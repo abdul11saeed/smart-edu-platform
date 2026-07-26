@@ -1,0 +1,257 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      // Check Firestore users collection for role.
+      // Guard the get() with exists() so a missing user document does not
+      // raise an error (which would deny every rule that calls this helper).
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin';
+    }
+
+    function isOwnerAccount(uid) {
+      // Guard the get() with exists() to avoid errors on missing documents.
+      // Use isPermanentAdmin flag instead of hardcoded email for better security.
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.get('isPermanentAdmin', false) == true;
+    }
+
+    function isBanned(uid) {
+      // Guard the get() with exists() so a missing user document is treated as
+      // "not banned" instead of raising an error that denies the whole request.
+      // banExpiresAt of 0 (or missing) means a permanent ban.
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.get('isBanned', false) == true
+        && (
+          get(/databases/$(database)/documents/users/$(uid)).data.get('banExpiresAt', 0) == 0
+          || request.time.toMillis() < get(/databases/$(database)/documents/users/$(uid)).data.get('banExpiresAt', 0)
+        );
+    }
+
+    function sameUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // ============================================
+    // USERS
+    // ============================================
+    // Owner account (isPermanentAdmin) is fully protected:
+    // - No admin can modify, delete, or demote the owner
+    // - Only the owner can read/update their own document
+    // - Admins can read all users but cannot modify the owner
+    // - Banned users cannot read any user data
+
+    match /users/{userId} {
+      allow read: if sameUser(userId) || (isAdmin() && !isBanned(request.auth.uid));
+      allow create: if sameUser(userId) && !isBanned(request.auth.uid);
+      // Users can update their own profile (not role). Admins can update any user
+      // EXCEPT the permanent owner account.
+      allow update: if isAdmin()
+                         && !isOwnerAccount(userId)
+                         || (sameUser(userId) && !isBanned(request.auth.uid) && (resource == null || request.resource.data.role == resource.data.role));
+      // Only the owner can delete their own account. Admins cannot delete the owner.
+      allow delete: if sameUser(userId) || (isAdmin() && !isOwnerAccount(userId));
+    }
+
+    // ============================================
+    // COURSE FILES - Unified File System
+    // ============================================
+    // All authenticated users can read public files
+    // Only uploader can read private files
+    // Admins can read any file
+    // Users can create files
+    // Users can update/delete their own files
+    // Admins can update/delete any file
+
+    match /courseFiles/{fileId} {
+       allow read: if signedIn() && !isBanned(request.auth.uid);
+       allow create: if signedIn() && !isBanned(request.auth.uid);
+       allow update: if signedIn() && !isBanned(request.auth.uid) && (request.auth.uid == resource.data.uploadedBy || isAdmin());
+       allow delete: if signedIn() && !isBanned(request.auth.uid) && (request.auth.uid == resource.data.uploadedBy || isAdmin());
+     }
+
+    // ============================================
+    // PUBLIC COURSE FILES - Metadata only (no sensitive data)
+    // ============================================
+    // Guests can read public file metadata (title, description, course info, etc.)
+    // Only file owner can create/update their public record
+    // Admins can delete any public record
+
+    match /publicCourseFiles/{fileId} {
+      allow read: if true;
+      allow create: if signedIn() && !isBanned(request.auth.uid) && request.auth.uid == request.resource.data.uploadedBy;
+      allow update: if signedIn() && !isBanned(request.auth.uid) && request.auth.uid == resource.data.uploadedBy;
+      allow delete: if signedIn() && !isBanned(request.auth.uid) && (request.auth.uid == resource.data.uploadedBy || isAdmin());
+    }
+
+    // ============================================
+    // UNIVERSITIES (colleges/majors/courses are stored NESTED inside each university document)
+    // ============================================
+    // Public read - catalog data has no sensitive information
+    // Only admins can write
+
+    match /universities/{universityId} {
+      allow read: if true;
+      allow update: if isAdmin() && !isBanned(request.auth.uid);
+      allow create, delete: if isAdmin() && !isBanned(request.auth.uid);
+    }
+
+    // ============================================
+    // DISCUSSIONS
+    // ============================================
+
+    match /discussions/{discussionId} {
+      allow read: if signedIn() && !isBanned(request.auth.uid);
+      allow create: if signedIn() && !isBanned(request.auth.uid);
+      allow update: if signedIn() && !isBanned(request.auth.uid) && (request.auth.uid == resource.data.authorId || isAdmin());
+      allow delete: if signedIn() && !isBanned(request.auth.uid) && (request.auth.uid == resource.data.authorId || isAdmin());
+    }
+
+    // ============================================
+    // PUBLIC DISCUSSIONS - Public discussion samples (no comments/likes)
+    // ============================================
+    // Guests can read discussion titles, content previews, author names
+    // Only discussion author can create/update their public record
+    // Admins can delete any public record
+
+    match /publicDiscussions/{discussionId} {
+      allow read: if true;
+      allow create: if signedIn() && !isBanned(request.auth.uid) && request.auth.uid == request.resource.data.authorId;
+      allow update: if signedIn() && !isBanned(request.auth.uid) && request.auth.uid == resource.data.authorId;
+      allow delete: if signedIn() && !isBanned(request.auth.uid) && (request.auth.uid == resource.data.authorId || isAdmin());
+    }
+
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && !isBanned(request.auth.uid) && request.auth.uid == resource.data.userId;
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // TERMS
+    // ============================================
+
+    match /terms/{termId} {
+      allow read: if signedIn() && !isBanned(request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // AUDIT LOGS
+    // ============================================
+
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // ANALYTICS
+    // ============================================
+
+    match /analytics/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ============================================
+    // SETTINGS
+    // ============================================
+
+    match /settings/{id} {
+      allow read: if signedIn() && !isBanned(request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // SYSTEM METRICS
+    // ============================================
+
+    match /systemMetrics/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ============================================
+    // ACTIVITY LOGS
+    // ============================================
+
+    match /activityLogs/{logId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // RECOMMENDATION CONTENTS - Public educational content
+    // ============================================
+    // Public read for SEO indexing - articles, news, courses, research, etc.
+    // Only admins can write
+
+    match /recommendation_contents/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // STUDENT INTERESTS
+    // ============================================
+
+    match /student_interests/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId && !isBanned(request.auth.uid);
+      allow write: if signedIn() && request.auth.uid == userId && !isBanned(request.auth.uid);
+    }
+
+    // ============================================
+    // STUDENT ACTIVITY
+    // ============================================
+
+    match /student_activity/{activityId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId && !isBanned(request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // SAVED RECOMMENDATIONS
+    // ============================================
+
+    match /saved_recommendations/{saveId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId && !isBanned(request.auth.uid);
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+    }
+
+    // ============================================
+    // LIKED RECOMMENDATIONS
+    // ============================================
+
+    match /liked_recommendations/{likeId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId && !isBanned(request.auth.uid);
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+    }
+
+    // ============================================
+    // HIDDEN RECOMMENDATIONS
+    // ============================================
+
+    match /hidden_recommendations/{hideId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId && !isBanned(request.auth.uid);
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId && !isBanned(request.auth.uid);
+    }
+  }
+}

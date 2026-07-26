@@ -1,0 +1,264 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import RecommendationCard from './RecommendationCard';
+import { ContentCategory, RecommendationContent, RecommendationItemWithStatus } from '../../types';
+import { recommendationService } from '../../services/recommendationService';
+import { useRecommendationActions } from '../../hooks/useRecommendationActions';
+
+interface CategorySectionProps {
+    userId?: string;
+    category: ContentCategory;
+    title: string;
+    icon?: string;
+    limit?: number;
+    requiredCount?: number;  // Guarantee at least this many cards
+    onViewAll?: (category: ContentCategory) => void;
+    isPublic?: boolean;
+    excludeIds?: string[];
+}
+
+const CategorySection: React.FC<CategorySectionProps> = ({
+    userId,
+    category,
+    title,
+    icon,
+    limit = 6,
+    requiredCount,
+    onViewAll,
+    isPublic = false,
+    excludeIds,
+}) => {
+    const [items, setItems] = useState<RecommendationItemWithStatus[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [reloadKey, setReloadKey] = useState(0);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    // Page size used for both the initial load and "Load more" (capped at 50).
+    const PAGE_SIZE = Math.max(1, Math.min(limit || 20, 50));
+
+    const { handleSave, handleLike, handleHide, canInteract } = useRecommendationActions({
+        userId: isPublic ? undefined : userId,
+        onInvalidate: () => {
+            // Invalidate cache for this user/category when interactions happen
+            if (userId) {
+                recommendationService.getRecommendations({ category, limit: 1, page: 1 }, userId);
+            }
+        }
+    });
+
+    const loadCategoryContent = useCallback(async (pageNum: number, append: boolean) => {
+        if (append) setLoadingMore(true);
+        else {
+            setLoading(true);
+            setError(false);
+        }
+        try {
+            let data: RecommendationContent[] = [];
+            // FIX: For public users, fetch the actual category content instead of hardcoded 'recommended'
+            // This ensures "تقنية المعلومات" shows tech content, not generic recommendations
+            const fetchCategory = isPublic ? category : category;
+            data = await recommendationService.getRecommendations(
+                {
+                    category: fetchCategory,
+                    limit: PAGE_SIZE,
+                    page: pageNum,
+                    requiredCount: requiredCount || limit || PAGE_SIZE,
+                    fallbackOnEmpty: true,
+                },
+                isPublic ? undefined : userId
+            );
+            const validData = (data as RecommendationItemWithStatus[]).filter(
+                item => item.title && item.sourceUrl && item.title.trim() && item.sourceUrl.trim()
+            );
+            const mapped = validData.map(item => ({
+                ...item,
+                isSaved: !!item.isSaved,
+                isLiked: !!item.isLiked,
+            }));
+            // Skip items already shown elsewhere (e.g. the top carousel) to avoid
+            // showing the same recommendation twice on the same page.
+            const excludeSet = new Set(excludeIds || []);
+            const filtered = mapped.filter(i => !excludeSet.has(i.id));
+            if (append) {
+                // Append the next page, skipping any duplicates by id.
+                setItems(prev => {
+                    const seen = new Set(prev.map(i => i.id));
+                    return [...prev, ...filtered.filter(i => !seen.has(i.id))];
+                });
+            } else {
+                setItems(filtered);
+            }
+            // More pages exist as long as we got a full page back.
+            setHasMore(filtered.length >= PAGE_SIZE);
+        } catch (err) {
+            if (!append) {
+                console.error(`Error fetching ${category} recommendations:`, err);
+                setError(true);
+            }
+        } finally {
+            if (append) setLoadingMore(false);
+            else setLoading(false);
+        }
+    }, [userId, category, limit, isPublic, PAGE_SIZE, excludeIds]);
+
+    useEffect(() => {
+        if (isPublic || userId) {
+            setPage(1);
+            loadCategoryContent(1, false);
+        }
+    }, [userId, category, isPublic, loadCategoryContent, reloadKey]);
+
+    const handleLoadMore = useCallback(() => {
+        const next = page + 1;
+        setPage(next);
+        loadCategoryContent(next, true);
+    }, [page, loadCategoryContent]);
+
+    const handleOpen = async (content: RecommendationContent) => {
+        // Track activity non-blocking with category/keywords for better personalization
+        if (!isPublic && userId) {
+            recommendationService.trackActivity(
+                {
+                    activityType: 'open_file',
+                    metadata: {
+                        contentType: 'recommendation',
+                        contentId: content.id,
+                        category: content.category,
+                        keywords: content.keywords,
+                        source: content.source,
+                    },
+                },
+                userId
+            ).catch(() => {
+                // Silently ignore tracking failures
+            });
+        }
+        window.open(content.sourceUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleSaveWrapper = async (contentId: string) => {
+        await handleSave(contentId, items, setItems);
+    };
+
+    const handleLikeWrapper = async (contentId: string) => {
+        await handleLike(contentId, items, setItems);
+    };
+
+    const handleHideWrapper = async (contentId: string) => {
+        await handleHide(contentId, items, setItems, () => loadCategoryContent(1, false));
+    };
+
+    if (loading) {
+        return (
+            <div className="mb-8">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    {icon} {title}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+                            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="mb-8">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    {icon} {title}
+                </h3>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-red-500 text-lg">⚠️</span>
+                        <span className="text-sm text-red-700 dark:text-red-300">
+                            تعذر تحميل المحتوى. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => setReloadKey(k => k + 1)}
+                        className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors whitespace-nowrap"
+                    >
+                        إعادة المحاولة
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Show skeleton while loading more content.
+    // The backend guarantees filled cards, but we show a loading state
+    // instead of hiding the entire section so users see feedback.
+    if (items.length === 0 && !error) {
+        return (
+            <div className="mb-8">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    {icon} {title}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+                            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {icon} {title}
+                </h3>
+                {onViewAll && items.length > 0 && (
+                    <button
+                        onClick={() => onViewAll(category)}
+                        className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                    >
+                        عرض الكل
+                    </button>
+                )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {items.map(item => (
+                    <RecommendationCard
+                        key={item.id}
+                        content={item}
+                        isSaved={item.isSaved}
+                        isLiked={item.isLiked}
+                        isPublic={isPublic}
+                        onOpen={handleOpen}
+                        onSave={canInteract ? handleSaveWrapper : undefined}
+                        onLike={canInteract ? handleLikeWrapper : undefined}
+                        onHide={canInteract ? handleHideWrapper : undefined}
+                    />
+                ))}
+            </div>
+
+            {hasMore && !loading && (
+                <div className="flex justify-center mt-6">
+                    <button
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-60"
+                    >
+                        {loadingMore ? 'جاري التحميل...' : 'عرض المزيد'}
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default CategorySection;

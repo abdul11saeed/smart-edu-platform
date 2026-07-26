@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Static sitemap for the public (indexable) areas of منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية.
+  Dynamic course/discussion URLs (/workspace/:courseId, /course-files/:courseId, /discussions?course=:courseId) should be appended here as they are created.
+  Replace https://eduai.yemen/ with the production domain.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://eduai.yemen/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://eduai.yemen/discussions</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://eduai.yemen/about</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://eduai.yemen/terms</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.4</priority>
+    </url>
+    <url>
+        <loc>https://eduai.yemen/contact</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.4</priority>
+    </url>
+</urlset>

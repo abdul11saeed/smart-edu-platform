@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:5173", "http://localhost:5174", "https://eduaiplatform-39fe9.web.app", "https://eduaiplatform-39fe9.firebaseapp.com"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Authorization", "X-Requested-With", "X-Goog-Upload-Protocol", "X-Goog-Upload-Command", "X-Goog-Upload-Content-Length", "X-Goog-Upload-Header-Content-Length"],
+    "maxAgeSeconds": 3600
+  }
+]

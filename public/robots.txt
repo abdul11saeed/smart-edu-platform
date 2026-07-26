@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Block authenticated-only and private app areas from indexing
+Disallow: /chat
+Disallow: /chat/private
+Disallow: /notifications
+Disallow: /profile
+Disallow: /recommendations
+Disallow: /admin
+Disallow: /admin/analytics
+Disallow: /admin/reports
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+
+Sitemap: https://eduai.yemen/sitemap.xml

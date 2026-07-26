@@ -1,0 +1,127 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      "$uid": {
+        ".read": "auth != null && !isBanned(auth.uid) && (auth.uid === $uid || isAdmin(auth.uid))",
+        ".write": "auth != null && !isBanned(auth.uid) && (auth.uid === $uid || isAdmin(auth.uid)) && !isOwnerAccount($uid)"
+      }
+    },
+    "universities": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      ".write": "auth != null && !isBanned(auth.uid) && isAdmin(auth.uid)"
+    },
+    "analytics": {
+      ".read": "auth != null && !isBanned(auth.uid) && isAdmin(auth.uid)",
+      ".write": "auth != null && !isBanned(auth.uid) && isAdmin(auth.uid)"
+    },
+    "activityFeed": {
+      ".read": "auth != null && !isBanned(auth.uid) && isAdmin(auth.uid)",
+      ".write": "auth != null && !isBanned(auth.uid) && isAdmin(auth.uid)"
+    },
+    "chat_rooms": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      "$roomId": {
+        ".read": "auth != null && !isBanned(auth.uid)",
+        ".write": "auth != null && !isBanned(auth.uid)",
+        "messages": {
+          ".read": "auth != null && !isBanned(auth.uid)",
+          "$messageId": {
+            ".read": "auth != null && !isBanned(auth.uid)",
+            ".write": "auth != null && !isBanned(auth.uid) && (!data.exists() || data.child('senderId').val() === auth.uid || isAdmin(auth.uid))",
+            "readBy": {
+              "$userId": {
+                ".read": "auth != null && !isBanned(auth.uid)",
+                ".write": "auth != null && !isBanned(auth.uid) && auth.uid === $userId"
+              }
+            },
+            "reactions": {
+              "$emoji": {
+                ".read": "auth != null && !isBanned(auth.uid)",
+                "$uid": {
+                  ".read": "auth != null && !isBanned(auth.uid)",
+                  ".write": "auth != null && !isBanned(auth.uid) && auth.uid === $uid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "chat": {
+      "$courseId": {
+        ".read": "auth != null && !isBanned(auth.uid)",
+        "$messageId": {
+          ".read": "auth != null && !isBanned(auth.uid)",
+          ".write": "auth != null && !isBanned(auth.uid) && (!data.exists() || data.child('senderId').val() === auth.uid || isAdmin(auth.uid))"
+        }
+      }
+    },
+    "chat_reactions": {
+      "$chatId": {
+        ".read": "auth != null && !isBanned(auth.uid)",
+        "$messageId": {
+          ".read": "auth != null && !isBanned(auth.uid)",
+          "$emoji": {
+            ".read": "auth != null && !isBanned(auth.uid)",
+            "$userId": {
+              ".read": "auth != null && !isBanned(auth.uid)",
+              ".write": "auth != null && !isBanned(auth.uid) && auth.uid === $userId"
+            }
+          }
+        }
+      }
+    },
+    "discussions": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      "$discussionId": {
+        ".read": "auth != null && !isBanned(auth.uid)",
+        ".write": "auth != null && !isBanned(auth.uid) && (!data.exists() || data.child('authorId').val() === auth.uid || isAdmin(auth.uid))",
+        "comments": {
+          ".read": "auth != null && !isBanned(auth.uid)",
+          "$commentId": {
+            ".read": "auth != null && !isBanned(auth.uid)",
+            ".write": "auth != null && !isBanned(auth.uid) && (!data.exists() || data.child('authorId').val() === auth.uid || isAdmin(auth.uid))"
+          }
+        }
+      }
+    },
+    "publicDiscussions": {
+      ".read": true,
+      "$discussionId": {
+        ".read": true,
+        ".write": "auth != null && !isBanned(auth.uid) && (!data.exists() || data.child('authorId').val() === auth.uid || isAdmin(auth.uid))"
+      }
+    },
+    "discussion_likes": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      "$discussionId": {
+        ".read": "auth != null && !isBanned(auth.uid)",
+        "$userId": {
+          ".read": "auth != null && !isBanned(auth.uid)",
+          ".write": "auth != null && !isBanned(auth.uid) && auth.uid === $userId"
+        }
+      }
+    },
+    "comment_likes": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      "$discussionId": {
+        ".read": "auth != null && !isBanned(auth.uid)",
+        "$commentId": {
+          ".read": "auth != null && !isBanned(auth.uid)",
+          "$userId": {
+            ".read": "auth != null && !isBanned(auth.uid)",
+            ".write": "auth != null && !isBanned(auth.uid) && auth.uid === $userId"
+          }
+        }
+      }
+    },
+    "notifications": {
+      ".read": "auth != null && !isBanned(auth.uid)",
+      "$notificationId": {
+        ".read": "auth != null && !isBanned(auth.uid) && data.child('toUserId').val() === auth.uid",
+        ".write": "auth != null && !isBanned(auth.uid) && (!data.exists() || data.child('toUserId').val() === newData.child('toUserId').val()) && (isAdmin(auth.uid) || newData.child('fromUserId').val() === auth.uid)"
+      }
+    }
+  }
+}

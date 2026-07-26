@@ -1,0 +1,41 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper to check if user is admin
+    function isAdmin() {
+      let userData = get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+      return request.auth != null && userData != null && userData.role == 'admin';
+    }
+
+    // Course files storage path: courses/{universityId}/{collegeId}/{majorId}/{courseId}/{uploaderId}/{fileId}.{ext}
+    // Users can only write to their own uploaderId folder
+    match /courses/{universityId}/{collegeId}/{majorId}/{courseId}/{uploaderId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uploaderId;
+      allow delete: if request.auth != null && (request.auth.uid == uploaderId || isAdmin());
+    }
+
+    // Fallback rule for paths without uploaderId segment (legacy/undefined paths)
+    match /courses/{universityId}/{collegeId}/{majorId}/{courseId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if false;
+      allow delete: if false;
+    }
+
+    // Profile pictures storage path: profilePics/{userId}/{fileName}
+    // Users can read any profile picture (authenticated), but only write/delete
+    // to their own folder; admins can delete any profile picture.
+    match /profilePics/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Default deny for any other paths
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

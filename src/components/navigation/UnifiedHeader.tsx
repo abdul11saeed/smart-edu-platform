@@ -1,0 +1,291 @@
+﻿import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+    Bell,
+    GraduationCap,
+    LogOut,
+    Menu,
+    Moon,
+    Sun,
+    X,
+} from 'lucide-react';
+import { useAppStore } from '../../stores/appStore';
+import { logout } from '../../services/authService';
+import {
+    subscribeToUserNotifications,
+    markNotificationAsRead,
+    Notification,
+} from '../../services/notificationService';
+
+const UnifiedHeader = ({
+    onMenuClick,
+    sidebarOpen,
+    isPublic = false,
+}: {
+    onMenuClick: () => void;
+    sidebarOpen: boolean;
+    isPublic?: boolean;
+}) => {
+    const navigate = useNavigate();
+    const {
+        currentUser,
+        setCurrentUser,
+        isDarkMode,
+        toggleDarkMode,
+    } = useAppStore();
+
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    const userMenuRef = useRef<HTMLDivElement>(null);
+    const notificationsRef = useRef<HTMLDivElement>(null);
+
+    const unreadNotifications = notifications.filter((n) => !n.read);
+    const unreadCount = unreadNotifications.length;
+
+    useEffect(() => {
+        if (!currentUser?.id) return;
+        const unsubscribe = subscribeToUserNotifications(currentUser.id, (notifs) => {
+            setNotifications(notifs);
+        });
+        return () => unsubscribe();
+    }, [currentUser?.id]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node;
+            if (userMenuRef.current && !userMenuRef.current.contains(target)) setUserMenuOpen(false);
+            if (notificationsRef.current && !notificationsRef.current.contains(target)) setNotificationsOpen(false);
+        };
+
+        if (userMenuOpen || notificationsOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [userMenuOpen, notificationsOpen]);
+
+    // Close dropdowns on Escape key
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (notificationsOpen) setNotificationsOpen(false);
+                if (userMenuOpen) setUserMenuOpen(false);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [notificationsOpen, userMenuOpen]);
+
+    useEffect(() => {
+        if (isDarkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+    }, [isDarkMode]);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            setCurrentUser(null);
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            setCurrentUser(null);
+            navigate('/login');
+        }
+    };
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.read) {
+            await markNotificationAsRead(notification.id);
+            setNotifications((prev) =>
+                prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+            );
+        }
+        if (notification.link) {
+            navigate(notification.link);
+        }
+        setNotificationsOpen(false);
+    };
+
+    return (
+        <header className={`fixed top-0 right-0 left-0 h-16 bg-[#FFFBEB]/85 dark:bg-brown-900/85 backdrop-blur-xl shadow-lg shadow-primary-500/5 border-b border-brown-200/50 dark:border-brown-700/30 z-50 transition-all duration-300`}>
+            {/* Subtle gradient line at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary-400/40 to-transparent dark:via-primary-600/40"></div>
+
+            <div className="h-full px-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Link to="/" className="flex items-center gap-2 group">
+                        <div className="bg-gradient-to-br from-[#5C3A1E] via-[#7B4D2A] to-[#D97706] p-1.5 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-105 animate-icon-pulse shadow-[#7B4D2A]/20 hover:shadow-[#7B4D2A]/40 transition-all duration-300 border border-white/20">
+                            <GraduationCap className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-lg font-bold bg-gradient-to-r from-[#3B2314] to-[#D97706] bg-clip-text text-transparent hidden sm:block group-hover:from-[#5C3A1E] group-hover:to-[#B45309] transition-all duration-200">
+                            EduAI
+                        </span>
+                    </Link>
+
+                    <div className="w-px h-6 bg-gradient-to-b from-transparent via-primary-200 to-transparent dark:from-transparent dark:via-primary-700 dark:to-transparent hidden sm:block" />
+
+                    <button
+                        onClick={onMenuClick}
+                        className="p-2 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 text-brown-700 dark:text-brown-300 transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-md hover:shadow-primary-500/10"
+                        title={sidebarOpen ? 'إغلاق' : 'فتح'}
+                    >
+                        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Night mode toggle button */}
+                    <button
+                        onClick={() => toggleDarkMode()}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${isDarkMode
+                            ? 'bg-gradient-to-r from-primary-700 to-secondary-600 text-white shadow-lg hover:shadow-xl hover:from-primary-800 hover:to-secondary-700'
+                            : 'bg-gradient-to-r from-brown-700 to-brown-800 text-neutral-100 hover:from-brown-800 hover:to-brown-900 shadow-md hover:shadow-lg'
+                            }`}
+                        title={isDarkMode ? 'الوضع الليلي مُفعّل - اضغط للعودة للوضع النهاري' : 'الوضع النهاري - اضغط للتحويل للوضع الليلي'}
+                        aria-label="تبديل الوضع الليلي"
+                    >
+                        {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                        <span className="hidden sm:inline">الوضع الليلي</span>
+                    </button>
+
+                    {/* Show login button for guests, notifications + profile for logged-in users */}
+                    {isPublic ? (
+                        <Link
+                            to="/login"
+                            className="btn-modern-primary flex items-center gap-2 px-4 py-2 text-sm"
+                        >
+                            تسجيل الدخول
+                        </Link>
+                    ) : (
+                        <>
+                            {/* Notifications */}
+                            <div className="relative" ref={notificationsRef}>
+                                <button
+                                    onClick={() => setNotificationsOpen((prev) => !prev)}
+                                    className="relative p-2 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 text-brown-700 dark:text-brown-300 transition-all duration-200 hover:scale-110 hover:shadow-md hover:shadow-primary-500/10"
+                                    title="الإشعارات"
+                                >
+                                    <Bell className="h-5 w-5" />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-[10px] font-semibold text-white flex items-center justify-center shadow-lg animate-pulse">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {notificationsOpen && (
+                                    <div className="absolute end-0 mt-2 w-64 xs:w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-[#FFFBEB]/95 dark:bg-brown-900/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-primary-500/10 border border-brown-200/50 dark:border-brown-700/30 overflow-hidden z-[60] animate-fade-in-down">
+                                        {/* Gradient header */}
+                                        <div className="px-4 py-3 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/30 border-b border-brown-200/50 dark:border-brown-700/30 text-sm font-semibold text-brown-800 dark:text-neutral-100 flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Bell className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                                                الإشعارات
+                                            </span>
+                                            {unreadCount > 0 && (
+                                                <span className="text-xs bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-0.5 rounded-full font-medium shadow-sm">{unreadCount} غير مقروء</span>
+                                            )}
+                                        </div>
+                                        {notifications.filter(n => !n.read).length === 0 ? (
+                                            <div className="p-6 text-sm text-brown-500 dark:text-neutral-400 text-center">لا توجد إشعارات</div>
+                                        ) : (
+                                            <div className="max-h-80 overflow-y-auto">
+                                                {notifications.filter(n => !n.read).slice(0, 10).map((notification) => (
+                                                    <button
+                                                        key={notification.id}
+                                                        onClick={() => handleNotificationClick(notification)}
+                                                        className={`w-full text-right px-4 py-3 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 border-b border-brown-100 dark:border-brown-700/50 last:border-b-0 transition-all duration-200 ${!notification.read ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}`}
+                                                    >
+                                                        <div className="flex items-start gap-2">
+                                                            <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${!notification.read ? 'bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm shadow-primary-500/30' : 'bg-transparent'}`}></div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-medium text-brown-800 dark:text-neutral-100 text-sm">{notification.title}</div>
+                                                                {notification.body && <div className="text-xs text-brown-500 dark:text-neutral-400 mt-1 line-clamp-2">{notification.body}</div>}
+                                                                <p className="text-xs text-brown-400 dark:text-neutral-500 mt-1">من: {notification.fromUserName}</p>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {notifications.length > 10 && (
+                                            <div className="px-4 py-2 border-t border-brown-200/50 dark:border-brown-700/30 bg-gradient-to-r from-primary-50/30 to-transparent dark:from-primary-900/10 dark:to-transparent">
+                                                <button
+                                                    onClick={() => {
+                                                        setNotificationsOpen(false);
+                                                        navigate('/notifications');
+                                                    }}
+                                                    className="text-sm text-primary-700 dark:text-primary-300 hover:text-primary-800 dark:hover:text-primary-200 font-medium transition-colors"
+                                                >
+                                                    عرض جميع الإشعارات
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Profile - clicking the avatar icon opens the menu */}
+                            <div className="relative" ref={userMenuRef}>
+                                <button
+                                    onClick={() => setUserMenuOpen((prev) => !prev)}
+                                    className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-600 text-white font-semibold shadow-lg hover:shadow-xl hover:ring-2 hover:ring-primary-400/50 hover:scale-110 transition-all duration-300 border border-white/20 overflow-hidden"
+                                    title={currentUser?.name || 'الحساب'}
+                                >
+                                    {currentUser?.photoURL ? (
+                                        <img
+                                            src={currentUser.photoURL}
+                                            alt={currentUser.name || 'الحساب'}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        (currentUser?.name?.charAt(0) || 'U')
+                                    )}
+                                </button>
+
+                                {userMenuOpen && (
+                                    <div className="absolute end-0 mt-2 w-56 sm:w-64 max-w-[calc(100vw-2rem)] bg-[#FFFBEB]/95 dark:bg-brown-900/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-primary-500/10 border border-brown-200/50 dark:border-brown-700/30 z-[60] overflow-hidden animate-fade-in-down">
+                                        {/* User info - gradient header */}
+                                        <div className="px-4 py-3 bg-gradient-to-r from-primary-50/80 to-secondary-50/80 dark:from-primary-900/30 dark:to-secondary-900/30 border-b border-brown-200/50 dark:border-brown-700/30">
+                                            <p className="font-semibold text-brown-800 dark:text-neutral-100 truncate">
+                                                {currentUser?.name || 'المستخدم'}
+                                            </p>
+                                            {currentUser?.email && (
+                                                <p className="text-xs text-brown-500 dark:text-neutral-400 truncate">
+                                                    {currentUser.email}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <Link
+                                            to="/profile"
+                                            className="block px-4 py-3 text-right text-brown-700 dark:text-brown-300 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-colors duration-200 font-medium"
+                                        >
+                                            الملف الشخصي
+                                        </Link>
+
+                                        <div className="border-t border-brown-100 dark:border-brown-700/50 my-1"></div>
+
+                                        {/* Logout button */}
+                                        <button
+                                            onClick={() => {
+                                                handleLogout();
+                                                setUserMenuOpen(false);
+                                            }}
+                                            className="w-full text-right px-4 py-3 flex items-center justify-between gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 font-medium"
+                                        >
+                                            <span>تسجيل الخروج</span>
+                                            <LogOut className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </header>
+    );
+};
+
+export default UnifiedHeader;

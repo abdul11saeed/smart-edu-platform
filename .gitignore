@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase
+firebase-debug.log
+ui-debug.log
+
+# Server (backend - keep package.json but not dependencies)
+# server/node_modules/ - already covered by node_modules/
+
+# Server secrets
+server/service-account-key.json
+server/.env
+
+# Server logs
+server/*.log
+
+# Development archives & tools
+react-devtools.zip
+*.zip
+
+# Temporary/debug files
+TODO.md
+tmp_*.js
+
+# Analysis & plan documents (internal use, not for production)
+DISCUSSION_ARCHITECTURE_ANALYSIS.md
+PROJECT_FLOW_REPORT.md
+plans/
