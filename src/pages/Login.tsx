@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore';
 import { loginWithEmail, loginWithGoogle, EMAIL_REGEX } from '../services/authService';
 import { useToast } from '../components/ui/Toast';
@@ -22,6 +23,7 @@ interface LoginForm {
 const getRedirectPath = (role: string): string => (role === 'admin' ? '/admin' : '/');
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
   const currentUser = useAppStore((state) => state.currentUser);
   const navigate = useNavigate();
@@ -36,7 +38,7 @@ const Login: React.FC = () => {
   useEffect(() => {
     const state = location.state as { aiLoginRequired?: boolean } | null;
     if (state?.aiLoginRequired) {
-      info('يرجى التسجيل لاستخدام خدمات الذكاء الاصطناعي');
+      info(t('auth.aiLoginRequired'));
       // Clear the flag so the notice isn't repeated on later renders
       navigate(location.pathname, { replace: true, state: null });
     }
@@ -63,7 +65,7 @@ const Login: React.FC = () => {
       // Redirect based on role
       navigate(getRedirectPath(user.role));
     } catch (error: any) {
-      setLoginError(error.message || 'فشل تسجيل الدخول');
+      setLoginError(error.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +82,7 @@ const Login: React.FC = () => {
       // Redirect based on role
       navigate(getRedirectPath(user.role));
     } catch (error: any) {
-      setLoginError(error.message || 'فشل تسجيل الدخول عبر جوجل');
+      setLoginError(error.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);
     }
@@ -94,9 +96,9 @@ const Login: React.FC = () => {
             <GraduationCap className="h-10 w-10 text-white" />
           </div>
           <h2 className="text-3xl font-bold bg-gradient-to-l from-[#7B4D2A] to-[#3B2314] dark:from-[#D4A77A] dark:to-[#B8865E] bg-clip-text text-transparent">
-            تسجيل الدخول
+            {t('auth.login')}
           </h2>
-          <p className="mt-2 text-brown-600 dark:text-[#D4A77A]/70">أدخل بياناتك للوصول إلى منصتك التعليمية</p>
+          <p className="mt-2 text-brown-600 dark:text-[#D4A77A]/70">{t('common.welcome')}</p>
         </div>
 
         {loginError && (
@@ -109,14 +111,14 @@ const Login: React.FC = () => {
           <div className="rounded-md shadow-sm -space-y-px">
             <div className="relative">
               <label htmlFor="email" className="sr-only">
-                البريد الإلكتروني
+                {t('auth.email')}
               </label>
               <input
                 {...register('email', {
-                  required: 'البريد الإلكتروني مطلوب',
+                  required: t('errors.generic'),
                   pattern: {
                     value: EMAIL_REGEX,
-                    message: 'البريد الإلكتروني غير صالح'
+                    message: t('errors.generic')
                   }
                 })}
                 id="email"
@@ -124,21 +126,21 @@ const Login: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 className={`${authInputClasses} rounded-t-md`}
-                placeholder="البريد الإلكتروني"
+                placeholder={t('auth.email')}
               />
             </div>
             <div className="relative">
               <label htmlFor="password" className="sr-only">
-                كلمة المرور
+                {t('auth.password')}
               </label>
               <input
-                {...register('password', { required: 'كلمة المرور مطلوبة' })}
+                {...register('password', { required: t('common.required') })}
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 className={`${authInputClasses} rounded-b-md`}
-                placeholder="كلمة المرور"
+                placeholder={t('auth.password')}
               />
               <button
                 type="button"
@@ -159,7 +161,7 @@ const Login: React.FC = () => {
 
           <div className="flex items-center justify-between mt-2">
             <Link to="/reset-password" className="text-sm text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] transition-colors">
-              نسيت كلمة المرور؟
+               {t('auth.forgotPassword', 'نسيت كلمة المرور؟')}
             </Link>
           </div>
 
@@ -175,9 +177,9 @@ const Login: React.FC = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  جاري تسجيل الدخول...
+                  {t('common.loading')}
                 </>
-              ) : 'تسجيل الدخول'}
+              ) : t('auth.login')}
             </button>
           </div>
 
@@ -187,7 +189,7 @@ const Login: React.FC = () => {
                 <div className="w-full border-t border-brown-300/80 dark:border-brown-600/20" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white/80 dark:bg-brown-900/60 text-brown-500 dark:text-[#D4A77A]/60">أو</span>
+                <span className="px-2 bg-white/80 dark:bg-brown-900/60 text-brown-500 dark:text-[#D4A77A]/60">{t('common.or', 'أو')}</span>
               </div>
             </div>
 
@@ -204,7 +206,7 @@ const Login: React.FC = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    جاري التسجيل بجوجل...
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
@@ -214,7 +216,7 @@ const Login: React.FC = () => {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    تسجيل الدخول باستخدام جوجل
+                    {t('auth.loginWithGoogle')}
                   </>
                 )}
               </button>
@@ -223,7 +225,7 @@ const Login: React.FC = () => {
 
           <div className="text-center mt-6">
             <Link to="/register" className="text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] font-medium transition-colors">
-              ليس لديك حساب؟ سجل الآن
+               {t('auth.noAccount', 'ليس لديك حساب؟ سجل الآن')}
             </Link>
           </div>
         </form>

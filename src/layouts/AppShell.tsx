@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import i18n from '../i18n';
 import Sidebar from '../components/navigation/Sidebar';
 import UnifiedHeader from '../components/navigation/UnifiedHeader';
 import Footer from '../components/layout/Footer';
@@ -60,10 +61,12 @@ function AppShell() {
         };
     }, []);
 
+    const direction = i18n.language === 'ar' ? 'rtl' : 'ltr';
+
     // For guests (not logged in), render simplified layout without sidebar
     if (!currentUser) {
         return (
-            <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-brown-950 via-brown-900/30 to-brown-900' : 'bg-gradient-to-br from-[#FFFBEB] via-brown-50/40 to-[#FFFBEB]/60'}`} dir="rtl">
+            <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-brown-950 via-brown-900/30 to-brown-900' : 'bg-gradient-to-br from-[#FFFBEB] via-brown-50/40 to-[#FFFBEB]/60'}`} dir={direction}>
                 <ScrollToTop />
                 {/* Simplified public header */}
                 <UnifiedHeader onMenuClick={handleMenuClick} sidebarOpen={sidebarOpen} isPublic={true} />
@@ -81,7 +84,7 @@ function AppShell() {
 
     // Full layout for authenticated users
     return (
-        <div className={`min-h-screen flex ${isDarkMode ? 'bg-gradient-to-br from-brown-950 via-brown-900/20 to-brown-900' : 'bg-gradient-to-br from-[#FFFBEB] via-brown-50/40 to-[#FFFBEB]/60'}`} dir="rtl">
+        <div className={`min-h-screen flex ${isDarkMode ? 'bg-gradient-to-br from-brown-950 via-brown-900/20 to-brown-900' : 'bg-gradient-to-br from-[#FFFBEB] via-brown-50/40 to-[#FFFBEB]/60'}`} dir={direction}>
             <ScrollToTop />
 
             {/* Sidebar */}

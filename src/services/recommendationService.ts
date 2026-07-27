@@ -19,6 +19,12 @@ const recommendationsCache = new Map<string, { ts: number; data: RecommendationC
 // Prevents concurrent identical requests from hitting the network simultaneously.
 const pendingRequests = new Map<string, Promise<RecommendationContent[]>>();
 
+// --- Stats cache ---
+// Reduces redundant calls to /api/recommendations/stats which has stricter rate limits.
+const STATS_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+const statsCache = new Map<string, { ts: number; data: RecommendationStats | null }>();
+const pendingStatsRequests = new Map<string, Promise<RecommendationStats | null>>();
+
 function recommendationsCacheKey(userId: string | undefined, filters: RecommendationFilters): string {
     return [
         userId || 'public',
@@ -56,10 +62,25 @@ function setCachedRecommendations(key: string, data: RecommendationContent[]): v
     recommendationsCache.set(key, { ts: Date.now(), data });
 }
 
-function invalidateUserRecommendations(userId: string): void {
+function invalidateUserRecommendations(userId?: string): void {
+    if (!userId) {
+        for (const key of recommendationsCache.keys()) {
+            if (key.startsWith('public|')) recommendationsCache.delete(key);
+        }
+        return;
+    }
     for (const key of recommendationsCache.keys()) {
         if (key.startsWith(`${userId}|`)) recommendationsCache.delete(key);
     }
+}
+
+function invalidateUserStats(userId?: string): void {
+    if (!userId) {
+        statsCache.clear();
+        return;
+    }
+    const key = `stats|${userId}`;
+    statsCache.delete(key);
 }
 
 export interface RecommendationFilters {
@@ -226,6 +247,7 @@ class RecommendationService {
     async saveRecommendation(contentId: string, userId: string): Promise<boolean> {
         try {
             invalidateUserRecommendations(userId);
+            invalidateUserStats(userId);
             const response = await fetch(`${API_BASE_URL}/recommendations/save`, {
                 method: 'POST',
                 headers: {
@@ -250,6 +272,7 @@ class RecommendationService {
     async unsaveRecommendation(contentId: string, userId: string): Promise<boolean> {
         try {
             invalidateUserRecommendations(userId);
+            invalidateUserStats(userId);
             const response = await fetch(`${API_BASE_URL}/recommendations/save`, {
                 method: 'DELETE',
                 headers: {
@@ -274,6 +297,7 @@ class RecommendationService {
     async likeRecommendation(contentId: string, userId: string): Promise<boolean> {
         try {
             invalidateUserRecommendations(userId);
+            invalidateUserStats(userId);
             const response = await fetch(`${API_BASE_URL}/recommendations/like`, {
                 method: 'POST',
                 headers: {
@@ -298,6 +322,7 @@ class RecommendationService {
     async hideRecommendation(contentId: string, userId: string, reason: string = 'user_hidden'): Promise<boolean> {
         try {
             invalidateUserRecommendations(userId);
+            invalidateUserStats(userId);
             const response = await fetch(`${API_BASE_URL}/recommendations/hide`, {
                 method: 'POST',
                 headers: {
@@ -320,25 +345,71 @@ class RecommendationService {
     }
 
     async getStats(_userId?: string): Promise<RecommendationStats | null> {
-        try {
-            // Server extracts uid from Authorization Bearer token only.
-            // Do not send x-user-id here to avoid mismatch/confusion.
-            const headers = await this.getAuthHeader();
-            const response = await fetch(`${API_BASE_URL}/recommendations/stats`, {
-                method: 'GET',
-                headers,
+        const userId = _userId || 'public';
+        const MAX_RETRIES = 3;
+        let lastError: Error | null = null;
+
+        // Check cache first
+        const cachedEntry = statsCache.get(userId);
+        if (cachedEntry && Date.now() - cachedEntry.ts < STATS_CACHE_TTL_MS) {
+            return cachedEntry.data;
+        }
+
+        // Request deduplication: if the same request is already in flight, return its promise
+        const pending = pendingStatsRequests.get(userId);
+        if (pending) return pending;
+
+        const executeRequest = async (attempt: number): Promise<RecommendationStats | null> => {
+            try {
+                // Server extracts uid from Authorization Bearer token only.
+                // Do not send x-user-id here to avoid mismatch/confusion.
+                const headers = await this.getAuthHeader();
+                const response = await fetch(`${API_BASE_URL}/recommendations/stats`, {
+                    method: 'GET',
+                    headers,
+                });
+
+                if (!response.ok) {
+                    const retryAfter = response.headers.get('Retry-After');
+                    const err = new Error(`API Error: ${response.status}`) as any;
+                    if (response.status === 429 && retryAfter) {
+                        err.retryAfterMs = parseInt(retryAfter) * 1000;
+                    }
+                    throw err;
+                }
+
+                const result = await response.json();
+                const data = result.data || null;
+                // Cache the result
+                statsCache.set(userId, { ts: Date.now(), data });
+                return data;
+            } catch (error) {
+                lastError = error as Error;
+                if (attempt < MAX_RETRIES) {
+                    let delay = 1000 * Math.pow(2, attempt); // Exponential backoff: 2s, 4s
+                    const errWithRetry = error as any;
+                    if (errWithRetry.retryAfterMs) {
+                        delay = Math.max(delay, errWithRetry.retryAfterMs);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return executeRequest(attempt + 1);
+                }
+                throw error;
+            }
+        };
+
+        const requestPromise = executeRequest(1)
+            .catch((error) => {
+                console.error('Get stats error:', error);
+                // Return null on final failure to avoid blocking the UI
+                return null;
+            })
+            .finally(() => {
+                pendingStatsRequests.delete(userId);
             });
 
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
-            }
-
-            const result = await response.json();
-            return result.data || null;
-        } catch (error) {
-            console.error('Get stats error:', error);
-            return null;
-        }
+        pendingStatsRequests.set(userId, requestPromise);
+        return requestPromise;
     }
 
     // Track activity with error handling - non-blocking.

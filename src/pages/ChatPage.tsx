@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     MessageCircle,
     Send,
@@ -26,6 +27,7 @@ import { createNotification, getUserNotifications, markNotificationAsRead } from
 import { getUserFromRealtimeDB } from '../services/authService';
 
 const ChatPage = () => {
+    const { t } = useTranslation();
     const { currentUser, activeCourse } = useAppStore();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -43,7 +45,7 @@ const ChatPage = () => {
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-300">جاري التحقق من تسجيل الدخول...</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('chat.verifyingLogin')}</p>
                 </div>
             </div>
         );
@@ -52,7 +54,7 @@ const ChatPage = () => {
     // Get courseId from query param or Zustand activeCourse
     const courseIdFromQuery = searchParams.get('courseId');
     const courseId = courseIdFromQuery || activeCourse?.id || 'global';
-    const courseName = activeCourse?.name || (courseIdFromQuery ? `مقرر ${courseIdFromQuery}` : 'الدردشة العامة');
+    const courseName = activeCourse?.name || (courseIdFromQuery ? t('chat.courseChat') + ' ' + courseIdFromQuery : t('chat.generalChat'));
 
     // Get private chat info from URL params
     const targetUserId = searchParams.get('userId');
@@ -211,7 +213,7 @@ const ChatPage = () => {
     const handleCopyMessage = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
-            setToastMessage('تم نسخ الرسالة');
+            setToastMessage(t('chat.copyMessage'));
         } catch (err) {
             console.error('Failed to copy:', err);
         }
@@ -226,7 +228,7 @@ const ChatPage = () => {
         setDeletedForMe(newDeletedForMe);
         setContextMenu(null);
 
-        setToastMessage('تم إخفاء الرسالة');
+        setToastMessage(t('chat.deleteForMe'));
     };
 
     const handleDeleteForEveryone = async (messageId: string) => {
@@ -237,8 +239,8 @@ const ChatPage = () => {
                 try {
                     await createNotification({
                         type: 'message_deleted',
-                        title: 'تم حذف رسالة',
-                        body: 'تم حذف رسالة من المحادثة',
+                        title: t('chat.messageDeleted'),
+                        body: t('chat.messageDeleted'),
                         fromUserId: currentUser.id,
                         fromUserName: currentUser.name,
                         toUserId: targetUserId,
@@ -250,7 +252,7 @@ const ChatPage = () => {
             }
         } catch (err) {
             console.error('Error deleting message:', err);
-            setError('حدث خطأ أثناء حذف الرسالة');
+            setError(t('chat.errorDeletingMessage'));
         }
         setContextMenu(null);
     };
@@ -334,14 +336,14 @@ const ChatPage = () => {
                                 <button
                                     onClick={() => handleReply(message)}
                                     className="p-2 bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 rounded-full shadow-md hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                                    title="رد"
+                                    title={t('chat.reply')}
                                 >
                                     <Reply className="h-4 w-4" />
                                 </button>
                                 <button
                                     onClick={() => handleCopyMessage(message.text)}
                                     className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full shadow-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                                    title="نسخ"
+                                    title={t('chat.copy')}
                                 >
                                     <Copy className="h-4 w-4" />
                                 </button>
@@ -349,7 +351,7 @@ const ChatPage = () => {
                                     <button
                                         onClick={() => handleDeleteForEveryone(message.id)}
                                         className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full shadow-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-                                        title="حذف"
+                                        title={t('chat.deleteForEveryone')}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </button>
@@ -358,7 +360,7 @@ const ChatPage = () => {
                                     <button
                                         onClick={() => handleDeleteForMe(message.id)}
                                         className="p-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                                        title="إخفاء"
+                                        title={t('chat.hide')}
                                     >
                                         <ShieldOff className="h-4 w-4" />
                                     </button>
@@ -367,7 +369,7 @@ const ChatPage = () => {
                                     <button
                                         onClick={() => handleAdminDelete(message.id)}
                                         className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full shadow-md hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-                                        title="حذف كمدير"
+                                        title={t('chat.deleteAsAdmin')}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </button>
@@ -405,7 +407,7 @@ const ChatPage = () => {
                                     <textarea
                                         value={editingText}
                                         onChange={(e) => setEditingText(e.target.value)}
-                                        placeholder="تعديل الرسالة"
+                                        placeholder={t('chat.edit') + '...'}
                                         className={`w-full p-2 rounded-lg text-sm resize-none ${isOwnMessage
                                             ? 'bg-green-400/20 text-white placeholder-green-200'
                                             : 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400'
@@ -416,18 +418,18 @@ const ChatPage = () => {
                                     <div className="flex gap-2 mt-2">
                                         <button onClick={handleSaveEdit}
                                             className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700">
-                                            حفظ
+                                            {t('chat.saveEdit')}
                                         </button>
                                         <button onClick={() => { setEditingMessageId(null); setEditingText(''); }}
                                             className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg text-xs hover:bg-gray-400">
-                                            إلغاء
+                                            {t('chat.cancel')}
                                         </button>
                                     </div>
                                 </div>
                             ) : (
                                 <p className="text-sm leading-relaxed px-3 py-1.5">
                                     {message.isDeleted ? (
-                                        <span className="italic opacity-60">تم حذف هذه الرسالة</span>
+                                        <span className="italic opacity-60">{t('chat.messageDeleted')}</span>
                                     ) : (
                                         <>
                                             {message.text}
@@ -495,7 +497,7 @@ const ChatPage = () => {
                         navigate('/');
                     }
                 }}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="العودة">
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t('common.back')}>
                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                 </button>
                 <div className="flex-1 min-w-0">
@@ -506,11 +508,11 @@ const ChatPage = () => {
                     </h1>
                     <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate">
                         {courseIdFromQuery ? (
-                            <><BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> دردشة المقرر</>
+                            <><BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.courseChat')}</>
                         ) : targetUserId ? (
-                            <><Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> محادثة خاصة</>
+                            <><Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.privateChatLabel')}</>
                         ) : (
-                            <><Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> دردشة عامة</>
+                            <><Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.generalChat')}</>
                         )}
                     </p>
                 </div>
@@ -518,14 +520,14 @@ const ChatPage = () => {
                 {!courseIdFromQuery && !targetUserId && (
                     <button onClick={() => setShowUserList(!showUserList)}
                         className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showUserList ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
-                        title="محادثة خاصة" aria-label="فتح قائمة المحادثات الخاصة">
+                        title={t('chat.openPrivateChats')} aria-label={t('chat.openPrivateChats')}>
                         <Users className="h-5 w-5" />
                     </button>
                 )}
 
                 {targetUserId && (
                     <button onClick={() => navigate('/chat')}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 flex-shrink-0" title="العودة للدردشة العامة">
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 flex-shrink-0" title={t('chat.backToGeneralChat')}>
                         <Lock className="h-5 w-5" />
                     </button>
                 )}
@@ -536,17 +538,17 @@ const ChatPage = () => {
                 <div className="fixed inset-0 bg-black/50 z-[9999] flex items-start justify-center pt-16 sm:pt-20 p-4 overflow-y-auto" onClick={() => setShowUserList(false)}>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-sm w-full max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-5rem)] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">المستخدمون في المحادثة العامة</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">اختر شخصاً لبدء محادثة خاصة</p>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('chat.usersInGeneralChat')}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('chat.selectUserForPrivateChat')}</p>
                         </div>
                         {loadingUsers ? (
                             <div className="p-4 text-center">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
-                                <p className="text-gray-500 dark:text-gray-400 mt-2">جاري التحميل...</p>
+                                <p className="text-gray-500 dark:text-gray-400 mt-2">{t('chat.loadingUsers')}</p>
                             </div>
                         ) : userList.length === 0 ? (
                             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                                لا يوجد مستخدمين أرسلوا رسائل بعد في المحادثة العامة
+                                {t('chat.noUsersYet')}
                             </div>
                         ) : (
                             <div>
@@ -587,7 +589,7 @@ const ChatPage = () => {
             {(messageSent || toastMessage) && (
                 <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in z-50">
                     <Check className="h-4 w-4" />
-                    <span>{toastMessage || 'تم إرسال الرسالة'}</span>
+                    <span>{toastMessage || t('chat.messageSent')}</span>
                 </div>
             )}
 
@@ -608,13 +610,13 @@ const ChatPage = () => {
                                         <button onClick={() => handleEdit(menuMessage)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                                            <span>تعديل</span>
+                                            <span>{t('chat.edit')}</span>
                                         </button>
                                         <div className="border-t border-gray-100 dark:border-gray-700 my-0.5 sm:my-1"></div>
                                         <button onClick={() => handleDeleteForEveryone(menuMessage.id)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
                                             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            <span>حذف للجميع</span>
+                                            <span>{t('chat.deleteForEveryone')}</span>
                                         </button>
                                     </>
                                 ) : (
@@ -622,12 +624,12 @@ const ChatPage = () => {
                                         <button onClick={() => handleReply(menuMessage)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <Reply className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                                            <span>رد</span>
+                                            <span>{t('chat.reply')}</span>
                                         </button>
                                         <button onClick={() => handleCopyMessage(menuMessage.text)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                                            <span>نسخ</span>
+                                            <span>{t('chat.copy')}</span>
                                         </button>
                                         <div className="border-t border-gray-100 dark:border-gray-700 my-0.5 sm:my-1"></div>
                                         <div className="px-2.5 sm:px-4 py-1.5 sm:py-2 flex flex-wrap gap-0.5 sm:gap-1 max-h-[180px] overflow-y-auto">
@@ -643,14 +645,14 @@ const ChatPage = () => {
                                             <button onClick={() => handleDeleteForMe(menuMessage.id)}
                                                 className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                                 <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                <span>إخفاء الرسالة</span>
+                                                <span>{t('chat.hideMessage')}</span>
                                             </button>
                                         )}
                                         {isAdmin && (
                                             <button onClick={() => handleAdminDelete(menuMessage.id)}
                                                 className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
                                                 <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                <span>حذف كمدير</span>
+                                                <span>{t('chat.deleteAsAdmin')}</span>
                                             </button>
                                         )}
                                     </>
@@ -671,7 +673,7 @@ const ChatPage = () => {
                                 onClick={loadOlderMessages}
                                 className="text-xs text-green-600 dark:text-green-400 hover:underline"
                             >
-                                تحميل الرسائل السابقة
+                                {t('chat.loadPreviousMessages')}
                             </button>
                         </div>
                     )}
@@ -680,17 +682,17 @@ const ChatPage = () => {
                         <div className="flex items-center justify-center h-full">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                                <div className="text-gray-500 dark:text-gray-400 text-sm">جاري التحميل...</div>
+                                <div className="text-gray-500 dark:text-gray-400 text-sm">{t('chat.loadingMessages')}</div>
                             </div>
                         </div>
                     ) : messages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
                             <MessageCircle className="h-12 w-12 mb-3 opacity-30" />
-                            <p className="font-medium">لا توجد رسائل بعد</p>
-                            <p className="text-sm">كن أول من يرسل رسالة!</p>
+                            <p className="font-medium">{t('chat.noMessages')}</p>
+                            <p className="text-sm">{t('chat.beFirst')}</p>
                             {courseIdFromQuery && (
                                 <p className="text-xs mt-2 text-blue-500 dark:text-blue-400">
-                                    هذه الدردشة خاصة بمقرر {activeCourse?.name || courseId}
+                                    {t('chat.coursePrivateChat', { courseName: activeCourse?.name || courseId })}
                                 </p>
                             )}
                         </div>
@@ -706,12 +708,12 @@ const ChatPage = () => {
                     <div className="px-3 sm:px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
                             <Reply className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            <span className="text-gray-500 dark:text-gray-400">رد على:</span>
+                            <span className="text-gray-500 dark:text-gray-400">{t('chat.replyTo')}</span>
                             <span className="font-medium text-gray-700 dark:text-gray-200 truncate max-w-[150px] sm:max-w-[200px]">
                                 {replyTo.senderName}: {replyTo.text}
                             </span>
                         </div>
-                        <button onClick={cancelReply} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title="إلغاء الرد">
+                        <button onClick={cancelReply} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title={t('chat.cancelReply')}>
                             <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         </button>
                     </div>
@@ -724,8 +726,8 @@ const ChatPage = () => {
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                     className={`p-2 sm:p-2.5 rounded-full transition-colors ${showEmojiPicker ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'}`}
-                                    title="إضافة رمز تعبيري"
-                                    aria-label="إضافة رمز تعبيري"
+                                    title={t('chat.addEmoji')}
+                                    aria-label={t('chat.addEmoji')}
                                 >
                                     <Smile className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </button>
@@ -750,7 +752,7 @@ const ChatPage = () => {
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 onClick={() => setShowEmojiPicker(false)}
-                                placeholder={courseIdFromQuery ? `اكتب رسالتك في ${courseName}...` : "اكتب رسالتك..."}
+                                placeholder={courseIdFromQuery ? t('chat.typeMessage') + ' ' + t('chat.courseChat', { courseName }) : t('chat.typeMessage')}
                                 className="flex-1 p-2 sm:p-3 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                                 onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSendMessage()}
                                 disabled={isSending}
@@ -762,8 +764,8 @@ const ChatPage = () => {
                                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                     : 'bg-gradient-to-r from-primary-700 to-primary-800 text-white hover:from-primary-800 hover:to-primary-900 hover:scale-105 shadow-lg shadow-primary-500/20'
                                 }`}
-                                title="إرسال الرسالة"
-                                aria-label="إرسال الرسالة"
+                                title={t('chat.sendMessage')}
+                                aria-label={t('chat.sendMessage')}
                             >
                                 {isSending ? (
                                     <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -775,7 +777,7 @@ const ChatPage = () => {
                     ) : (
                         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                             <AlertCircle className="h-4 w-4" />
-                            <span>يرجى تسجيل الدخول</span>
+                            <span>{t('chat.pleaseLogin')}</span>
                         </div>
                     )}
 

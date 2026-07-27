@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     Bell,
     GraduationCap,
@@ -16,6 +17,7 @@ import {
     markNotificationAsRead,
     Notification,
 } from '../../services/notificationService';
+import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 const UnifiedHeader = ({
     onMenuClick,
@@ -26,6 +28,7 @@ const UnifiedHeader = ({
     sidebarOpen: boolean;
     isPublic?: boolean;
 }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const {
         currentUser,
@@ -128,7 +131,7 @@ const UnifiedHeader = ({
                     <button
                         onClick={onMenuClick}
                         className="p-2 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 text-brown-700 dark:text-brown-300 transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-md hover:shadow-primary-500/10"
-                        title={sidebarOpen ? 'إغلاق' : 'فتح'}
+                        title={sidebarOpen ? t('sidebar.close') : t('sidebar.open')}
                     >
                         {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
@@ -142,12 +145,15 @@ const UnifiedHeader = ({
                             ? 'bg-gradient-to-r from-primary-700 to-secondary-600 text-white shadow-lg hover:shadow-xl hover:from-primary-800 hover:to-secondary-700'
                             : 'bg-gradient-to-r from-brown-700 to-brown-800 text-neutral-100 hover:from-brown-800 hover:to-brown-900 shadow-md hover:shadow-lg'
                             }`}
-                        title={isDarkMode ? 'الوضع الليلي مُفعّل - اضغط للعودة للوضع النهاري' : 'الوضع النهاري - اضغط للتحويل للوضع الليلي'}
-                        aria-label="تبديل الوضع الليلي"
+                        title={isDarkMode ? t('darkMode.darkModeOn') : t('darkMode.darkModeOff')}
+                        aria-label={t('darkMode.toggle')}
                     >
                         {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                        <span className="hidden sm:inline">الوضع الليلي</span>
+                        <span className="hidden sm:inline">{t('darkMode.toggle')}</span>
                     </button>
+
+                    {/* Language switcher */}
+                    <LanguageSwitcher />
 
                     {/* Show login button for guests, notifications + profile for logged-in users */}
                     {isPublic ? (
@@ -155,7 +161,7 @@ const UnifiedHeader = ({
                             to="/login"
                             className="btn-modern-primary flex items-center gap-2 px-4 py-2 text-sm"
                         >
-                            تسجيل الدخول
+                            {t('nav.login')}
                         </Link>
                     ) : (
                         <>
@@ -164,7 +170,7 @@ const UnifiedHeader = ({
                                 <button
                                     onClick={() => setNotificationsOpen((prev) => !prev)}
                                     className="relative p-2 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 text-brown-700 dark:text-brown-300 transition-all duration-200 hover:scale-110 hover:shadow-md hover:shadow-primary-500/10"
-                                    title="الإشعارات"
+                                    title={t('notifications.title')}
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
@@ -180,14 +186,14 @@ const UnifiedHeader = ({
                                         <div className="px-4 py-3 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/30 border-b border-brown-200/50 dark:border-brown-700/30 text-sm font-semibold text-brown-800 dark:text-neutral-100 flex items-center justify-between">
                                             <span className="flex items-center gap-2">
                                                 <Bell className="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                                                الإشعارات
+                                                {t('notifications.title')}
                                             </span>
                                             {unreadCount > 0 && (
                                                 <span className="text-xs bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-0.5 rounded-full font-medium shadow-sm">{unreadCount} غير مقروء</span>
                                             )}
                                         </div>
                                         {notifications.filter(n => !n.read).length === 0 ? (
-                                            <div className="p-6 text-sm text-brown-500 dark:text-neutral-400 text-center">لا توجد إشعارات</div>
+                                            <div className="p-6 text-sm text-brown-500 dark:text-neutral-400 text-center">{t('notifications.noNotifications')}</div>
                                         ) : (
                                             <div className="max-h-80 overflow-y-auto">
                                                 {notifications.filter(n => !n.read).slice(0, 10).map((notification) => (
@@ -217,7 +223,7 @@ const UnifiedHeader = ({
                                                     }}
                                                     className="text-sm text-primary-700 dark:text-primary-300 hover:text-primary-800 dark:hover:text-primary-200 font-medium transition-colors"
                                                 >
-                                                    عرض جميع الإشعارات
+                                                    {t('notifications.viewAll')}
                                                 </button>
                                             </div>
                                         )}
@@ -248,7 +254,7 @@ const UnifiedHeader = ({
                                         {/* User info - gradient header */}
                                         <div className="px-4 py-3 bg-gradient-to-r from-primary-50/80 to-secondary-50/80 dark:from-primary-900/30 dark:to-secondary-900/30 border-b border-brown-200/50 dark:border-brown-700/30">
                                             <p className="font-semibold text-brown-800 dark:text-neutral-100 truncate">
-                                                {currentUser?.name || 'المستخدم'}
+                                                {currentUser?.name || t('common.welcome')}
                                             </p>
                                             {currentUser?.email && (
                                                 <p className="text-xs text-brown-500 dark:text-neutral-400 truncate">
@@ -261,7 +267,7 @@ const UnifiedHeader = ({
                                             to="/profile"
                                             className="block px-4 py-3 text-right text-brown-700 dark:text-brown-300 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-colors duration-200 font-medium"
                                         >
-                                            الملف الشخصي
+                                            {t('nav.profile')}
                                         </Link>
 
                                         <div className="border-t border-brown-100 dark:border-brown-700/50 my-1"></div>
@@ -274,7 +280,7 @@ const UnifiedHeader = ({
                                             }}
                                             className="w-full text-right px-4 py-3 flex items-center justify-between gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 font-medium"
                                         >
-                                            <span>تسجيل الخروج</span>
+                                            <span>{t('nav.logout')}</span>
                                             <LogOut className="h-4 w-4" />
                                         </button>
                                     </div>

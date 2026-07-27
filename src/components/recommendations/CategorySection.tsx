@@ -3,12 +3,13 @@ import RecommendationCard from './RecommendationCard';
 import { ContentCategory, RecommendationContent, RecommendationItemWithStatus } from '../../types';
 import { recommendationService } from '../../services/recommendationService';
 import { useRecommendationActions } from '../../hooks/useRecommendationActions';
+import { AlertTriangle, ChevronRight } from 'lucide-react';
 
 interface CategorySectionProps {
     userId?: string;
     category: ContentCategory;
     title: string;
-    icon?: string;
+    icon?: React.ElementType;
     limit?: number;
     requiredCount?: number;  // Guarantee at least this many cards
     onViewAll?: (category: ContentCategory) => void;
@@ -20,7 +21,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     userId,
     category,
     title,
-    icon,
+    icon: IconComponent,
     limit = 6,
     requiredCount,
     onViewAll,
@@ -153,8 +154,9 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     if (loading) {
         return (
             <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                    {icon} {title}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    {IconComponent && <IconComponent className="h-5 w-5 text-primary-600 dark:text-primary-400" />}
+                    {title}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3].map(i => (
@@ -172,12 +174,13 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     if (error) {
         return (
             <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                    {icon} {title}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    {IconComponent && <IconComponent className="h-5 w-5 text-primary-600 dark:text-primary-400" />}
+                    {title}
                 </h3>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-red-500 text-lg">⚠️</span>
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
                         <span className="text-sm text-red-700 dark:text-red-300">
                             تعذر تحميل المحتوى. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.
                         </span>
@@ -199,8 +202,9 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     if (items.length === 0 && !error) {
         return (
             <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                    {icon} {title}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    {IconComponent && <IconComponent className="h-5 w-5 text-primary-600 dark:text-primary-400" />}
+                    {title}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3].map(i => (
@@ -218,42 +222,45 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     return (
         <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    {icon} {title}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    {IconComponent && <IconComponent className="h-5 w-5 text-primary-600 dark:text-primary-400" />}
+                    {title}
                 </h3>
                 {onViewAll && items.length > 0 && (
                     <button
                         onClick={() => onViewAll(category)}
-                        className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                        className="text-sm font-semibold text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 flex items-center gap-1.5 transition-all duration-200 bg-primary-50 dark:bg-primary-900/20 px-4 py-2 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:shadow-md hover:scale-[1.03] active:scale-[0.97]"
                     >
                         عرض الكل
+                        <ChevronRight className="h-4 w-4" />
                     </button>
                 )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map(item => (
-                    <RecommendationCard
-                        key={item.id}
-                        content={item}
-                        isSaved={item.isSaved}
-                        isLiked={item.isLiked}
-                        isPublic={isPublic}
-                        onOpen={handleOpen}
-                        onSave={canInteract ? handleSaveWrapper : undefined}
-                        onLike={canInteract ? handleLikeWrapper : undefined}
-                        onHide={canInteract ? handleHideWrapper : undefined}
-                    />
+                {items.map((item, index) => (
+                    <div key={item.id} className={`animate-card-stagger stagger-${Math.min(index + 1, 10)}`}>
+                        <RecommendationCard
+                            content={item}
+                            isSaved={item.isSaved}
+                            isLiked={item.isLiked}
+                            isPublic={isPublic}
+                            onOpen={handleOpen}
+                            onSave={canInteract ? handleSaveWrapper : undefined}
+                            onLike={canInteract ? handleLikeWrapper : undefined}
+                            onHide={canInteract ? handleHideWrapper : undefined}
+                        />
+                    </div>
                 ))}
             </div>
 
             {hasMore && !loading && (
-                <div className="flex justify-center mt-6">
+                <div className="flex justify-center mt-8">
                     <button
                         onClick={handleLoadMore}
                         disabled={loadingMore}
-                        className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-60"
+                        className="btn-modern-primary px-8 py-3.5 rounded-xl text-base font-bold shadow-lg hover:shadow-xl hover:shadow-primary-500/25"
                     >
-                        {loadingMore ? 'جاري التحميل...' : 'عرض المزيد'}
+                        {loadingMore ? '⏳ جاري التحميل...' : '🔽 عرض المزيد'}
                     </button>
                 </div>
             )}

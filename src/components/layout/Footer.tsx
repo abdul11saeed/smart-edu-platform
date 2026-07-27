@@ -1,30 +1,32 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../stores/appStore';
 
 const Footer = () => {
+    const { t } = useTranslation();
     const currentYear = new Date().getFullYear();
     const currentUser = useAppStore(state => state.currentUser);
 
     // For guests, show only public links
     const services = currentUser ? [
-        { name: 'المناقشات', path: '/discussions', icon: '💬' },
-        { name: 'الدردشة', path: '/chat', icon: '🤖' }
+        { name: t('nav.discussions'), path: '/discussions', icon: '💬' },
+        { name: t('nav.chat'), path: '/chat', icon: '🤖' }
     ] : [];
 
     const publicLinks = [
-        { name: 'عن المنصة', path: '/about', key: 'about-link' },
-        { name: 'الأقسام', path: '/categories', key: 'categories-link' },
-        { name: 'المقالات', path: '/articles', key: 'articles-link' },
-        { name: 'الأخبار', path: '/news', key: 'news-link' },
-        { name: 'الدورات', path: '/courses', key: 'courses-link' },
-        { name: 'الشروط والأحكام', path: '/terms', key: 'terms-link' },
-        { name: 'تواصل معنا', path: '/contact', key: 'contact-link' }
+        { name: t('footer.about'), path: '/about', key: 'about-link' },
+        { name: t('footer.categories'), path: '/categories', key: 'categories-link' },
+        { name: t('footer.articles'), path: '/articles', key: 'articles-link' },
+        { name: t('footer.news'), path: '/news', key: 'news-link' },
+        { name: t('footer.courses'), path: '/courses', key: 'courses-link' },
+        { name: t('footer.terms'), path: '/terms', key: 'terms-link' },
+        { name: t('footer.contact'), path: '/contact', key: 'contact-link' }
     ];
 
     const quickLinks = [
-        { name: 'عن المنصة', path: '/about', key: 'quick-about' },
-        { name: 'الشروط والأحكام', path: '/terms', key: 'quick-terms' },
-        { name: 'تواصل معنا', path: '/contact', key: 'quick-contact' }
+        { name: t('footer.about'), path: '/about', key: 'quick-about' },
+        { name: t('footer.terms'), path: '/terms', key: 'quick-terms' },
+        { name: t('footer.contact'), path: '/contact', key: 'quick-contact' }
     ];
 
     return (
@@ -48,11 +50,11 @@ const Footer = () => {
                                 </svg>
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-white via-[#D4A77A] to-[#B8865E] bg-clip-text text-transparent">
-                                منصة البرامج الاكاديميه للجامعات اليمنيه
+                                {t('app.title')}
                             </span>
                         </div>
                         <p className="text-[#F0D9B5] text-base font-bold leading-relaxed mb-6 max-w-sm">
-                            منصة تعليمية ذكية تساعد الطلاب على التعلم بشكل أفضل باستخدام أحدث تقنيات الذكاء الاصطناعي.
+                            {t('app.description')}
                         </p>
                         {/* Social Icons - elegant warm brown */}
                         <div className="flex items-center gap-3">
@@ -80,7 +82,7 @@ const Footer = () => {
                             <>
                                 <h4 className="text-base font-bold text-white mb-5 uppercase tracking-wider flex items-center gap-2">
                                     <span className="w-1 h-5 bg-gradient-to-b from-[#7B4D2A] to-[#D97706] rounded-full"></span>
-                                    الخدمات
+                                    {t('footer.servicesTitle')}
                                 </h4>
                                 <ul className="space-y-3">
                                     {services.map((service) => (
@@ -102,7 +104,7 @@ const Footer = () => {
                             <>
                                 <h4 className="text-base font-bold text-white mb-5 uppercase tracking-wider flex items-center gap-2">
                                     <span className="w-1 h-5 bg-gradient-to-b from-[#7B4D2A] to-[#D97706] rounded-full"></span>
-                                    روابط عامة
+                                    {t('footer.publicLinks')}
                                 </h4>
                                 <ul className="space-y-3">
                                     {publicLinks.slice(0, 4).map((link) => (
@@ -127,7 +129,7 @@ const Footer = () => {
                     <div className="lg:col-span-2">
                         <h4 className="text-base font-bold text-white mb-5 uppercase tracking-wider flex items-center gap-2">
                             <span className="w-1 h-5 bg-gradient-to-b from-[#D97706] to-[#7B4D2A] rounded-full"></span>
-                            روابط سريعة
+                            {t('footer.quickLinksTitle')}
                         </h4>
                         <ul className="space-y-3">
                             {currentUser ? (
@@ -166,7 +168,7 @@ const Footer = () => {
                     <div className="col-span-2 xs:col-span-1 lg:col-span-3 text-center xs:text-right">
                         <h4 className="text-base font-bold text-white mb-5 uppercase tracking-wider flex items-center gap-2 justify-center xs:justify-start">
                             <span className="w-1 h-5 bg-gradient-to-b from-[#D97706] to-[#D4A77A] rounded-full"></span>
-                            تواصل معنا
+                            {t('footer.contactTitle')}
                         </h4>
                         <ul className="space-y-4 flex flex-col xs:block">
                             <li className="flex items-start gap-3 text-base font-bold text-[#E8C9A0] group justify-center xs:justify-start">
@@ -198,17 +200,17 @@ const Footer = () => {
                     <div className="bg-gradient-to-r from-[#7B4D2A]/20 via-[#D97706]/10 to-[#7B4D2A]/20 rounded-2xl p-6 sm:p-8 mb-12 border border-[#7B4D2A]/30">
                         <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
                             <div className="text-center lg:text-right">
-                                <h3 className="text-lg font-bold text-white mb-1">ابقَ على اطلاع</h3>
-                                <p className="text-base text-[#F0D9B5]">احصل على آخر التحديثات والمقالات التعليمية</p>
+                                <h3 className="text-lg font-bold text-white mb-1">{t('footer.stayUpdated')}</h3>
+                                <p className="text-base text-[#F0D9B5]">{t('footer.getUpdates')}</p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                                 <input
                                     type="email"
-                                    placeholder="أدخل بريدك الإلكتروني"
+                                    placeholder={t('footer.enterEmail')}
                                     className="px-4 py-2.5 bg-brown-800/50 border border-brown-600/50 rounded-xl text-sm text-white placeholder-[#B8865E] focus:outline-none focus:ring-2 focus:ring-[#7B4D2A] focus:border-transparent w-full sm:w-64 transition-all"
                                 />
                                 <button className="px-6 py-2.5 bg-gradient-to-r from-[#5C3A1E] to-[#7B4D2A] text-white text-sm font-medium rounded-xl hover:from-[#3B2314] hover:to-[#5C3A1E] transition-all duration-200 hover:shadow-lg hover:shadow-[#7B4D2A]/25 whitespace-nowrap btn-glow">
-                                    اشترك الآن
+                                    {t('footer.subscribe')}
                                 </button>
                             </div>
                         </div>
@@ -216,13 +218,13 @@ const Footer = () => {
                 ) : (
                     <div className="bg-gradient-to-r from-[#7B4D2A]/10 via-[#D97706]/10 to-[#7B4D2A]/10 rounded-2xl p-6 sm:p-8 mb-12 border border-[#7B4D2A]/20">
                         <div className="text-center">
-                            <h3 className="text-lg font-bold text-white mb-1">انضم إلى منصة البرامج الاكاديميه للجامعات اليمنيه</h3>
-                            <p className="text-base text-[#F0D9B5] mb-4">سجّل دخولك للوصول إلى جميع الخدمات التعليمية</p>
+                            <h3 className="text-lg font-bold text-white mb-1">{t('footer.joinPlatform')}</h3>
+                            <p className="text-base text-[#F0D9B5] mb-4">{t('footer.loginAccess')}</p>
                             <Link
                                 to="/login"
                                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#5C3A1E] to-[#7B4D2A] text-white text-sm font-medium rounded-xl hover:from-[#3B2314] hover:to-[#5C3A1E] transition-all duration-200 hover:shadow-lg hover:shadow-[#7B4D2A]/25"
                             >
-                                تسجيل الدخول
+                                {t('footer.login')}
                             </Link>
                         </div>
                     </div>
@@ -232,17 +234,16 @@ const Footer = () => {
                 <div className="border-t border-brown-800/50 pt-8">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-[#E8C9A0] text-base font-bold">
-                            © {currentYear} منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية. جميع الحقوق محفوظة.
+                            © {currentYear} {t('app.title')} {t('footer.allRightsReserved')}.
                         </p>
                         <div className="flex items-center gap-6">
                             <Link to="/terms" className="text-[#E8C9A0] hover:text-white text-base font-bold transition-colors">
-                                الشروط والأحكام
+                                {t('footer.terms')}
                             </Link>
                         </div>
                         <p className="text-[#E8C9A0] text-sm flex items-center gap-1">
-                            صُنع ب{' '}
+                            {t('footer.madeForStudents')} {' '}
                             <span className="inline-block animate-pulse">❤️</span>
-                            {' '}للطلاب اليمنيين
                         </p>
                     </div>
                 </div>

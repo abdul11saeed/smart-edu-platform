@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MessageCircle, Send, ThumbsUp, User, Clock, Reply, Search, BookOpen, Edit, Trash2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Discussion, Comment, University, College, Major, Course as CourseType } from '../types';
@@ -31,6 +32,7 @@ interface Course {
 }
 
 const DiscussionsPage = () => {
+  const { t } = useTranslation();
   const { currentUser } = useAppStore();
   const { universities } = useCatalogStore();
   const navigate = useNavigate();
@@ -71,7 +73,7 @@ const DiscussionsPage = () => {
   // Get course name by ID — memoized to avoid recalculation every render
   const getCourseName = useCallback((courseId: string): string => {
     const course = allCourses.find(c => c.id === courseId);
-    return course?.name || 'مادة غير محددة';
+    return course?.name || t('common.noData');
   }, [allCourses]);
 
   // Shared dropdown renderer for course selection — eliminates three duplicate dropdown patterns
@@ -295,11 +297,11 @@ const DiscussionsPage = () => {
 
    const handleCreateDiscussion = async () => {
     if (!newDiscussion.title.trim() || !newDiscussion.content.trim()) {
-      alert('الرجاء إدخال عنوان ومحتوى للمناقشة');
+      alert(t('discussions.enterTitleAndContent'));
       return;
     }
     if (!currentUser) {
-      alert('الرجاء تسجيل الدخول للمشاركة');
+      alert(t('discussions.logInParticipate'));
       return;
     }
 
@@ -323,14 +325,14 @@ const DiscussionsPage = () => {
       setShowNewDiscussion(false);
     } catch (error) {
       console.error('Error creating discussion:', error);
-      alert('حدث خطأ أثناء إنشاء المناقشة');
+      alert(t('discussions.discussionCreateError'));
     }
   };
 
   const handleAddComment = async (discussionId: string) => {
     if (!newComment.trim()) return;
     if (!currentUser) {
-      alert('الرجاء تسجيل الدخول للتعليق');
+      alert(t('discussions.loginToComment'));
       return;
     }
 
@@ -350,13 +352,13 @@ const DiscussionsPage = () => {
       setNewComment('');
     } catch (error) {
       console.error('Error adding comment:', error);
-      alert('حدث خطأ أثناء إضافة التعليق');
+      alert(t('discussions.commentAddError'));
     }
   };
 
   const handleLike = async (discussionId: string) => {
     if (!currentUser) {
-      alert('الرجاء تسجيل الدخول للإعجاب');
+      alert(t('discussions.likeLogin'));
       return;
     }
 
@@ -388,14 +390,14 @@ const DiscussionsPage = () => {
 
   // Delete discussion (with all its comments)
   const handleDeleteDiscussion = async (discussionId: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه المناقشة؟ سيتم حذف جميع الردود أيضاً.')) return;
+    if (!window.confirm(t('discussions.deleteDiscussionConfirm'))) return;
 
     try {
       await deleteDiscussion(discussionId);
       setSelectedDiscussionId(null);
     } catch (error) {
       console.error('Error deleting discussion:', error);
-      alert('حدث خطأ أثناء حذف المناقشة');
+      alert(t('discussions.discussionUpdateError'));
     }
   };
 
@@ -413,7 +415,7 @@ const DiscussionsPage = () => {
   const handleUpdateDiscussion = async () => {
     if (!editingDiscussion) return;
     if (!editDiscussionData.title.trim() || !editDiscussionData.content.trim()) {
-      alert('الرجاء إدخال عنوان ومحتوى للمناقشة');
+      alert(t('discussions.enterTitleAndContent'));
       return;
     }
 
@@ -427,19 +429,19 @@ const DiscussionsPage = () => {
       setEditDiscussionData({ title: '', content: '', courseId: '' });
     } catch (error) {
       console.error('Error updating discussion:', error);
-      alert('حدث خطأ أثناء تعديل المناقشة');
+      alert(t('discussions.discussionUpdateError'));
     }
   };
 
   // Delete a comment from a discussion
   const handleDeleteComment = async (discussionId: string, commentId: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا الرد؟')) return;
+    if (!window.confirm(t('discussions.deleteReplyConfirm'))) return;
 
     try {
       await deleteComment(discussionId, commentId);
     } catch (error) {
       console.error('Error deleting comment:', error);
-      alert('حدث خطأ أثناء حذف الرد');
+      alert(t('discussions.discussionUpdateError'));
     }
   };
 
@@ -453,7 +455,7 @@ const DiscussionsPage = () => {
     if (!editingComment || !selectedDiscussion) return;
 
     if (!editingComment.content.trim()) {
-      alert('الرجاء إدخال محتوى التعليق');
+      alert(t('discussions.enterTitleAndContent'));
       return;
     }
 
@@ -462,14 +464,14 @@ const DiscussionsPage = () => {
       setEditingComment(null);
     } catch (error) {
       console.error('Error updating comment:', error);
-      alert('حدث خطأ أثناء تعديل التعليق');
+      alert(t('discussions.commentEditError'));
     }
   };
 
   // Like a comment
   const handleLikeComment = async (discussionId: string, commentId: string) => {
     if (!currentUser) {
-      alert('الرجاء تسجيل الدخول للإعجاب');
+      alert(t('discussions.likeLogin'));
       return;
     }
 
@@ -504,10 +506,10 @@ const DiscussionsPage = () => {
             onClick={() => setSelectedDiscussionId(null)}
             className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline mb-4 flex items-center transition-colors duration-200"
           >
-            ← العودة للمناقشات
+            {t('discussions.backToDiscussions')}
           </button>
           <div className="bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-gray-800 rounded-xl border border-primary-100 dark:border-primary-800 p-6 animate-fade-in">
-            <p className="text-gray-500 dark:text-gray-400">حدث خطأ في تحميل المناقشة</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('discussions.discussionsError')}</p>
           </div>
         </div>
       );
@@ -519,7 +521,7 @@ const DiscussionsPage = () => {
           onClick={() => setSelectedDiscussionId(null)}
           className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline mb-4 flex items-center transition-colors duration-200"
         >
-          ← العودة للمناقشات
+          {t('discussions.backToDiscussions')}
         </button>
 
         {/* Edit Discussion Overlay */}
@@ -529,7 +531,7 @@ const DiscussionsPage = () => {
               {/* Header */}
               <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 rounded-t-2xl z-10">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">تعديل المناقشة</h3>
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">{t('discussions.editDiscussion')}</h3>
                   <button
                     onClick={() => setEditingDiscussion(null)}
                     className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
@@ -548,27 +550,27 @@ const DiscussionsPage = () => {
               <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                   <div className="md:col-span-1">
-                     {renderCourseDropdown('editCourse', editDiscussionData.courseId, (id) => setEditDiscussionData({ ...editDiscussionData, courseId: id }), 'اختر المادة (اختياري)', 'المادة')}
+                     {renderCourseDropdown('editCourse', editDiscussionData.courseId, (id) => setEditDiscussionData({ ...editDiscussionData, courseId: id }), t('discussions.selectCourseOptional'), t('discussions.courseTool'))}
                    </div>
 
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5 sm:mb-2">عنوان المناقشة</label>
-                    <input
-                      type="text"
-                      value={editDiscussionData.title}
-                      onChange={(e) => setEditDiscussionData({ ...editDiscussionData, title: e.target.value })}
-                      placeholder="عنوان المناقشة..."
+                 <div className="md:col-span-1">
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5 sm:mb-2">{t('discussions.discussionTitle')}</label>
+                   <input
+                     type="text"
+                     value={editDiscussionData.title}
+                     onChange={(e) => setEditDiscussionData({ ...editDiscussionData, title: e.target.value })}
+                     placeholder={t('discussions.discussionTitle') + '...'}
                       className="w-full p-2.5 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors duration-200 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                     />
                   </div>
                 </div>
 
                 <div className="mt-4 sm:mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">محتوى المناقشة</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">{t('discussions.discussionContent')}</label>
                   <textarea
                     value={editDiscussionData.content}
                     onChange={(e) => setEditDiscussionData({ ...editDiscussionData, content: e.target.value })}
-                    placeholder="محتوى المناقشة..."
+                    placeholder={t('discussions.discussionContent') + '...'}
                     rows={7}
                     className="w-full p-2.5 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors duration-200 text-base resize-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                   />
@@ -579,13 +581,13 @@ const DiscussionsPage = () => {
                     onClick={handleUpdateDiscussion}
                     className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-medium text-sm sm:text-base"
                   >
-                    حفظ التعديل
+                    {t('discussions.saveEdit')}
                   </button>
                   <button
                     onClick={() => setEditingDiscussion(null)}
                     className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] transition-all duration-200 font-medium text-sm sm:text-base text-gray-700 dark:text-gray-200"
                   >
-                    إلغاء
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -604,14 +606,14 @@ const DiscussionsPage = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleStartEdit(selectedDiscussion)}
-                    title="تعديل المناقشة"
+                    title={t('discussions.editDiscussion')}
                     className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all duration-200"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteDiscussion(selectedDiscussion.id)}
-                    title="حذف المناقشة"
+                    title={t('discussions.deleteDiscussion')}
                     className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -625,7 +627,7 @@ const DiscussionsPage = () => {
               <span className="ml-1">{selectedDiscussion.authorName}</span>
               {selectedDiscussion.authorRole === 'admin' && (
                 <span className="ml-2 px-2 py-0.5 bg-accent-100 dark:bg-accent-900/50 text-accent-700 dark:text-accent-300 text-xs rounded-md font-medium">
-                  مدير الموقع
+                  {t('discussions.siteAdmin')}
                 </span>
               )}
               <Clock className="h-4 w-4 mr-3 ml-3 text-gray-400 dark:text-gray-500" />
@@ -635,11 +637,11 @@ const DiscussionsPage = () => {
           </div>
 
           <div className="mb-6">
-            <h4 className="font-semibold mb-4 text-lg">التعليقات ({Array.isArray(selectedDiscussion.comments) ? selectedDiscussion.comments.length : 0})</h4>
+            <h4 className="font-semibold mb-4 text-lg">{t('discussions.comments', { count: Array.isArray(selectedDiscussion.comments) ? selectedDiscussion.comments.length : 0 })}</h4>
 
             {!Array.isArray(selectedDiscussion.comments) || selectedDiscussion.comments.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                لا توجد تعليقات بعد. كن أول من يعلق!
+                 {t('discussions.noCommentsYetShort')}
               </div>
             ) : (
               <div className="space-y-3">
@@ -652,7 +654,7 @@ const DiscussionsPage = () => {
                           value={editingComment.content}
                           onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
                           rows={2}
-                          placeholder="تعديل التعليق..."
+                          placeholder={t('chat.edit') + '...'}
                           className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg mb-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-600 hover:border-gray-300 transition-colors duration-200 text-gray-900 dark:text-gray-100"
                         />
                         <div className="flex gap-2">
@@ -660,13 +662,13 @@ const DiscussionsPage = () => {
                             onClick={handleUpdateComment}
                             className="px-3 py-1 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 text-sm font-medium"
                           >
-                            حفظ
+                            {t('chat.saveEdit')}
                           </button>
                           <button
                             onClick={() => setEditingComment(null)}
                             className="px-3 py-1 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 text-sm font-medium text-gray-700 dark:text-gray-200"
                           >
-                            إلغاء
+                            {t('common.cancel')}
                           </button>
                         </div>
                       </div>
@@ -679,7 +681,7 @@ const DiscussionsPage = () => {
                             <span className="font-medium ml-1 text-gray-900 dark:text-gray-100">{comment.authorName}</span>
                             {comment.authorRole === 'admin' && (
                               <span className="ml-2 px-2 py-0.5 bg-accent-100 dark:bg-accent-900/50 text-accent-700 dark:text-accent-300 text-xs rounded-md font-medium">
-                                مدير الموقع
+                                {t('discussions.siteAdmin')}
                               </span>
                             )}
                             <Clock className="h-4 w-4 mr-3 ml-3 text-gray-400 dark:text-gray-500" />
@@ -708,14 +710,14 @@ const DiscussionsPage = () => {
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleStartEditComment(comment)}
-                              title="تعديل الرد"
+                              title={t('chat.edit')}
                               className="p-1 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all duration-200"
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteComment(selectedDiscussion.id, comment.id)}
-                              title="حذف الرد"
+                              title={t('discussions.deleteComment')}
                               className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -736,13 +738,13 @@ const DiscussionsPage = () => {
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="اكتب تعليقك..."
+                placeholder={t('discussions.replyPlaceholder')}
                 className="flex-1 p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 hover:border-gray-300 transition-colors duration-200 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment(selectedDiscussion.id)}
               />
               <button
                 onClick={() => handleAddComment(selectedDiscussion.id)}
-                title="إرسال التعليق"
+                title={t('chat.send')}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200"
               >
                 <Send className="h-5 w-5" />
@@ -750,7 +752,7 @@ const DiscussionsPage = () => {
             </div>
           ) : (
             <div className="text-center py-4 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-              <p>الرجاء تسجيل الدخول للتعليق</p>
+              <p>{t('discussions.loginToComment')}</p>
             </div>
           )}
         </div>
@@ -768,14 +770,14 @@ const DiscussionsPage = () => {
               }`}
           >
             <MessageCircle className="inline-block h-5 w-5 ml-2 text-primary-500 dark:text-primary-400" />
-            المناقشات
+            {t('discussions.discussionsTitle')}
           </button>
           <button
             onClick={() => navigate('/chat')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 active:scale-[0.98] text-brown-600 dark:text-brown-300 hover:text-brown-800 dark:hover:text-brown-100 hover:bg-brown-200/50 dark:hover:bg-brown-700/50`}
           >
             <MessageCircle className="inline-block h-5 w-5 ml-2 text-brown-500 dark:text-brown-400" />
-            الدردشة العامة
+            {t('chat.publicChat')}
           </button>
         </div>
 
@@ -784,20 +786,20 @@ const DiscussionsPage = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold flex items-center text-brown-800 dark:text-neutral-100">
               <MessageCircle className="h-5 w-5 text-primary-500 ml-2" />
-              منصة النقاشات والمناقشات
+              {t('discussions.discussionsTitle')}
             </h2>
             {currentUser && (
                 <button
                     onClick={() => setShowNewDiscussion(!showNewDiscussion)}
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-medium"
                 >
-                    مناقشة جديدة
+                    {t('discussions.newDiscussion')}
                 </button>
             )}
             {!currentUser && (
                 <div className="flex items-center gap-2 text-sm text-brown-500 dark:text-neutral-400 bg-brown-50 dark:bg-brown-800/50 px-4 py-2 rounded-lg">
                     <Lock className="h-4 w-4" />
-                    <span>سجل دخولك للمشاركة في المناقشات</span>
+                    <span>{t('discussions.logInParticipate')}</span>
                 </div>
             )}
           </div>
@@ -810,27 +812,27 @@ const DiscussionsPage = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="البحث في المناقشات..."
+                placeholder={t('discussions.searchPlaceholder')}
                 className="w-full p-2.5 pr-10 border border-brown-200 dark:border-brown-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
               />
             </div>
-            {renderCourseDropdown('courseFilter', selectedCourseFilter, setSelectedCourseFilter, 'جميع المواد', 'المادة', false)}
+            {renderCourseDropdown('courseFilter', selectedCourseFilter, setSelectedCourseFilter, t('discussions.allCourses'), t('discussions.courseTool'), false)}
           </div>
 
           {showNewDiscussion && (
             <div className="border-2 border-dashed border-primary-300 dark:border-primary-700 rounded-xl p-4 mb-6 bg-primary-50 dark:bg-primary-900/20 animate-fade-in-up">
-              {renderCourseDropdown('newCourse', newDiscussion.courseId, (id) => setNewDiscussion({ ...newDiscussion, courseId: id }), 'اختر المادة (اختياري)', 'المادة')}
+              {renderCourseDropdown('newCourse', newDiscussion.courseId, (id) => setNewDiscussion({ ...newDiscussion, courseId: id }), t('discussions.selectCourseOptional'), t('discussions.courseTool'))}
               <input
                 type="text"
                 value={newDiscussion.title}
                 onChange={(e) => setNewDiscussion({ ...newDiscussion, title: e.target.value })}
-                placeholder="عنوان المناقشة..."
+                placeholder={t('discussions.discussionTitle') + '...'}
                 className="w-full p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
               />
               <textarea
                 value={newDiscussion.content}
                 onChange={(e) => setNewDiscussion({ ...newDiscussion, content: e.target.value })}
-                placeholder="محتوى المناقشة..."
+                placeholder={t('discussions.discussionContent') + '...'}
                 rows={3}
                 className="w-full p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
               />
@@ -839,29 +841,29 @@ const DiscussionsPage = () => {
                   onClick={handleCreateDiscussion}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-medium"
                 >
-                  نشر المناقشة
+                  {t('discussions.publishDiscussion')}
                 </button>
                 <button
                   onClick={() => setShowNewDiscussion(false)}
                   className="px-4 py-2 border border-brown-200 dark:border-brown-600 rounded-lg hover:bg-brown-50 dark:hover:bg-brown-700 hover:border-brown-300 dark:hover:border-brown-500 active:scale-[0.98] transition-all duration-200 font-medium text-brown-700 dark:text-neutral-200"
                 >
-                  إلغاء
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
           )}
 
           {isLoading ? (
-            <div className="text-center py-8 text-brown-500 dark:text-neutral-400">جاري التحميل...</div>
+            <div className="text-center py-8 text-brown-500 dark:text-neutral-400">{t('common.loading')}</div>
           ) : filteredDiscussions.length === 0 ? (
             <div className="text-center py-14 bg-brown-50 dark:bg-brown-800/50 rounded-xl border-2 border-dashed border-primary-200 dark:border-primary-800">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-primary-400 dark:text-primary-500" />
               <p className="text-lg sm:text-xl font-bold text-brown-700 dark:text-neutral-200 leading-relaxed px-4">
                   {searchQuery || selectedCourseFilter
-                      ? 'لا توجد مناقشات تطابق بحثك'
+                      ? t('discussions.noDiscussionsMatch')
                       : currentUser
-                          ? 'لا توجد مناقشات بعد. كن أول من يبدأ مناقشة!'
-                          : 'لا توجد مناقشات لعرضها بعد'}
+                          ? t('discussions.noDiscussionsYetBeFirst')
+                          : t('discussions.noDiscussionsShow')}
               </p>
             </div>
           ) : (
@@ -885,7 +887,7 @@ const DiscussionsPage = () => {
                          <span className="ml-1">{discussion.authorName}</span>
                          {discussion.authorRole === 'admin' && (
                            <span className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-xs rounded-md font-medium">
-                             مدير الموقع
+                             {t('discussions.siteAdmin')}
                            </span>
                          )}
                          <Clock className="h-3 w-3 mr-3 ml-3 text-brown-400 dark:text-brown-500" />
@@ -900,7 +902,7 @@ const DiscussionsPage = () => {
                              ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30'
                              : 'text-brown-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                              }`}
-                           aria-label={getLikeInfo(discussion.id).likedByCurrentUser ? 'إلغاء الإعجاب' : 'إعجاب'}
+                           aria-label={getLikeInfo(discussion.id).likedByCurrentUser ? t('common.like') : t('common.like')}
                          >
                            <ThumbsUp className={`h-4 w-4 ${getLikeInfo(discussion.id).likedByCurrentUser ? 'fill-current' : ''}`} />
                            <span className="text-sm font-medium">{getLikeInfo(discussion.id).likeCount}</span>
@@ -921,13 +923,13 @@ const DiscussionsPage = () => {
             <div className="text-center py-8 bg-gradient-to-br from-primary-50 to-[#FFFBEB] dark:from-primary-900/20 dark:to-brown-900 rounded-xl border-2 border-dashed border-primary-300 dark:border-primary-700 mt-4">
               <User className="h-12 w-12 mx-auto mb-3 text-primary-500 dark:text-primary-400" />
               <p className="text-lg sm:text-xl font-bold text-brown-700 dark:text-neutral-200 mb-5 leading-relaxed px-4">
-                الرجاء تسجيل الدخول للمشاركة في المناقشات
+                 {t('discussions.logInParticipate')}
               </p>
               <button
                 onClick={() => navigate('/login')}
                 className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-semibold text-base"
               >
-                تسجيل الدخول
+                {t('auth.login')}
               </button>
             </div>
           )}

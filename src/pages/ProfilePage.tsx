@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Mail, Shield, Calendar, Plus, Pencil, Check, X, Clock } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 import { getUserFromRealtimeDB, uploadProfilePicture, updateUserProfile } from '../services/authService';
 
 const ProfilePage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { currentUser, setCurrentUser } = useAppStore();
     const [loading, setLoading] = useState(true);
@@ -22,14 +24,14 @@ const ProfilePage = () => {
 
     const handlePhotoChange = async (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        e.target.value = ''; // reset so the same file can be selected again
+        e.target.value = '';
         if (!file || !currentUser?.id) return;
         setUploading(true);
         try {
             const url = await uploadProfilePicture(file, currentUser.id);
             setCurrentUser({ ...currentUser, photoURL: url });
         } catch (err) {
-            window.alert(err instanceof Error ? err.message : 'فشل رفع صورة الملف الشخصي');
+            window.alert(err instanceof Error ? err.message : t('common.uploadError'));
         } finally {
             setUploading(false);
         }
@@ -47,7 +49,7 @@ const ProfilePage = () => {
             });
             setEditing(false);
         } catch (err) {
-            window.alert(err instanceof Error ? err.message : 'فشل حفظ التغييرات');
+            window.alert(err instanceof Error ? err.message : t('common.uploadError'));
         } finally {
             setSavingProfile(false);
         }
@@ -59,7 +61,6 @@ const ProfilePage = () => {
         setEditing(false);
     };
 
-    // Click outside the name/bio fields (while editing) reverts to normal view.
     useEffect(() => {
         if (!editing) return;
         const handleClickOutside = (event: MouseEvent) => {
@@ -86,7 +87,7 @@ const ProfilePage = () => {
                     });
                 }
             } catch {
-                // Silently fail - we'll still show basic info
+                // Silently fail
             } finally {
                 setLoading(false);
             }
@@ -95,7 +96,7 @@ const ProfilePage = () => {
     }, [currentUser?.id]);
 
     const formatDate = (timestamp?: number) => {
-        if (!timestamp) return 'غير متوفر';
+        if (!timestamp) return t('profile.notAvailable');
         return new Date(timestamp).toLocaleDateString('ar-SA', {
             year: 'numeric',
             month: 'long',
@@ -104,7 +105,7 @@ const ProfilePage = () => {
     };
 
     const getRoleLabel = (role: string) => {
-        return role === 'admin' ? 'مدير' : 'طالب';
+        return role === 'admin' ? t('profile.admin') : t('profile.student');
     };
 
     const getRoleBadgeColor = (role: string) => {
@@ -114,7 +115,7 @@ const ProfilePage = () => {
     };
 
     const formatDateTime = (timestamp?: number) => {
-        if (!timestamp) return 'غير متوفر';
+        if (!timestamp) return t('profile.notAvailable');
         return new Date(timestamp).toLocaleDateString('ar-SA', {
             year: 'numeric',
             month: 'long',
@@ -130,10 +131,10 @@ const ProfilePage = () => {
         const years = Math.floor(days / 365);
         const months = Math.floor((days % 365) / 30);
         if (years > 0) {
-            return `عضو منذ ${years} ${years === 1 ? 'سنة' : 'سنوات'}${months > 0 ? ` و ${months} ${months === 1 ? 'شهر' : 'أشهر'}` : ''}`;
+            return `${t('profile.memberSince')} ${years} ${years === 1 ? 'سنة' : 'سنوات'}${months > 0 ? ` و ${months} ${months === 1 ? 'شهر' : 'أشهر'}` : ''}`;
         }
-        if (months > 0) return `عضو منذ ${months} ${months === 1 ? 'شهر' : 'أشهر'}`;
-        return `عضو منذ ${days} ${days === 1 ? 'يوم' : 'أيام'}`;
+        if (months > 0) return `${t('profile.memberSince')} ${months} ${months === 1 ? 'شهر' : 'أشهر'}`;
+        return `${t('profile.memberSince')} ${days} ${days === 1 ? 'يوم' : 'أيام'}`;
     };
 
     if (loading) {
@@ -141,7 +142,7 @@ const ProfilePage = () => {
             <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E40AF] border-t-transparent"></div>
-                    <p className="mt-4 text-slate-600 dark:text-blue-200/70">جاري تحميل البيانات...</p>
+                    <p className="mt-4 text-slate-600 dark:text-blue-200/70">{t('common.loading')}</p>
                 </div>
             </div>
         );
@@ -151,12 +152,12 @@ const ProfilePage = () => {
         return (
             <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
                 <div className="text-center">
-                    <p className="text-slate-600 dark:text-blue-200/70 mb-4">يجب تسجيل الدخول لعرض الملف الشخصي</p>
+                    <p className="text-slate-600 dark:text-blue-200/70 mb-4">{t('profile.loginRequiredViewProfile')}</p>
                     <button
                         onClick={() => navigate('/login')}
                         className="btn-ripple px-6 py-3 bg-gradient-to-l from-[#1E40AF] to-[#0F172A] dark:from-blue-600 dark:to-blue-800 text-white rounded-xl hover:shadow-lg hover:shadow-[#1E40AF]/25 transition-all font-medium"
                     >
-                        تسجيل الدخول
+                        {t('auth.login')}
                     </button>
                 </div>
             </div>
@@ -177,7 +178,7 @@ const ProfilePage = () => {
                             {currentUser.photoURL ? (
                                 <img
                                     src={currentUser.photoURL}
-                                    alt={currentUser.name || 'الملف الشخصي'}
+                                    alt={t('profile.title')}
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
@@ -185,12 +186,11 @@ const ProfilePage = () => {
                             )}
                         </div>
 
-                        {/* Plus button above the profile picture to add/change photo */}
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
-                            title="إضافة صورة الملف الشخصي"
+                            title={t('profile.addPhoto')}
                             className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#0F172A] dark:from-blue-600 dark:to-blue-800 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:shadow-[#1E40AF]/30 hover:scale-110 active:scale-90 transition-all border-2 border-white dark:border-[#0F172A] disabled:opacity-70"
                         >
                             {uploading ? (
@@ -215,11 +215,11 @@ const ProfilePage = () => {
                                     value={nameValue}
                                     onChange={(e) => setNameValue(e.target.value)}
                                     className="text-2xl font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-blue-400/20 rounded-xl px-3 py-1 w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/40"
-                                    placeholder="الاسم"
+                                    placeholder={t('profile.title')}
                                 />
                             ) : (
                                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 truncate">
-                                    {currentUser.name || 'المستخدم'}
+                                    {currentUser.name || t('profile.welcome')}
                                 </h1>
                             )}
                             <div className="flex items-center gap-2 flex-wrap mt-2">
@@ -228,11 +228,11 @@ const ProfilePage = () => {
                                 </span>
                                 {currentUser.isBanned ? (
                                     <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/30">
-                                        محظور
+                                        {t('profile.banned')}
                                     </span>
                                 ) : (
                                     <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30">
-                                        نشط
+                                        {t('profile.active')}
                                     </span>
                                 )}
                                 {getMembershipDuration(userDetails.createdAt) && (
@@ -250,7 +250,7 @@ const ProfilePage = () => {
                                     onClick={handleSaveProfile}
                                     disabled={savingProfile}
                                     className="p-2 rounded-lg bg-gradient-to-br from-[#1E40AF] to-[#0F172A] dark:from-blue-600 dark:to-blue-800 text-white hover:shadow-lg hover:shadow-[#1E40AF]/25 hover:scale-105 active:scale-90 transition-all disabled:opacity-70"
-                                    title="حفظ"
+                                    title={t('profile.save')}
                                 >
                                     {savingProfile ? (
                                         <span className="inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -262,7 +262,7 @@ const ProfilePage = () => {
                                     type="button"
                                     onClick={handleCancelEdit}
                                     className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                    title="إلغاء"
+                                    title={t('profile.cancel')}
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
@@ -272,7 +272,7 @@ const ProfilePage = () => {
                                 type="button"
                                 onClick={() => setEditing(true)}
                                 className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-110 active:scale-90 transition-all"
-                                title="تعديل الاسم والنبذة"
+                                title={t('profile.edit')}
                             >
                                 <Pencil className="h-4 w-4" />
                             </button>
@@ -283,18 +283,18 @@ const ProfilePage = () => {
 
             {/* Bio */}
             <div className="rounded-2xl border border-slate-200/80 dark:border-blue-400/20 bg-white dark:bg-[#0F172A] p-5 shadow-lg shadow-primary-500/5">
-                <p className="text-sm font-medium text-slate-700 dark:text-blue-200/80 mb-2">النبذة الشخصية</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-blue-200/80 mb-2">{t('profile.bio')}</p>
                 {editing ? (
                     <textarea
                         value={bioValue}
                         onChange={(e) => setBioValue(e.target.value)}
                         rows={3}
                         className="w-full text-sm text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-blue-400/20 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/40 resize-none"
-                        placeholder="اكتب نبذة قصيرة عنك..."
+                        placeholder={t('profile.writeBio')}
                     />
                 ) : (
                     <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line">
-                        {currentUser.bio || 'لا توجد نبذة شخصية.'}
+                        {currentUser.bio || t('profile.noBio')}
                     </p>
                 )}
             </div>
@@ -309,9 +309,9 @@ const ProfilePage = () => {
                             <Mail className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500 dark:text-slate-400">البريد الإلكتروني</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('profile.email')}</p>
                             <p className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                                {currentUser.email || 'غير متوفر'}
+                                {currentUser.email || t('profile.notAvailable')}
                             </p>
                         </div>
                     </div>
@@ -324,7 +324,7 @@ const ProfilePage = () => {
                             <Shield className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500 dark:text-slate-400">نوع الحساب</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('profile.accountType')}</p>
                             <p className="font-medium text-slate-900 dark:text-slate-100">
                                 {getRoleLabel(currentUser.role || 'student')}
                             </p>
@@ -339,7 +339,7 @@ const ProfilePage = () => {
                             <Calendar className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500 dark:text-slate-400">تاريخ التسجيل</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('profile.registrationDate')}</p>
                             <p className="font-medium text-slate-900 dark:text-slate-100">
                                 {formatDate(userDetails.createdAt)}
                             </p>
@@ -354,7 +354,7 @@ const ProfilePage = () => {
                             <Clock className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-500 dark:text-slate-400">آخر تسجيل دخول</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('profile.lastLogin')}</p>
                             <p className="font-medium text-slate-900 dark:text-slate-100">
                                 {formatDateTime(userDetails.lastLogin)}
                             </p>

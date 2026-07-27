@@ -5,22 +5,29 @@ import RecommendationCard from '../components/recommendations/RecommendationCard
 import { recommendationService } from '../services/recommendationService';
 import { ContentCategory, RecommendationStats, RecommendationContent, RecommendationItemWithStatus } from '../types';
 import { useAppStore } from '../stores/appStore';
-import { Heart, Star, Lock, Search } from 'lucide-react';
+import { Heart, Star, Lock, Search, Pin, Laptop, Brain, HeartPulse, Settings, BookOpen, FileText, GraduationCap, Briefcase, Trophy, Flame } from 'lucide-react';
 
-const CATEGORIES = [
-    { key: 'recommended', label: '⭐ المقترح لك', icon: '⭐' },
-    { key: 'tech', label: '💻 تقنية المعلومات', icon: '💻' },
-    { key: 'ai', label: '🤖 الذكاء الاصطناعي', icon: '🤖' },
-    { key: 'medical', label: '🏥 الطب', icon: '🏥' },
-    { key: 'engineering', label: '⚙️ الهندسة', icon: '⚙️' },
-    { key: 'free_courses', label: '📚 الدورات المجانية', icon: '📚' },
-    { key: 'news', label: '📰 الأخبار', icon: '📰' },
-    { key: 'research', label: '📄 الأبحاث العلمية', icon: '📄' },
-    { key: 'scholarships', label: '🎓 المنح', icon: '🎓' },
-    { key: 'training', label: '💼 التدريب والوظائف', icon: '💼' },
-    { key: 'competitions', label: '🏆 المسابقات', icon: '🏆' },
-    { key: 'popular', label: '🔥 الأكثر شيوعاً', icon: '🔥' },
-    { key: 'saved', label: '❤️ المحفوظات', icon: '❤️' },
+interface CategoryInfo {
+    key: ContentCategory;
+    label: string;
+    icon: React.ElementType;
+    color: string;
+}
+
+const CATEGORIES: CategoryInfo[] = [
+    { key: 'recommended', label: 'المقترح لك', icon: Star, color: 'text-yellow-500' },
+    { key: 'tech', label: 'تقنية المعلومات', icon: Laptop, color: 'text-blue-500' },
+    { key: 'ai', label: 'الذكاء الاصطناعي', icon: Brain, color: 'text-violet-500' },
+    { key: 'medical', label: 'الطب', icon: HeartPulse, color: 'text-rose-500' },
+    { key: 'engineering', label: 'الهندسة', icon: Settings, color: 'text-slate-500' },
+    { key: 'free_courses', label: 'الدورات المجانية', icon: BookOpen, color: 'text-emerald-500' },
+    { key: 'news', label: 'الأخبار', icon: FileText, color: 'text-sky-500' },
+    { key: 'research', label: 'الأبحاث العلمية', icon: FileText, color: 'text-amber-500' },
+    { key: 'scholarships', label: 'المنح', icon: GraduationCap, color: 'text-indigo-500' },
+    { key: 'training', label: 'التدريب والوظائف', icon: Briefcase, color: 'text-teal-500' },
+    { key: 'competitions', label: 'المسابقات', icon: Trophy, color: 'text-orange-500' },
+    { key: 'popular', label: 'الأكثر شيوعاً', icon: Flame, color: 'text-red-500' },
+    { key: 'saved', label: 'المحفوظات', icon: Heart, color: 'text-pink-500' },
 ];
 
 const RecommendationsPage = () => {
@@ -45,11 +52,11 @@ const RecommendationsPage = () => {
             (stats.topInterests?.length || 0) > 0);
 
     // IMPROVEMENT: Better user segmentation with more granular categories
-    const userType = 
+    const userType =
         !currentUser ? 'guest' : // No authentication
-        hasEnoughSignals ? 'active' : // Has sufficient activity signals
-        stats?.totalPoints === 0 && stats?.savedCount === 0 && !(stats?.topInterests?.length) ? 'new' : // New user with zero activity
-        'casual'; // Has some activity but below threshold
+            hasEnoughSignals ? 'active' : // Has sufficient activity signals
+                stats?.totalPoints === 0 && stats?.savedCount === 0 && !(stats?.topInterests?.length) ? 'new' : // New user with zero activity
+                    'casual'; // Has some activity but below threshold
 
     const showGeneralSmartForUser = userType === 'new';
 
@@ -63,7 +70,7 @@ const RecommendationsPage = () => {
                 actionPath: '/login'
             };
         }
-        
+
         if (userType === 'new') {
             return {
                 title: 'استكشف اهتماماتك الدراسية',
@@ -72,7 +79,7 @@ const RecommendationsPage = () => {
                 actionPath: '/recommendations' // Stay on page but trigger onboarding
             };
         }
-        
+
         return {
             title: 'لا توجد توصيات جديدة',
             description: 'لقد قمت بإخفاء جميع التوصيات الجديدة في هذا القسم. تحقق مرة أخرى لاحقاً أو استكشف الفئات الأخرى.',
@@ -102,9 +109,12 @@ const RecommendationsPage = () => {
     }, [isPublic]);
 
     useEffect(() => {
-        if (userId) {
-            recommendationService.getStats(userId).then(setStats);
-        }
+        if (!userId) return;
+        let cancelled = false;
+        recommendationService.getStats(userId).then((stats) => {
+            if (!cancelled) setStats(stats);
+        });
+        return () => { cancelled = true; };
     }, [userId]);
 
     // Search recommendations
@@ -156,31 +166,38 @@ const RecommendationsPage = () => {
     // Filter categories for public view (hide saved)
     const publicCategories = CATEGORIES.filter(cat => cat.key !== 'saved');
 
+    const activeCatInfo = CATEGORIES.find(c => c.key === activeCategory);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-[#0F172A] dark:via-[#1E40AF]/10 dark:to-[#0F172A] p-4 sm:p-6 space-y-6" dir="rtl">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-l from-[#1E40AF] to-[#0F172A] dark:from-blue-300 dark:to-blue-100 bg-clip-text text-transparent">
-                        {isPublic ? '📌 المحتوى الموصى به' : '📌 الاقتراحات والتوصيات'}
-                    </h1>
-                    <p className="text-slate-600 dark:text-blue-200/70 mt-1">
-                        {isPublic
-                            ? 'محتوى تعليمي مختار للطلاب الجامعيين'
-                            : 'محتوى مخصص لك بناءً على اهتماماتك ونشاطك'}
-                    </p>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/20 animate-fade-in">
+                        <Pin className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-l from-[#1E40AF] to-[#0F172A] dark:from-blue-300 dark:to-blue-100 bg-clip-text text-transparent">
+                            {isPublic ? 'المحتوى الموصى به' : 'الاقتراحات والتوصيات'}
+                        </h1>
+                        <p className="text-slate-600 dark:text-blue-200/70 mt-0.5">
+                            {isPublic
+                                ? 'محتوى تعليمي مختار للطلاب الجامعيين'
+                                : 'محتوى مخصص لك بناءً على اهتماماتك ونشاطك'}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Stats - only for logged-in users */}
                 {stats && !isPublic && (
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1 text-sm text-slate-600 dark:text-blue-200/80 bg-white/60 dark:bg-[#0F172A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200 dark:border-blue-400/20">
-                            <Star className="h-4 w-4 text-yellow-500" />
-                            <span>{stats.totalPoints} نقطة</span>
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-blue-200/80 bg-white/60 dark:bg-[#0F172A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200 dark:border-blue-400/20 transition-all duration-200 hover:shadow-md">
+                            <Star className="h-4 w-4 text-yellow-500 animate-gentle-pulse" />
+                            <span className="font-medium">{stats.totalPoints} نقطة</span>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-slate-600 dark:text-blue-200/80 bg-white/60 dark:bg-[#0F172A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200 dark:border-blue-400/20">
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-blue-200/80 bg-white/60 dark:bg-[#0F172A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200 dark:border-blue-400/20 transition-all duration-200 hover:shadow-md">
                             <Heart className="h-4 w-4 text-red-500" />
-                            <span>{stats.savedCount} محفوظ</span>
+                            <span className="font-medium">{stats.savedCount} محفوظ</span>
                         </div>
                     </div>
                 )}
@@ -208,14 +225,14 @@ const RecommendationsPage = () => {
                 <button
                     onClick={handleSearch}
                     disabled={isSearching || !searchQuery.trim()}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-l from-[#1E40AF] to-[#0F172A] dark:from-blue-600 dark:to-blue-800 text-white font-medium hover:shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="px-6 py-3 rounded-xl bg-gradient-to-l from-primary-700 via-primary-600 to-secondary-500 text-white font-semibold text-base hover:shadow-lg hover:shadow-primary-500/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                    {isSearching ? 'جاري البحث...' : 'بحث'}
+                    {isSearching ? 'جاري البحث...' : '🔍 بحث'}
                 </button>
                 {searchQuery && (
                     <button
                         onClick={clearSearch}
-                        className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-blue-400/20 text-slate-600 dark:text-blue-200/80 hover:bg-slate-100 dark:hover:bg-[#1E40AF]/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                        className="px-5 py-3 rounded-xl border border-slate-200 dark:border-blue-400/20 text-slate-600 dark:text-blue-200/80 hover:bg-slate-100 dark:hover:bg-[#1E40AF]/20 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 font-medium text-sm"
                     >
                         إلغاء
                     </button>
@@ -240,14 +257,15 @@ const RecommendationsPage = () => {
                         key={cat.key}
                         onClick={() => setActiveCategory(cat.key as ContentCategory)}
                         className={`
-                            px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm
+                            px-5 py-3 rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base flex items-center gap-2
                             ${activeCategory === cat.key
-                                ? 'bg-gradient-to-l from-[#1E40AF] to-[#0F172A] dark:from-blue-600 dark:to-blue-800 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.03] active:scale-[0.97]'
-                                : 'bg-white/60 dark:bg-[#0F172A]/60 backdrop-blur-sm text-slate-700 dark:text-blue-200/80 border border-slate-200 dark:border-blue-400/20 hover:bg-slate-100 dark:hover:bg-[#1E40AF]/20 hover:shadow-sm hover:scale-[1.03] active:scale-[0.97]'
+                                ? 'bg-gradient-to-l from-primary-700 via-primary-600 to-secondary-500 text-white shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 hover:scale-[1.04] active:scale-[0.96]'
+                                : 'bg-white/70 dark:bg-[#0F172A]/70 backdrop-blur-sm text-slate-700 dark:text-blue-200/80 border border-slate-200 dark:border-blue-400/20 hover:bg-slate-100 dark:hover:bg-[#1E40AF]/20 hover:shadow-md hover:scale-[1.03] active:scale-[0.97]'
                             }
                         `}
                     >
-                        {cat.icon} {cat.label}
+                        <cat.icon className={`h-5 w-5 ${activeCategory === cat.key ? 'text-white' : cat.color}`} />
+                        {cat.label}
                     </button>
                 ))}
             </div>
@@ -256,7 +274,8 @@ const RecommendationsPage = () => {
             {/* Search Results */}
             {searchResults !== null && (
                 <div className="mb-6">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                        <Search className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                         نتائج البحث عن "{searchQuery}"
                         <span className="text-sm font-normal text-gray-500 mr-2">
                             ({searchResults.length} نتيجة)
@@ -265,15 +284,16 @@ const RecommendationsPage = () => {
                     {/* No empty state - backend guarantees results via fallback categories */}
                     {searchResults.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {searchResults.map(item => (
-                                <RecommendationCard
-                                    key={item.id}
-                                    content={item}
-                                    isSaved={!!('isSaved' in item && item.isSaved)}
-                                    isLiked={!!('isLiked' in item && item.isLiked)}
-                                    isPublic={effectiveIsPublic}
-                                    onOpen={(content) => window.open(content.sourceUrl, '_blank', 'noopener,noreferrer')}
-                                />
+                            {searchResults.map((item, index) => (
+                                <div key={item.id} className={`animate-card-stagger stagger-${Math.min(index + 1, 10)}`}>
+                                    <RecommendationCard
+                                        content={item}
+                                        isSaved={!!('isSaved' in item && item.isSaved)}
+                                        isLiked={!!('isLiked' in item && item.isLiked)}
+                                        isPublic={effectiveIsPublic}
+                                        onOpen={(content) => window.open(content.sourceUrl, '_blank', 'noopener,noreferrer')}
+                                    />
+                                </div>
                             ))}
                         </div>
                     )}
@@ -284,7 +304,7 @@ const RecommendationsPage = () => {
             {searchResults === null && (
                 <>
                     {activeCategory === 'saved' && isPublic ? (
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl">
                             <Lock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">المحفوظات</h3>
                             <p className="text-gray-600 dark:text-gray-300">سجّل دخولك لعرض المحتوى المحفوظ</p>
@@ -293,8 +313,8 @@ const RecommendationsPage = () => {
                         <CategorySection
                             userId={userId}
                             category="recommended"
-                            title="⭐ المقترح لك"
-                            icon="⭐"
+                            title="المقترح لك"
+                            icon={Star}
                             limit={20}
                             requiredCount={20}
                             onViewAll={handleViewAll}
@@ -305,8 +325,8 @@ const RecommendationsPage = () => {
                         <CategorySection
                             userId={userId}
                             category={activeCategory}
-                            title={CATEGORIES.find(c => c.key === activeCategory)?.label || activeCategory}
-                            icon={CATEGORIES.find(c => c.key === activeCategory)?.icon}
+                            title={activeCatInfo?.label || activeCategory}
+                            icon={activeCatInfo?.icon}
                             limit={20}
                             requiredCount={20}
                             onViewAll={handleViewAll}

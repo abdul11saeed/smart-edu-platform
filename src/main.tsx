@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import ErrorBoundary from './components/ui/ErrorBoundary'
+import './i18n'
 
 // Third-party styles for Markdown rendering (load BEFORE index.css so our
 // Tailwind theme can fine-tune them where needed).

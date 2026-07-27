@@ -1,6 +1,8 @@
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Bot, MessageSquare, MessageCircle } from 'lucide-react';
+import i18n from './i18n';
 const StudentHome = lazy(() => import('./pages/StudentHome'));
 const CourseWorkspace = lazy(() => import('./pages/CourseWorkspace'));
 const CourseFilesPage = lazy(() => import('./pages/CourseFilesPage'));
@@ -101,6 +103,7 @@ const CourseRedirect = () => {
 };
 
 function App() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { setCurrentUser, currentUser, currentCourseFiles, allUserFiles, reset, isAIChatOpen, setIsAIChatOpen, isDarkMode, setIsDarkMode, aiChatInitialFile, setAiChatInitialFile, setIsOffline } = useAppStore();
   const { subscribeToUniversities } = useCatalogStore();
@@ -118,6 +121,19 @@ function App() {
       }
     }
   }, [setIsDarkMode]);
+
+  // Sync document direction (RTL/LTR) with the current language
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      document.documentElement.dir = lng === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lng;
+    };
+    handleLanguageChanged(i18n.language);
+    i18n.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
+  }, []);
 
   // Subscribe to real-time universities data from Firebase
   useEffect(() => {
@@ -277,14 +293,14 @@ function App() {
           <button
             onClick={() => navigate('/chat')}
             className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white p-4 rounded-full shadow-lg shadow-secondary-500/30 hover:shadow-xl hover:shadow-secondary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
-            title="الدردشة العامة - تواصل فوري"
+            title={t('chat.publicChat')}
           >
             <MessageCircle className="h-6 w-6" />
           </button>
           <button
             onClick={() => navigate('/discussions')}
             className="bg-gradient-to-r from-primary-700 to-primary-800 text-white p-4 rounded-full shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
-            title="المناقشات والحوار"
+            title={t('nav.discussions')}
           >
             <MessageSquare className="h-6 w-6" />
           </button>
@@ -301,7 +317,7 @@ function App() {
               setIsAIChatOpen(true);
             }}
             className="bg-gradient-to-r from-primary-700 via-secondary-600 to-primary-500 text-white p-4 rounded-full shadow-lg shadow-primary-600/30 hover:shadow-xl transition-all duration-300 ease-spring hover:scale-105 active:scale-95 animate-glow-wave"
-            title="مساعد الذكاء الاصطناعي"
+            title={t('nav.aiAssistant')}
           >
             <Bot className="h-6 w-6" />
           </button>

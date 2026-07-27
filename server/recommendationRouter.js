@@ -235,7 +235,7 @@ function recCacheKey(category, userId, searchQuery, page, pageSize, preferredLan
         (searchQuery || '').toLowerCase().trim(),
         page || 1,
         pageSize || 20,
-        preferredLanguage || 'en',
+        preferredLanguage || 'ar',
     ].join('|');
 }
 
@@ -561,11 +561,17 @@ const RSS_SOURCES = {
         { name: 'Smashing Magazine', url: 'https://www.smashingmagazine.com/feed/' },
     ],
     cybersecurity: [
+        // Arabic cybersecurity sources
+        { name: 'أمن المعلومات العربي', url: 'https://www.arabsecurity.net/feed/' },
+        { name: 'أكاديمية حسوب', url: 'https://academy.hsoub.com/feed/' },
         // International cybersecurity sources
         { name: 'Krebs on Security', url: 'https://krebsonsecurity.com/feed/' },
         { name: 'The Hacker News', url: 'https://thehackernews.com/feed' },
     ],
     ai: [
+        // Arabic AI sources
+        { name: 'عرب هاردوير', url: 'https://www.arabh.net/feed/' },
+        { name: 'أراجيك', url: 'https://www.arageek.com/feed/' },
         // International AI sources
         { name: 'Google AI Blog', url: 'https://blog.google/technology/ai/rss/' },
         { name: 'OpenAI Blog', url: 'https://openai.com/blog/rss.xml' },
@@ -631,6 +637,10 @@ const RSS_SOURCES = {
     // Previously these two categories had NO source at all, so their tabs were
     // always empty. Fed now by stable feeds (dead feeds are skipped gracefully).
     research: [
+        // Arabic research sources
+        { name: 'المؤسسة العربية للعلوم ونشر الأبحاث', url: 'https://journals.ajsrp.com/feed' },
+        { name: 'الشبكة العربية للصحافة العلمية', url: 'https://www.arabicnsj.org/feed' },
+        // International research sources
         { name: 'arXiv - Computer Science', url: 'http://export.arxiv.org/rss/cs' },
         { name: 'Nature', url: 'https://www.nature.com/nature.rss' },
         { name: 'ScienceDaily - All', url: 'https://www.sciencedaily.com/rss/all.xml' },
@@ -796,7 +806,7 @@ function detectLanguage(text) {
     const totalChars = text.replace(/\s/g, '').length;
     if (totalChars === 0) return 'en';
     const arabicRatio = arabicChars / totalChars;
-    return arabicRatio > 0.3 ? 'ar' : 'en';
+    return arabicRatio > 0.15 ? 'ar' : 'en';
 }
 
 async function fetchRssFeed(url) {
@@ -1520,6 +1530,12 @@ router.post('/generate', async (req, res) => {
 
         // Sort by badge priority
         const sortedContents = sortByBadgePriority(contentsWithBadges);
+
+        // Rank results: Arabic content first, then by engagement (views + likes*10)
+        sortedContents.sort(langFirstComparator('ar', (a, b) =>
+            ((b.viewsCount || 0) + (b.likesCount || 0) * 10) -
+            ((a.viewsCount || 0) + (a.likesCount || 0) * 10)
+        ));
 
         // Self-healing: if the full collection looks empty or critically low, kick off a background
         // aggregation so real recommendations appear on the next request without

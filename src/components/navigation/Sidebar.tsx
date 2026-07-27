@@ -1,4 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import {
     GraduationCap, Home, MessageSquare, MessageCircle, Upload,
     Bot, X, Menu, BarChart3, Sparkles
@@ -16,6 +18,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) => {
+    const { t } = useTranslation();
     const { currentUser, setIsAIChatOpen } = useAppStore();
     const location = useLocation();
     const sidebarRef = useRef<HTMLDivElement>(null);
@@ -62,28 +65,28 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
     }, [isOpen]);
 
     const navItems = [
-        { path: '/', icon: Home, label: 'الرئيسية', roles: ['student', 'admin'] },
-        { path: '/discussions', icon: MessageSquare, label: 'المناقشات', roles: ['student', 'admin'] },
-        { path: '/chat', icon: MessageCircle, label: 'الدردشة', roles: ['student', 'admin'] },
-        { path: '/recommendations', icon: Sparkles, label: 'الاقتراحات والتوصيات', roles: ['student', 'admin'] },
+        { path: '/', icon: Home, label: t('nav.home'), roles: ['student', 'admin'] },
+        { path: '/discussions', icon: MessageSquare, label: t('nav.discussions'), roles: ['student', 'admin'] },
+        { path: '/chat', icon: MessageCircle, label: t('nav.chat'), roles: ['student', 'admin'] },
+        { path: '/recommendations', icon: Sparkles, label: t('nav.recommendations'), roles: ['student', 'admin'] },
         {
             action: 'upload',
             icon: Upload,
-            label: 'رفع الملفات',
+            label: t('nav.upload'),
             roles: ['student', 'admin'],
             onClick: () => { onUploadClick(); onClose?.(); }
         },
     ];
 
     if (currentUser?.role === 'admin') {
-        navItems.push({ path: '/admin', icon: MessageSquare, label: 'لوحة الإدارة', roles: ['admin'] });
-        navItems.push({ path: '/admin/reports', icon: BarChart3, label: 'التقارير والتحليلات', roles: ['admin'] });
+        navItems.push({ path: '/admin', icon: MessageSquare, label: t('nav.admin'), roles: ['admin'] });
+        navItems.push({ path: '/admin/reports', icon: BarChart3, label: t('nav.adminReports'), roles: ['admin'] });
     }
 
     navItems.push({
         action: 'aiChat',
         icon: Bot,
-        label: 'مساعد الذكاء الاصطناعي',
+        label: t('nav.aiAssistant'),
         roles: ['student', 'admin'],
         onClick: () => {
             setIsAIChatOpen(true);
@@ -96,19 +99,25 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
         ? navItems.filter(item => item.roles.includes(currentUser?.role || 'student'))
         : [];
 
+    const isRTL = i18n.language === 'ar';
+    const sideStart = isRTL ? 'right' : 'left';
+    const sideEnd = isRTL ? 'left' : 'right';
+    const translateClosed = isRTL ? 'translate-x-full' : '-translate-x-full';
+    const borderStart = isRTL ? 'border-l' : 'border-r';
+
     return (
         <aside
             ref={sidebarRef}
             className={`
-                bg-[#FFFBEB]/95 dark:bg-brown-900/95 backdrop-blur-xl shadow-2xl shadow-primary-500/10 dark:shadow-brown-950/50 flex flex-col z-40 border-l border-brown-200/50 dark:border-brown-700/30
+                bg-[#FFFBEB]/95 dark:bg-brown-900/95 backdrop-blur-xl shadow-2xl shadow-primary-500/10 dark:shadow-brown-950/50 flex flex-col z-40 ${borderStart} border-brown-200/50 dark:border-brown-700/30
                 ${isMobile
-                    ? 'fixed inset-y-0 right-0 w-72 transform transition-all duration-300 ease-in-out '
-                        + (isOpen ? 'translate-x-0 opacity-100 visible pointer-events-auto' : 'translate-x-full opacity-0 invisible pointer-events-none')
-                    : 'fixed top-0 right-0 h-screen w-72 transform transition-all duration-300 ease-in-out '
-                        + (isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 invisible pointer-events-none')}
+                    ? `fixed inset-y-0 ${sideStart}-0 w-72 transform transition-all duration-300 ease-in-out `
+                        + (isOpen ? 'translate-x-0 opacity-100 visible pointer-events-auto' : `${translateClosed} opacity-0 invisible pointer-events-none`)
+                    : `fixed top-0 ${sideStart}-0 h-screen w-72 transform transition-all duration-300 ease-in-out `
+                        + (isOpen ? 'translate-x-0 opacity-100' : `${translateClosed} opacity-0 invisible pointer-events-none`)}
                 ${className || ''}
             `}
-            style={{ direction: 'rtl' }}
+            style={{ direction: isRTL ? 'rtl' : 'ltr' }}
         >
             {/* Logo Section with gradient accent */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-brown-200/50 dark:border-brown-700/30 bg-gradient-to-r from-primary-50/50 to-transparent dark:from-primary-900/20 dark:to-transparent">
@@ -125,7 +134,7 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
                     data-sidebar-toggle
                     onClick={onClose}
                     className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 text-brown-600 dark:text-brown-300 transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-md hover:shadow-primary-500/10"
-                    title="إغلاق"
+                    title={t('sidebar.close')}
                 >
                     <X className="h-5 w-5" />
                 </button>
@@ -198,10 +207,10 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
                     <NavLink
                         to="/login"
                         className="flex items-center gap-3 px-4 py-3 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-md hover:shadow-primary-500/10"
-                        title="تسجيل الدخول"
+                        title={t('nav.login')}
                     >
                         <Menu className="h-5 w-5 flex-shrink-0 rotate-180" />
-                        <span className="font-medium text-sm">تسجيل الدخول</span>
+                        <span className="font-medium text-sm">{t('nav.login')}</span>
                     </NavLink>
                 )}
             </div>

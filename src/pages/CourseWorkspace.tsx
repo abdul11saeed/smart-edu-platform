@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, Suspense, lazy, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     FileText,
     MessageSquare,
@@ -27,16 +28,17 @@ interface TabConfig {
 }
 
 const tabs: TabConfig[] = [
-    { id: 'files', label: 'الملفات', icon: FileText },
-    { id: 'upload', label: 'رفع ملفات', icon: Upload },
-    { id: 'discussions', label: 'المناقشات', icon: MessageSquare },
-    { id: 'chat', label: 'الدردشة', icon: MessageCircle },
-    { id: 'ai', label: 'مساعد الذكاء', icon: Bot },
+    { id: 'files', label: 'home.allFiles', icon: FileText },
+    { id: 'upload', label: 'nav.upload', icon: Upload },
+    { id: 'discussions', label: 'nav.discussions', icon: MessageSquare },
+    { id: 'chat', label: 'nav.chat', icon: MessageCircle },
+    { id: 'ai', label: 'nav.aiAssistant', icon: Bot },
 ];
 
 const DiscussionsTab = lazy(() => import('../components/workspace/DiscussionsTab'));
 
 const CourseWorkspace = () => {
+    const { t } = useTranslation();
     const { courseId } = useParams<{ courseId: string }>();
     const navigate = useNavigate();
     const { activeTab, setActiveTab, setActiveCourseId, setCurrentCourseFiles } = useAppStore();
@@ -141,12 +143,12 @@ const CourseWorkspace = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">المقرر غير موجود</p>
+                    <p className="text-gray-500">{t('errors.notFound')}</p>
                     <button
                         onClick={() => navigate('/')}
                         className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg"
                     >
-                        العودة للرئيسية
+                        {t('notFound.backToHome')}
                     </button>
                 </div>
             </div>
@@ -227,7 +229,7 @@ const CourseWorkspace = () => {
                                     `}
                                 >
                                     <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1.5 sm:ml-2 ${isActive ? 'text-primary-600' : 'text-gray-500'}`} />
-                                    {tab.label}
+                                    {t(tab.label)}
                                 </button>
                             );
                         })}

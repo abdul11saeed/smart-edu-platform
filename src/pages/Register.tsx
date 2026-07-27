@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore';
 import { registerWithEmail, loginWithGoogle, EMAIL_REGEX } from '../services/authService';
 import { Eye, EyeOff } from 'lucide-react';
@@ -20,6 +21,7 @@ const authInputClasses =
   "sm:text-sm transition-all duration-200";
 
 const Register: React.FC = () => {
+  const { t } = useTranslation();
   const { register, handleSubmit, formState: { errors }, watch } = useForm<RegisterForm>();
   const currentUser = useAppStore((state) => state.currentUser);
   const navigate = useNavigate();
@@ -49,7 +51,7 @@ const Register: React.FC = () => {
       await registerWithEmail(data.email, data.password, data.name, 'student');
       navigate('/');
     } catch (error: any) {
-      setRegisterError(error.message || 'فشل إنشاء الحساب');
+      setRegisterError(error.message || t('auth.registerError'));
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +65,7 @@ const Register: React.FC = () => {
       await loginWithGoogle();
       navigate('/');
     } catch (error: any) {
-      setRegisterError(error.message || 'فشل التسجيل عبر جوجل');
+      setRegisterError(error.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);
     }
@@ -74,10 +76,10 @@ const Register: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold bg-gradient-to-l from-[#7B4D2A] to-[#3B2314] dark:from-[#D4A77A] dark:to-[#B8865E] bg-clip-text text-transparent">
-            إنشاء حساب جديد
+            {t('auth.register')}
           </h2>
           <p className="mt-2 text-center text-sm text-brown-600 dark:text-[#D4A77A]/70">
-            سيتم تسجيلك كطالب افتراضياً
+            {t('auth.defaultStudent')}
           </p>
         </div>
 
@@ -178,7 +180,7 @@ const Register: React.FC = () => {
               disabled={isLoading}
               className="btn-ripple group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-l from-[#7B4D2A] to-[#3B2314] dark:from-[#7B4D2A] dark:to-[#1A1512] hover:from-[#3B2314] hover:to-[#7B4D2A] dark:hover:from-[#5C3A1E] dark:hover:to-[#3B2314] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7B4D2A]/50 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#7B4D2A]/20 hover:shadow-xl hover:shadow-[#7B4D2A]/30 transition-all"
             >
-              {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}
+              {isLoading ? t('common.loading') : t('auth.register')}
             </button>
           </div>
 
@@ -188,7 +190,7 @@ const Register: React.FC = () => {
                 <div className="w-full border-t border-brown-300/80 dark:border-brown-600/20" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white/80 dark:bg-brown-900/60 text-brown-500 dark:text-[#D4A77A]/60">أو</span>
+                <span className="px-2 bg-white/80 dark:bg-brown-900/60 text-brown-500 dark:text-[#D4A77A]/60">{t('common.or')}</span>
               </div>
             </div>
 
@@ -205,14 +207,14 @@ const Register: React.FC = () => {
                   <path fill="#c98a3e" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path fill="#6e70d6" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                التسجيل باستخدام جوجل
+                {t('auth.loginWithGoogle')}
               </button>
             </div>
           </div>
 
           <div className="text-center">
             <Link to="/login" className="text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] transition-colors">
-              لديك حساب بالفعل؟ سجل الدخول
+              {t('auth.alreadyHaveAccount', 'لديك حساب بالفعل؟ سجل الدخول')}
             </Link>
           </div>
         </form>

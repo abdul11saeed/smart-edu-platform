@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Bell, Check } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 import { getUserNotifications, markNotificationAsRead, subscribeToUserNotifications, Notification } from '../services/notificationService';
 
 const NotificationsPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { currentUser } = useAppStore();
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -22,7 +24,7 @@ const NotificationsPage = () => {
                 const notifs = await getUserNotifications(currentUser.id, 50);
                 setNotifications(notifs);
             } catch (err) {
-                setError('فشل تحميل الإشعارات');
+                setError(t('notifications.loadingNotifications'));
             } finally {
                 setLoading(false);
             }
@@ -37,7 +39,7 @@ const NotificationsPage = () => {
         });
 
         return () => unsubscribe();
-    }, [currentUser, navigate]);
+    }, [currentUser, navigate, t]);
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
@@ -46,7 +48,6 @@ const NotificationsPage = () => {
                 prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
             );
         }
-
         if (notification.link) {
             navigate(notification.link);
         }
@@ -71,7 +72,7 @@ const NotificationsPage = () => {
         const diffHours = Math.floor(diffMins / 60);
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffMins < 1) return 'الآن';
+        if (diffMins < 1) return t('common.loading');
         if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
         if (diffHours < 24) return `منذ ${diffHours} ساعة`;
         return `منذ ${diffDays} يوم`;
@@ -82,7 +83,7 @@ const NotificationsPage = () => {
             <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-300">جاري تحميل الإشعارات...</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('notifications.loadingNotifications')}</p>
                 </div>
             </div>
         );
@@ -96,7 +97,6 @@ const NotificationsPage = () => {
             <div className="flex items-center gap-4 mb-6">
                 <button
                     onClick={() => {
-                        // Safely navigate back - if no history, go to home
                         if (window.history.length > 1) {
                             navigate(-1);
                         } else {
@@ -104,17 +104,17 @@ const NotificationsPage = () => {
                         }
                     }}
                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    title="العودة"
+                    title={t('notifications.back')}
                 >
                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                 </button>
                 <div className="flex-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <Bell className="h-6 w-6 text-primary-600" />
-                        الإشعارات
+                        {t('notifications.notificationsList')}
                         {unreadCount > 0 && (
                             <span className="bg-primary-600 text-white text-xs px-2 py-1 rounded-full">
-                                {unreadCount} غير مقروء
+                                {unreadCount} {t('notifications.unreadNotification')}
                             </span>
                         )}
                     </h1>
@@ -131,8 +131,7 @@ const NotificationsPage = () => {
             {notifications.length === 0 ? (
                 <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
                     <Bell className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300">لا توجد إشعارات</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">ستظهر هنا الإشعارات الجديدة</p>
+                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300">{t('notifications.noNotificationsYet')}</p>
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -160,7 +159,7 @@ const NotificationsPage = () => {
                                         {notification.body}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        من: {notification.fromUserName}
+                                        {t('notifications.from')} {notification.fromUserName}
                                     </p>
                                 </div>
                                 {!notification.read && (
@@ -173,7 +172,7 @@ const NotificationsPage = () => {
                                             );
                                         }}
                                         className="p-1.5 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
-                                        title="تعليم كمقروء"
+                                        title={t('notifications.markAsReadTitle')}
                                     >
                                         <Check className="h-4 w-4" />
                                     </button>
