@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
   Send,
@@ -87,11 +88,10 @@ const getStorageKey = (user?: AIChatUser | null): string => {
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-const makeGreeting = (): Message => ({
+const makeGreeting = (t: (key: string) => string): Message => ({
   id: uid(),
   role: 'ai',
-  content:
-    'مرحباً! أنا مساعد منصة البرامج الاكاديميه للجامعات اليمنيه الذكي 🤖\nبإمكاني مساعدتك في شرح المفاهيم، تلخيص الملفات، توليد أسئلة وترجمة النصوص.\nاختر أداة من الأعلى أو اكتب سؤالك مباشرةً!',
+  content: t('ai.welcome'),
   type: 'text'
 });
 
@@ -116,29 +116,34 @@ const saveConversations = (storageKey: string, convs: Conversation[]) => {
 
 const deriveTitle = (msgs: Message[]): string => {
   const firstUser = msgs.find((m) => m.role === 'user');
-  if (!firstUser) return 'محادثة جديدة';
-  const t = firstUser.content.replace(/\s+/g, ' ').trim();
-  return t.length > 32 ? t.slice(0, 32) + '…' : t || 'محادثة جديدة';
+  if (!firstUser) return 'New chat';
+  const text = firstUser.content.replace(/\s+/g, ' ').trim();
+  return text.length > 32 ? text.slice(0, 32) + '…' : text || 'New chat';
 };
 
 const timeAgo = (ts: number): string => {
   const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return 'الآن';
-  if (min < 60) return `قبل ${min} د`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `قبل ${hr} س`;
-  const d = Math.floor(hr / 24);
-  if (d < 30) return `قبل ${d} ي`;
+  const minute = Math.floor(diff / 60000);
+  const hours = Math.floor(minute / 60);
+  const days = Math.floor(hours / 24);
+
+  const locale = typeof window !== 'undefined' ? (document.documentElement.lang || 'ar') : 'ar';
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
+  if (minute < 1) return rtf.format(0, 'minute');
+  if (minute < 60) return rtf.format(-minute, 'minute');
+  if (hours < 24) return rtf.format(-hours, 'hour');
+  if (days < 30) return rtf.format(-days, 'day');
   try {
-    return new Date(ts).toLocaleDateString('ar');
+    return new Date(ts).toLocaleDateString(locale);
   } catch {
     return '';
   }
 };
 
-const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser = null, initialSelectedFile }: AIChatProps) => {
-   const [messages, setMessages] = useState<Message[]>([makeGreeting()]);
+ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser = null, initialSelectedFile }: AIChatProps) => {
+    const { t, i18n } = useTranslation();
+    const [messages, setMessages] = useState<Message[]>([makeGreeting(t)]);
    const [inputMessage, setInputMessage] = useState('');
    const [isLoading, setIsLoading] = useState(false);
    const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -283,7 +288,7 @@ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser 
        } else {
          // No recent conversation — start fresh
          setActiveId(null);
-         setMessages([makeGreeting()]);
+         setMessages([makeGreeting(t)]);
          sessionIdRef.current = null;
        }
      } else {
@@ -293,7 +298,7 @@ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser 
          setMessages(convs[0].messages);
        } else {
          setActiveId(null);
-         setMessages([makeGreeting()]);
+         setMessages([makeGreeting(t)]);
        }
      }
 
@@ -687,7 +692,7 @@ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser 
       const errMsg: Message = {
         id: uid(),
         role: 'ai',
-        content: 'عذراً، حدث خطأ في معالجة طلبك. يرجى المحاولة مرة أخرى.'
+        content: t('ai.errorProcessing')
       };
       const nextMessages = [...baseMessages, errMsg];
       setMessages(nextMessages);
@@ -726,7 +731,7 @@ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser 
 
   const startNewChat = () => {
     setActiveId(null);
-    setMessages([makeGreeting()]);
+    setMessages([makeGreeting(t)]);
     sessionIdRef.current = null;
     setIsHistoryOpen(false);
     setActiveTool(null);
@@ -884,7 +889,7 @@ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser 
       </div>
 
       {/* ===== Body ===== */}
-      <div ref={messagesContainerRef} dir="rtl" className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-900/60">
+       <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-900/60">
         {/* Quick Actions - sticky */}
         <div className="sticky top-0 z-10 bg-white/85 dark:bg-gray-800/85 backdrop-blur border-b border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center gap-2 mb-2">
@@ -1071,8 +1076,8 @@ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser 
           }`}
         onClick={() => setIsHistoryOpen(false)}
       />
-      <aside
-        dir="rtl"
+       <aside
+        dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
         className={`absolute top-0 right-0 h-full w-[82%] max-w-[300px] bg-white dark:bg-gray-800 shadow-2xl flex flex-col transition-transform duration-300 ease-out z-30 ${isHistoryOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
       >

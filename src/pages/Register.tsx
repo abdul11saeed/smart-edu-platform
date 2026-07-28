@@ -92,28 +92,24 @@ const Register: React.FC = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)} onChange={() => setRegisterError('')}>
           <div className="rounded-xl shadow-sm -space-y-px">
             <div>
-              <label htmlFor="name" className="sr-only">
-                الاسم الكامل
-              </label>
+              <label htmlFor="name" className="sr-only">{t('auth.name')}</label>
               <input
-                {...register('name', { required: 'الاسم مطلوب', minLength: { value: 2, message: 'الاسم يجب أن يكون حرفين على الأقل' } })}
+                {...register('name', { required: t('auth.nameRequired'), minLength: { value: 2, message: t('auth.nameMinLength') } })}
                 id="name"
                 name="name"
                 type="text"
                 className={`${authInputClasses} rounded-t-xl`}
-                placeholder="الاسم الكامل"
+                placeholder={t('auth.name')}
               />
             </div>
             <div>
-              <label htmlFor="email" className="sr-only">
-                البريد الإلكتروني
-              </label>
+              <label htmlFor="email" className="sr-only">{t('auth.email')}</label>
               <input
                 {...register('email', {
-                  required: 'البريد الإلكتروني مطلوب',
+                  required: t('auth.emailRequired'),
                   pattern: {
                     value: EMAIL_REGEX,
-                    message: 'البريد الإلكتروني غير صالح'
+                    message: t('auth.emailInvalid')
                   }
                 })}
                 id="email"
@@ -121,39 +117,35 @@ const Register: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 className={`${authInputClasses}`}
-                placeholder="البريد الإلكتروني"
+                placeholder={t('auth.email')}
               />
             </div>
             <div className="relative">
-              <label htmlFor="password" className="sr-only">
-                كلمة المرور
-              </label>
+              <label htmlFor="password" className="sr-only">{t('auth.password')}</label>
               <input
                 {...register('password', {
-                  required: 'كلمة المرور مطلوبة',
-                  minLength: { value: 6, message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }
+                  required: t('auth.passwordRequired'),
+                  minLength: { value: 6, message: t('auth.passwordMinLength') }
                 })}
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 className={`${authInputClasses}`}
-                placeholder="كلمة المرور"
+                placeholder={t('auth.password')}
               />
             </div>
             <div className="relative">
-              <label htmlFor="confirmPassword" className="sr-only">
-                تأكيد كلمة المرور
-              </label>
+              <label htmlFor="confirmPassword" className="sr-only">{t('auth.confirmPassword')}</label>
               <input
                 {...register('confirmPassword', {
-                  required: 'تأكيد كلمة المرور مطلوب',
-                  validate: value => value === password || 'كلمات المرور غير متطابقة'
+                  required: t('auth.confirmPasswordRequired'),
+                  validate: value => value === password || t('auth.passwordsMismatch')
                 })}
                 id="confirmPassword"
                 name="confirmPassword"
                 type={showPassword ? "text" : "password"}
                 className={`${authInputClasses} rounded-b-md`}
-                placeholder="تأكيد كلمة المرور"
+                placeholder={t('auth.confirmPassword')}
               />
               <button
                 type="button"

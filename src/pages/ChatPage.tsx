@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import {
     MessageCircle,
     Send,
@@ -263,7 +264,7 @@ const ChatPage = () => {
             <div className="flex items-center my-4">
                 <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
                 <span className="px-3 text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(date).toLocaleDateString('ar-SA', {
+                    {new Date(date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'ar-SA', {
                         weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
                     })}
                 </span>
@@ -434,7 +435,7 @@ const ChatPage = () => {
                                         <>
                                             {message.text}
                                             {message.editedAt && (
-                                                <span className="text-xs opacity-60 mr-1">(معدل)</span>
+                                                <span className="text-xs opacity-60 mr-1">({t('chat.edited')})</span>
                                             )}
                                         </>
                                     )}

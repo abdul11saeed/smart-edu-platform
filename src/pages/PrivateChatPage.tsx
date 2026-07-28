@@ -14,6 +14,7 @@ import {
     Edit3,
     ShieldOff
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore';
 import { useChat } from '../hooks/useChat';
 import { createNotification, markNotificationAsRead, getUserNotifications } from '../services/notificationService';
@@ -21,6 +22,7 @@ import { deleteMessage, ChatRoomMessage } from '../services/chatService';
 import { getUserFromRealtimeDB } from '../services/authService';
 
 const PrivateChatPage = () => {
+    const { t } = useTranslation();
     const { currentUser } = useAppStore();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -38,7 +40,7 @@ const PrivateChatPage = () => {
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-300">جاري التحقق من تسجيل الدخول...</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('chat.verifyingLogin')}</p>
                 </div>
             </div>
         );
@@ -46,7 +48,7 @@ const PrivateChatPage = () => {
 
     // Get private chat info from URL params
     const targetUserId = searchParams.get('userId');
-    const targetUserName = searchParams.get('userName') || 'مستخدم';
+    const targetUserName = searchParams.get('userName') || t('privateChat.userNotFound');
     const decodedUserName = decodeURIComponent(targetUserName);
 
     // Target user profile data
@@ -122,7 +124,7 @@ const PrivateChatPage = () => {
     const handleCopyMessage = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
-            setToastMessage('تم نسخ الرسالة');
+            setToastMessage(t('chat.messageCopied'));
         } catch (err) {
             console.error('Failed to copy:', err);
         }
@@ -137,7 +139,7 @@ const PrivateChatPage = () => {
         setDeletedForMe(newDeletedForMe);
         setContextMenu(null);
 
-        setToastMessage('تم إخفاء الرسالة');
+        setToastMessage(t('chat.messageHidden'));
     };
 
     // Fetch target user profile data
@@ -205,8 +207,8 @@ const PrivateChatPage = () => {
                 try {
                     await createNotification({
                         type: 'message_deleted',
-                        title: 'تم حذف رسالة',
-                        body: 'تم حذف رسالة من المحادثة',
+                        title: t('chat.deleteMessageTitle'),
+                        body: t('chat.deleteMessageBody'),
                         fromUserId: currentUser.id,
                         fromUserName: currentUser.name,
                         toUserId: targetUserId,
@@ -218,7 +220,7 @@ const PrivateChatPage = () => {
             }
         } catch (err) {
             console.error('Error deleting message:', err);
-            setError('حدث خطأ أثناء حذف الرسالة');
+            setError(t('chat.errorDeletingMessage'));
         }
     };
 
@@ -325,7 +327,7 @@ const PrivateChatPage = () => {
                                         setSwipedMessageId(null);
                                     }}
                                     className="p-2 bg-green-100 text-green-600 rounded-full shadow-md hover:bg-green-200 transition-colors"
-                                    title="رد"
+                                    title={t('chat.reply')}
                                 >
                                     <Reply className="h-4 w-4" />
                                 </button>
@@ -335,7 +337,7 @@ const PrivateChatPage = () => {
                                         setSwipedMessageId(null);
                                     }}
                                     className="p-2 bg-blue-100 text-blue-600 rounded-full shadow-md hover:bg-blue-200 transition-colors"
-                                    title="نسخ"
+                                    title={t('chat.copy')}
                                 >
                                     <Copy className="h-4 w-4" />
                                 </button>
@@ -346,7 +348,7 @@ const PrivateChatPage = () => {
                                             setSwipedMessageId(null);
                                         }}
                                         className="p-2 bg-red-100 text-red-600 rounded-full shadow-md hover:bg-red-200 transition-colors"
-                                        title="حذف"
+                                        title={t('chat.deleteForEveryone')}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </button>
@@ -358,7 +360,7 @@ const PrivateChatPage = () => {
                                             setSwipedMessageId(null);
                                         }}
                                         className="p-2 bg-gray-200 text-gray-600 rounded-full shadow-md hover:bg-gray-300 transition-colors"
-                                        title="إخفاء"
+                                        title={t('chat.hide')}
                                     >
                                         <ShieldOff className="h-4 w-4" />
                                     </button>
@@ -370,7 +372,7 @@ const PrivateChatPage = () => {
                                             setSwipedMessageId(null);
                                         }}
                                         className="p-2 bg-red-50 text-red-600 rounded-full shadow-md hover:bg-red-100 transition-colors"
-                                        title="حذف كمدير"
+                                        title={t('chat.deleteAsAdmin')}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </button>
@@ -407,7 +409,7 @@ const PrivateChatPage = () => {
                                     <textarea
                                         value={editingText}
                                         onChange={(e) => setEditingText(e.target.value)}
-                                        placeholder="تعديل الرسالة"
+                                        placeholder={t('chat.edit') + '...'}
                                         className={`w-full p-2 rounded-lg text-sm resize-none ${isOwnMessage
                                             ? 'bg-green-400/20 text-white placeholder-green-200'
                                             : 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400'
@@ -420,7 +422,7 @@ const PrivateChatPage = () => {
                                             onClick={handleSaveEdit}
                                             className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700"
                                         >
-                                            حفظ
+                                            {t('chat.saveEdit')}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -429,19 +431,19 @@ const PrivateChatPage = () => {
                                             }}
                                             className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg text-xs hover:bg-gray-400"
                                         >
-                                            إلغاء
+                                            {t('common.cancel')}
                                         </button>
                                     </div>
                                 </div>
                             ) : (
                                 <p className="text-sm leading-relaxed px-3 py-1">
                                     {message.isDeleted ? (
-                                        <span className="italic opacity-60">تم حذف هذه الرسالة</span>
+                                        <span className="italic opacity-60">{t('chat.messageDeleted')}</span>
                                     ) : (
                                         <>
                                             {message.text}
                                             {message.editedAt && (
-                                                <span className="text-xs opacity-60 mr-1">(معدل)</span>
+                                                <span className="text-xs opacity-60 ml-1">{t('chat.edited')}</span>
                                             )}
                                         </>
                                     )}
@@ -514,13 +516,13 @@ const PrivateChatPage = () => {
                                         <button onClick={() => handleEdit(menuMessage)}
                                             className="w-full flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
-                                            <span>تعديل</span>
+                                            <span>{t('chat.edit')}</span>
                                         </button>
                                         <div className="border-t border-gray-100 my-0.5 sm:my-1"></div>
                                         <button onClick={() => handleDeleteForEveryone(menuMessage.id)}
                                             className="w-full flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 transition-colors">
                                             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                            <span>حذف للجميع</span>
+                                            <span>{t('chat.deleteForEveryone')}</span>
                                         </button>
                                     </>
                                 ) : (
@@ -528,12 +530,12 @@ const PrivateChatPage = () => {
                                         <button onClick={() => handleReply(menuMessage)}
                                             className="w-full flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <Reply className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
-                                            <span>رد</span>
+                                            <span>{t('chat.reply')}</span>
                                         </button>
                                         <button onClick={() => handleCopyMessage(menuMessage.text)}
                                             className="w-full flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <Copy className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
-                                            <span>نسخ</span>
+                                            <span>{t('chat.copy')}</span>
                                         </button>
                                         <div className="border-t border-gray-100 my-0.5 sm:my-1"></div>
                                         <div className="px-2 sm:px-4 py-1.5 sm:py-2 flex flex-wrap gap-0.5 sm:gap-1 max-h-[180px] overflow-y-auto">
@@ -548,7 +550,7 @@ const PrivateChatPage = () => {
                                         <button onClick={() => handleDeleteForMe(menuMessage.id)}
                                             className="w-full flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm text-gray-500 hover:bg-gray-50 transition-colors">
                                             <ShieldOff className="h-3 w-3 sm:h-4 sm:w-4" />
-                                            <span>إخفاء الرسالة</span>
+                                            <span>{t('chat.hideMessage')}</span>
                                         </button>
                                     </>
                                 )}
@@ -558,7 +560,7 @@ const PrivateChatPage = () => {
                                         <button onClick={() => handleAdminDelete(menuMessage.id)}
                                             className="w-full flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 transition-colors">
                                             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                            <span>حذف كمدير</span>
+                                            <span>{t('chat.deleteAsAdmin')}</span>
                                         </button>
                                     </>
                                 )}
@@ -580,7 +582,7 @@ const PrivateChatPage = () => {
                         }
                     }}
                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    title="العودة"
+                    title={t('common.back')}
                 >
                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                 </button>
@@ -608,7 +610,7 @@ const PrivateChatPage = () => {
                         </h1>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            محادثة خاصة
+                            {t('chat.privateChatLabel')}
                         </p>
                         {targetUser.bio && (
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-[300px]">
@@ -623,7 +625,7 @@ const PrivateChatPage = () => {
             {(messageSent || toastMessage) && (
                 <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in z-50">
                     <Check className="h-4 w-4" />
-                    <span>{toastMessage || 'تم إرسال الرسالة'}</span>
+                    <span>{toastMessage || t('chat.messageSent')}</span>
                 </div>
             )}
 
@@ -650,7 +652,7 @@ const PrivateChatPage = () => {
                                 onClick={loadOlderMessages}
                                 className="text-xs text-green-600 dark:text-green-400 hover:underline"
                             >
-                                تحميل الرسائل السابقة
+                                {t('chat.loadPreviousMessages')}
                             </button>
                         </div>
                     )}
@@ -659,14 +661,14 @@ const PrivateChatPage = () => {
                         <div className="flex items-center justify-center h-full">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                                <div className="text-gray-500 text-sm">جاري التحميل...</div>
+                                <div className="text-gray-500 text-sm">{t('common.loading')}</div>
                             </div>
                         </div>
                     ) : Object.keys(groupedMessages).length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500">
                             <Lock className="h-12 w-12 mb-2 opacity-30" />
-                            <p>لا توجد رسائل خاصة بعد</p>
-                            <p className="text-sm">ابدأ المحادثة الآن!</p>
+                            <p>{t('chat.privateChatNoMessages')}</p>
+                            <p className="text-sm">{t('chat.privateChatStartNow')}</p>
                         </div>
                     ) : (
                         Object.entries(groupedMessages).map(([date, dateMessages]) =>
@@ -680,13 +682,13 @@ const PrivateChatPage = () => {
                 {replyTo && (
                     <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                            <Reply className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            <span className="text-gray-500 dark:text-gray-400">رد على:</span>
+                                <Reply className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                <span className="text-gray-500 dark:text-gray-400">{t('chat.replyTo')}</span>
                             <span className="font-medium text-gray-700 dark:text-gray-200 truncate max-w-[200px]">
                                 {replyTo.senderName}: {replyTo.text}
                             </span>
                         </div>
-                        <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title="إلغاء الرد">
+                        <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title={t('chat.cancelReply')}>
                             <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         </button>
                     </div>
@@ -700,8 +702,8 @@ const PrivateChatPage = () => {
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                     className={`p-2.5 rounded-full transition-colors ${showEmojiPicker ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'}`}
-                                    title="إضافة رمز تعبيري"
-                                    aria-label="إضافة رمز تعبيري"
+                                    title={t('chat.addEmoji')}
+                                    aria-label={t('chat.addEmoji')}
                                 >
                                     <Smile className="h-5 w-5" />
                                 </button>
@@ -725,7 +727,7 @@ const PrivateChatPage = () => {
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 onClick={() => setShowEmojiPicker(false)}
-                                placeholder={`اكتب رسالة خاصة لـ ${decodedUserName}...`}
+                                placeholder={t('chat.privateMessagePlaceholder', { name: decodedUserName })}
                                 className="flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                                 onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSendMessage()}
                                 disabled={isSending}
@@ -734,8 +736,8 @@ const PrivateChatPage = () => {
                                 onClick={handleSendMessage}
                                 disabled={!newMessage.trim() || isSending}
                                 className="p-3 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                                title="إرسال"
-                                aria-label="إرسال"
+                                title={t('chat.send')}
+                                aria-label={t('chat.send')}
                             >
                                 {isSending ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -746,12 +748,12 @@ const PrivateChatPage = () => {
                         </div>
                     ) : (
                         <div className="text-center py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                            <p className="text-gray-600 dark:text-gray-300 text-sm">الرجاء تسجيل الدخول للمحادثة</p>
+                            <p className="text-gray-600 dark:text-gray-300 text-sm">{t('chat.loggedInRequired')}</p>
                             <button
                                 onClick={() => navigate('/login')}
                                 className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
                             >
-                                تسجيل الدخول
+                                {t('auth.login')}
                             </button>
                         </div>
                     )}

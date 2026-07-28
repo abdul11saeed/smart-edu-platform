@@ -64,7 +64,7 @@ const Explainer = ({ topic, file, onClose }: ExplainerProps) => {
   };
 
   return (
-    <div dir="rtl" className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto text-gray-900 dark:text-gray-100">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto text-gray-900 dark:text-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold flex items-center">
           <User className="h-5 w-5 ml-2 text-secondary-500 dark:text-secondary-400" />

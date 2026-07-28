@@ -436,7 +436,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
 
     if (hideFormAfterSuccess) {
         return (
-            <div className="max-w-2xl mx-auto p-6 bg-white/90 backdrop-blur-md rounded-2xl border border-brown-200/80 shadow-card" dir="rtl">
+            <div className="max-w-2xl mx-auto p-6 bg-white/90 backdrop-blur-md rounded-2xl border border-brown-200/80 shadow-card">
                 <div className="text-center py-10">
                     <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-full flex items-center justify-center mb-4 border border-emerald-200">
                         <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -462,7 +462,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
         : [];
 
     return (
-        <div ref={dropdownRef} className="max-w-2xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-white/95 via-primary-50/20 to-white/95 backdrop-blur-md rounded-2xl border border-primary-100/40 shadow-xl shadow-primary-500/5 file-upload-form form-container-mobile" dir="rtl">
+        <div ref={dropdownRef} className="max-w-2xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-white/95 via-primary-50/20 to-white/95 backdrop-blur-md rounded-2xl border border-primary-100/40 shadow-xl shadow-primary-500/5 file-upload-form form-container-mobile">
             <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 bg-gradient-to-l from-primary-700 to-secondary-600 bg-clip-text text-transparent">رفع ملفات الطالب</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">

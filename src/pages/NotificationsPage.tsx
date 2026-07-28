@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { ArrowLeft, Bell, Check } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 import { getUserNotifications, markNotificationAsRead, subscribeToUserNotifications, Notification } from '../services/notificationService';
@@ -72,10 +73,10 @@ const NotificationsPage = () => {
         const diffHours = Math.floor(diffMins / 60);
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffMins < 1) return t('common.loading');
-        if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
-        if (diffHours < 24) return `منذ ${diffHours} ساعة`;
-        return `منذ ${diffDays} يوم`;
+        if (diffMins < 1) return t('notifications.timeJustNow');
+        if (diffMins < 60) return t('notifications.timeMinutesAgo', { minutes: diffMins });
+        if (diffHours < 24) return t('notifications.timeHoursAgo', { hours: diffHours });
+        return t('notifications.timeDaysAgo', { days: diffDays });
     };
 
     if (loading) {
@@ -92,7 +93,7 @@ const NotificationsPage = () => {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <div className="container mx-auto px-4 py-6 max-w-3xl" dir="rtl">
+         <div className="container mx-auto px-4 py-6 max-w-3xl" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <button

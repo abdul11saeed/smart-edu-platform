@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 const TermsPage = () => {
     const { t } = useTranslation();
 
     // SEO meta tags
     useEffect(() => {
-        document.title = `${t('terms.title')} - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية`;
+        document.title = `${t('terms.title')} - ${t('app.title')}`;
         let metaDesc = document.querySelector('meta[name="description"]');
         if (!metaDesc) {
             metaDesc = document.createElement('meta');
@@ -15,7 +16,7 @@ const TermsPage = () => {
         }
         metaDesc.setAttribute('content', t('terms.description'));
         return () => {
-            document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+            document.title = t('app.title');
         };
     }, [t]);
 

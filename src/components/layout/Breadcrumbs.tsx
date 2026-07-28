@@ -67,7 +67,7 @@ const Breadcrumbs = () => {
     }
 
     return (
-        <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-6 bg-gray-50 py-2 px-4 rounded-lg" dir="rtl">
+        <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-6 bg-gray-50 py-2 px-4 rounded-lg">
             {breadcrumbs.map((crumb, index) => (
                 <div key={index} className="flex items-center">
                     {index > 0 && <ChevronLeft className="h-4 w-4 mx-1 text-gray-400" />}

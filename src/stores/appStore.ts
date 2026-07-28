@@ -103,26 +103,33 @@ interface AppState {
     reset: () => void;
 }
 
-const initialState = {
-    currentUser: null,
-    isLoading: true,
-    isDarkMode: false,
-    isOffline: false,
-    activeCourseId: null,
-    activeCourse: null,
-    currentCourseFiles: [],
-    activeTab: 'files',
-    isAIChatOpen: false,
-    aiChatInitialFile: null,
-    aiChatOpenMode: 'default' as 'default' | 'resume-if-recent',
-    sidebarOpen: false,
-    isUploadModalOpen: false,
-    selectedUniversity: null,
-    selectedCollege: null,
-    selectedMajor: null,
-    selectedCourse: null,
-    allUserFiles: [],
+const getInitialState = () => {
+    // Read persisted preferences from localStorage
+    const storedDarkMode = localStorage.getItem('eduai_dark_mode');
+    const isDarkMode = storedDarkMode === 'true';
+    return {
+        currentUser: null,
+        isLoading: true,
+        isDarkMode,
+        isOffline: false,
+        activeCourseId: null,
+        activeCourse: null,
+        currentCourseFiles: [],
+        activeTab: 'files',
+        isAIChatOpen: false,
+        aiChatInitialFile: null,
+        aiChatOpenMode: 'default' as 'default' | 'resume-if-recent',
+        sidebarOpen: false,
+        isUploadModalOpen: false,
+        selectedUniversity: null,
+        selectedCollege: null,
+        selectedMajor: null,
+        selectedCourse: null,
+        allUserFiles: [],
+    };
 };
+
+const initialState = getInitialState();
 
 export const useAppStore = create<AppState>((set) => ({
     // Initial state
@@ -179,12 +186,14 @@ export const useAppStore = create<AppState>((set) => ({
     }),
     setSelectedCourse: (id) => set({ selectedCourse: id }),
 
-    // Theme actions (Root Fix: no localStorage)
+    // Theme actions (persist to localStorage)
     toggleDarkMode: () => set((state) => {
         const newValue = !state.isDarkMode;
+        localStorage.setItem('eduai_dark_mode', newValue.toString());
         return { isDarkMode: newValue };
     }),
     setIsDarkMode: (isDark: boolean) => {
+        localStorage.setItem('eduai_dark_mode', isDark.toString());
         set({ isDarkMode: isDark });
     },
 

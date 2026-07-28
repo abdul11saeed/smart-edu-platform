@@ -8,7 +8,8 @@ import {
     downloadCourseFile,
     getFileType,
 } from '../services/courseFilesService';
-import { useTranslation } from 'react-i18next';
+  import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { File as AppFile } from '../types';
 import { useCatalogStore } from '../stores/catalogStore';
 import { useAppStore } from '../stores/appStore';
@@ -90,54 +91,53 @@ const StudentHome: React.FC = () => {
         }
     }, [currentUser, authLoading]);
 
-    // SEO meta tags for public pages
-    useEffect(() => {
-        if (!currentUser) {
-            document.title = 'الرئيسية - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية | ملفات ومقررات جامعية';
-            let metaDesc = document.querySelector('meta[name="description"]');
-            if (!metaDesc) {
-                metaDesc = document.createElement('meta');
-                metaDesc.setAttribute('name', 'description');
-                document.head.appendChild(metaDesc);
-            }
-            metaDesc.setAttribute('content', 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية - تصفح الملفات الأكاديمية والمقررات الجامعية والمناقشات العامة. منصة تعليمية ذكية للطلاب الجامعيين في اليمن.');
-            // Canonical URL for the current public route (dedupes in search engines)
-            let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-            if (!canonical) {
-                canonical = document.createElement('link');
-                canonical.setAttribute('rel', 'canonical');
-                document.head.appendChild(canonical);
-            }
-            canonical.setAttribute('href', window.location.href);
-        } else {
-            document.title = 'الرئيسية - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
-            let metaDesc = document.querySelector('meta[name="description"]');
-            if (!metaDesc) {
-                metaDesc = document.createElement('meta');
-                metaDesc.setAttribute('name', 'description');
-                document.head.appendChild(metaDesc);
-            }
-            metaDesc.setAttribute('content', 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية - ارفع الملفات وشاركها مع زملائك. منصة تعليمية ذكية للطلاب الجامعيين.');
-        }
-        return () => {
-            document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
-        };
-    }, [currentUser]);
+     // SEO meta tags for public pages - language aware
+     useEffect(() => {
+         if (!currentUser) {
+             document.title = t('seo.homeTitle');
+             let metaDesc = document.querySelector('meta[name="description"]');
+             if (!metaDesc) {
+                 metaDesc = document.createElement('meta');
+                 metaDesc.setAttribute('name', 'description');
+                 document.head.appendChild(metaDesc);
+             }
+             metaDesc.setAttribute('content', t('seo.homeGuestDescription'));
+             let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+             if (!canonical) {
+                 canonical = document.createElement('link');
+                 canonical.setAttribute('rel', 'canonical');
+                 document.head.appendChild(canonical);
+             }
+             canonical.setAttribute('href', window.location.href);
+         } else {
+             document.title = t('seo.homeTitle');
+             let metaDesc = document.querySelector('meta[name="description"]');
+             if (!metaDesc) {
+                 metaDesc = document.createElement('meta');
+                 metaDesc.setAttribute('name', 'description');
+                 document.head.appendChild(metaDesc);
+             }
+             metaDesc.setAttribute('content', t('seo.homeLoggedInDescription'));
+         }
+         return () => {
+             document.title = t('seo.homeDefaultTitle');
+         };
+     }, [currentUser, t]);
 
     // SEO: structured data (JSON-LD) for the public homepage — helps crawlers index content
     useEffect(() => {
         if (currentUser) return; // only enrich the guest-facing (crawlable) view
-        const data = {
-            '@context': 'https://schema.org',
-            '@type': 'ItemList',
-            name: 'ملفات أكاديمية',
-            itemListElement: files.slice(0, 20).map((f, i) => ({
-                '@type': 'ListItem',
-                position: i + 1,
-                name: f.name || 'ملف',
-                description: f.description || undefined,
-            })),
-        };
+         const data = {
+             '@context': 'https://schema.org',
+             '@type': 'ItemList',
+             name: t('studentHome.allFiles'),
+             itemListElement: files.slice(0, 20).map((f, i) => ({
+                 '@type': 'ListItem',
+                 position: i + 1,
+                 name: f.name || t('studentHome.notSpecified'),
+                 description: f.description || undefined,
+             })),
+         };
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.id = 'jsonld-home-files';
@@ -162,7 +162,7 @@ const StudentHome: React.FC = () => {
 
     // Helper to get course name from catalog - memoized for performance
     const getCourseName = useCallback((courseId: string | undefined) => {
-        if (!courseId) return 'غير محدد';
+        if (!courseId) return t('studentHome.notSpecified');
 
         // Search through all universities, colleges, majors to find the course
         for (const uni of universities) {
@@ -176,15 +176,15 @@ const StudentHome: React.FC = () => {
                 }
             }
         }
-        return 'غير محدد';
+        return t('studentHome.notSpecified');
     }, [universities]);
 
     // Helper to get university name from catalog - memoized for performance
     const getUniversityName = useCallback((universityId: string | undefined) => {
-        if (!universityId) return 'غير محدد';
+        if (!universityId) return t('studentHome.notSpecified');
 
         const uni = universities.find((u) => String(u.id) === String(universityId));
-        return uni?.name || 'غير محدد';
+        return uni?.name || t('studentHome.notSpecified');
     }, [universities]);
 
     // Pagination - show only first 5 files initially
@@ -197,7 +197,7 @@ const StudentHome: React.FC = () => {
 
     // Smart helpers for display: fall back to catalog when stored value looks like an ID
     const getFileCourseName = useCallback((file: AppFile): string => {
-        if (!file.courseId) return 'غير محدد';
+        if (!file.courseId) return t('studentHome.notSpecified');
         if (file.courseName && file.courseName !== file.courseId) {
             return file.courseName;
         }
@@ -205,7 +205,7 @@ const StudentHome: React.FC = () => {
     }, [getCourseName]);
 
     const getFileUniversityName = useCallback((file: AppFile): string => {
-        if (!file.universityId) return 'غير محدد';
+        if (!file.universityId) return t('studentHome.notSpecified');
         if (file.universityName && file.universityName !== file.universityId) {
             return file.universityName;
         }
@@ -213,7 +213,7 @@ const StudentHome: React.FC = () => {
     }, [getUniversityName]);
 
     const getFileCollegeName = useCallback((file: AppFile): string => {
-        if (!file.collegeId) return 'غير محدد';
+        if (!file.collegeId) return t('studentHome.notSpecified');
         if (file.collegeName && file.collegeName !== file.collegeId) {
             return file.collegeName;
         }
@@ -222,11 +222,11 @@ const StudentHome: React.FC = () => {
             const col = colleges.find(c => String(c.id) === String(file.collegeId));
             if (col) return col.name;
         }
-        return 'غير محدد';
+        return t('studentHome.notSpecified');
     }, [universities]);
 
     const getFileMajorName = useCallback((file: AppFile): string => {
-        if (!file.majorId) return 'غير محدد';
+        if (!file.majorId) return t('studentHome.notSpecified');
         if (file.majorName && file.majorName !== file.majorId) {
             return file.majorName;
         }
@@ -238,7 +238,7 @@ const StudentHome: React.FC = () => {
                 if (maj) return maj.name;
             }
         }
-        return 'غير محدد';
+        return t('studentHome.notSpecified');
     }, [universities]);
 
     // Filtered files
@@ -295,9 +295,9 @@ const StudentHome: React.FC = () => {
         try {
             await deleteCourseFile(deleteFileId, currentUser.id, currentUser.role);
             setDeleteFileId(null);
-            alert('تم حذف الملف بنجاح');
+            alert(t('studentHome.deleteSuccessAlert'));
         } catch (error) {
-            alert(error instanceof Error ? error.message : 'فشل الحذف');
+            alert(error instanceof Error ? error.message : t('studentHome.deleteErrorAlert'));
         } finally {
             setDeleting(false);
         }
@@ -340,9 +340,9 @@ const StudentHome: React.FC = () => {
             };
             await updateCourseFile(editingFile.id, updates, currentUser.id, currentUser.role);
             setEditingFile(null);
-            alert('تم تحديث الملف بنجاح');
+            alert(t('studentHome.updateSuccessAlert'));
         } catch (error) {
-            alert(error instanceof Error ? error.message : 'فشل التحديث');
+            alert(error instanceof Error ? error.message : t('studentHome.updateErrorAlert'));
         } finally {
             setSavingEdit(false);
         }
@@ -375,16 +375,7 @@ const StudentHome: React.FC = () => {
 
     // Pick a random motivational message once (does not change on every render)
     const [motivationalMessage] = useState(() => {
-        const messages = [
-            'أتمنى أن تكون بأفضل حال، نحن هنا لمساعدتك على تحقيق أهدافك الأكاديمية 🌟',
-            'يوم جديد مليء بالإمكانيات، استمر في سعيك التعليمي بِلا خوف ولا استقال 🚀',
-            'في انتظار مشاركاتك الرائعة بكل فخر وانتظار ✨',
-            'كل خطوة نحو التعلم تقربك من حلمك، ونحن فخورون بك 🎓',
-            'أنت في المكان الصحيح للنجاح، استمر على هذا المنوال 💪',
-            'في خدمتك دائماً لأن تعليك أولويتنا، مرحباً بك في عالم التعلم 📚',
-            'ابدأ رحلتك اليوم مع مواردنا المميزة وتألق بين المقررات 🌈',
-            'نسأل الله أن يوفقك ويرزقك بالعلم النافع، مرحباً بك مرة أخرى 🤲',
-        ];
+        const messages = (t('studentHome.motivationalMessages', { returnObjects: true }) as string[]);
         return messages[Math.floor(Math.random() * messages.length)];
     });
 
@@ -395,8 +386,8 @@ const StudentHome: React.FC = () => {
 
     // Show loading while Firebase Auth is restoring session
     if (authLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900" dir="rtl">
+             return (
+             <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
                     <p className="mt-4 text-slate-600 dark:text-slate-300">{t('common.restoreSession')}</p>
@@ -406,7 +397,7 @@ const StudentHome: React.FC = () => {
     }
 
     return (
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6" dir="rtl">
+         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             {/* Header Modern - Elegant Navy Blue Gradient */}
             {currentUser ? (
                 <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#291A0A] via-[#3B2314] to-[#7B4D2A] p-6 sm:p-8 shadow-2xl shadow-[#7B4D2A]/20 border border-white/10 animate-card-appear`}>
@@ -439,8 +430,8 @@ const StudentHome: React.FC = () => {
                         </div>
                         <p className="mt-4 text-sm text-white/80 font-medium max-w-2xl animate-fade-in-up animate-delay-200 leading-relaxed">
                             {currentUser.role === 'admin'
-                                ? 'يمكنك إدارة الملفات والمستخدمين والوصول إلى كل ما تحتاجه كمدير على المنصة.'
-                                : 'يمكنك رفع الملفات والبحث عنها حسب الجامعة أو الكلية أو المقرر، مع إمكانية إدارة ملفاتك الخاصة.'
+                                ? t('studentHome.adminDescription')
+                                : t('studentHome.studentDescription')
                             }
                         </p>
                     </div>
@@ -458,19 +449,19 @@ const StudentHome: React.FC = () => {
                             <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 text-white backdrop-blur-md border border-white/30 shadow-xl shadow-primary-900/30 animate-float-icon">
                                 <GraduationCap className="h-7 w-7" />
                             </span>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg animate-fade-in-up tracking-tight">منصة البرامج الاكاديميه للجامعات اليمنيه ترحب بكم</h1>
+                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg animate-fade-in-up tracking-tight">{t('studentHome.welcomeGuestTitle')}</h1>
                         </div>
                         <p className="text-lg sm:text-xl text-white/90 mt-3 max-w-3xl animate-fade-in-up animate-delay-100 leading-relaxed">
-                            منصة تعليمية ذكية تساعد الطلاب على التعلم بشكل أفضل. يمكنك تصفح الملفات والموارد الأكاديمية بشكل عام.
+                            {t('studentHome.welcomeGuestDescription')}
                         </p>
                         <p className="mt-3 text-sm text-white/80 font-medium animate-fade-in-up animate-delay-200">
-                            سجل دخولك للاستفادة من جميع الخدمات: التحميل، المشاركة، الدردشة، والمساعد الذكي.
+                            {t('studentHome.welcomeGuestLoginCta')}
                         </p>
                         {/* Guest CTA button */}
                         <div className="mt-5 animate-fade-in-up animate-delay-300">
                             <Link to="/login" className="inline-flex items-center gap-2 px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
                                 <GraduationCap className="h-5 w-5" />
-                                سجّل دخولك الآن
+                                {t('studentHome.loginNow')}
                             </Link>
                         </div>
                     </div>
@@ -510,35 +501,35 @@ const StudentHome: React.FC = () => {
                 {/* Hierarchy Filters - Gradient Inputs */}
                 <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     <select
-                        aria-label="الجامعة"
+                        aria-label={t('studentHome.university')}
                         className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                         value={selectedUniversity}
                         onChange={(e) => { setSelectedUniversity(e.target.value); setSelectedCollege(''); setSelectedMajor(''); setSelectedCourse(''); setCourseSearch(''); }}
                     >
-                        <option value="">الجامعة</option>
+                        <option value="">{t('studentHome.university')}</option>
                         {universities.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                     </select>
                     <select
-                        aria-label="الكلية"
+                        aria-label={t('studentHome.college')}
                         className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                         value={selectedCollege}
                         onChange={(e) => { setSelectedCollege(e.target.value); setSelectedMajor(''); setSelectedCourse(''); setCourseSearch(''); }}
                         disabled={!selectedUniversity || !selectedUniversityData?.colleges?.length}
                     >
-                        <option value="">الكلية</option>
+                        <option value="">{t('studentHome.college')}</option>
                         {Array.isArray(selectedUniversityData?.colleges)
                             ? selectedUniversityData.colleges.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)
                             : null
                         }
                     </select>
                     <select
-                        aria-label="التخصص"
+                        aria-label={t('studentHome.major')}
                         className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                         value={selectedMajor}
                         onChange={(e) => { setSelectedMajor(e.target.value); setSelectedCourse(''); setCourseSearch(''); }}
                         disabled={!selectedCollege || !selectedCollegeData?.majors?.length}
                     >
-                        <option value="">التخصص</option>
+                        <option value="">{t('studentHome.major')}</option>
                         {Array.isArray(selectedCollegeData?.majors)
                             ? selectedCollegeData.majors.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)
                             : null
@@ -550,9 +541,9 @@ const StudentHome: React.FC = () => {
                         <div className="relative" ref={courseDropdownRef}>
                             <input
                                 type="text"
-                                aria-label="المقرر"
+                                aria-label={t('studentHome.course')}
                                 className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 w-full bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
-                                placeholder="اكتب اسم المقرر أو اختره..."
+                                placeholder={t('studentHome.searchPlaceholder')}
                                 value={courseSearch}
                                 onChange={(e) => {
                                     setCourseSearch(e.target.value);
@@ -582,7 +573,7 @@ const StudentHome: React.FC = () => {
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="p-2 text-brown-500 dark:text-neutral-400">لا توجد مقررات مطابقة</div>
+                                        <div className="p-2 text-brown-500 dark:text-neutral-400">{t('studentHome.noCoursesMatch')}</div>
                                     )}
                                 </div>
                             )}
@@ -595,9 +586,9 @@ const StudentHome: React.FC = () => {
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-400" />
                         <input
-                            aria-label="بحث الملفات"
+                            aria-label={t('studentHome.search')}
                             className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-brown-200 dark:border-brown-600 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
-                            placeholder="ابحث عن الملف أو الجامعة أو الكلية أو المقرر أو الدكتور..."
+                            placeholder={t('studentHome.searchPlaceholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => {
@@ -612,12 +603,12 @@ const StudentHome: React.FC = () => {
                         onClick={() => {
                             // Search is handled by the input's onChange - this button
                             // triggers a re-filter by focusing the search input
-                            const searchInput = document.querySelector('input[aria-label="بحث الملفات"]') as HTMLInputElement;
+                            const searchInput = document.querySelector('input[aria-label="' + t('studentHome.search') + '"]') as HTMLInputElement;
                             searchInput?.focus();
                         }}
                     >
                         <Search className="h-4 w-4" />
-                        بحث
+                        {t('studentHome.search')}
                     </button>
                     <button
                         className="btn-modern-ghost w-full sm:w-auto"
@@ -632,7 +623,7 @@ const StudentHome: React.FC = () => {
                         }}
                     >
                         <RotateCcw className="h-4 w-4" />
-                        إعادة تعيين
+                        {t('studentHome.resetFilters')}
                     </button>
                     {currentUser && (
                         <button
@@ -640,7 +631,7 @@ const StudentHome: React.FC = () => {
                             onClick={() => setIsUploadModalOpen(true)}
                         >
                             <Upload className="h-4 w-4" />
-                            رفع ملف جديد
+                            {t('studentHome.uploadNewFile')}
                         </button>
                     )}
                 </div>
@@ -661,12 +652,12 @@ const StudentHome: React.FC = () => {
                 {loadingFiles ? (
                     <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-                        <p className="text-slate-600 dark:text-slate-300 mt-2">جاري تحميل الملفات...</p>
+                        <p className="text-slate-600 dark:text-slate-300 mt-2">{t('studentHome.loadingText')}</p>
                     </div>
                 ) : filteredFiles.length === 0 ? (
                     <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                        <p className="text-lg">لا توجد ملفات تطابق الفلتر الحالي</p>
-                        <p className="text-sm mt-1">جرب تغيير الفلاتر أو ارفع ملفاً جديداً</p>
+                        <p className="text-lg">{t('studentHome.noFilesMatchText')}</p>
+                        <p className="text-sm mt-1">{t('studentHome.tryDifferentFiltersText')}</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -696,7 +687,7 @@ const StudentHome: React.FC = () => {
                                                         ? 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border-amber-200 dark:from-amber-950 dark:to-amber-900 dark:text-amber-300 dark:border-amber-800'
                                                         : 'bg-gradient-to-r from-sage-100 to-sage-200 text-sage-700 border-sage-200 dark:from-sage-950 dark:to-sage-900 dark:text-sage-300 dark:border-sage-800'
                                                 }`}>
-                                                    {file.storageMode === 'local' ? 'محلي' : 'سحابة'}
+                                                    {file.storageMode === 'local' ? t('studentHome.local') : t('studentHome.cloud')}
                                                 </span>
                                             </div>
                                             
@@ -714,7 +705,7 @@ const StudentHome: React.FC = () => {
                                                 {file.professorName && (
                                                     <span className="inline-flex items-center gap-1 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/30 text-primary-600 dark:text-primary-300 px-2.5 py-0.5 rounded-full border border-primary-100 dark:border-primary-800/40">
                                                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l-.707.707M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg>
-                                                        د. {file.professorName}
+                                                         {t('studentHome.professorPrefix')} {file.professorName}
                                                     </span>
                                                 )}
                                                 <span className="inline-flex items-center gap-1">
@@ -739,28 +730,28 @@ const StudentHome: React.FC = () => {
                                             <button
                                                 className="btn-modern-ghost px-2.5 py-1.5 text-xs"
                                                 onClick={() => handlePreview(file)}
-                                                title="معاينة"
+                                                title={t('studentHome.preview')}
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
-                                                معاينة
+                                                {t('studentHome.preview')}
                                             </button>
                                             {downloadingFileName === file.name ? (
-                                                <div className="flex items-center gap-2 min-w-[120px]" title="جاري التحميل">
+                                                <div className="flex items-center gap-2 min-w-[120px]" title={t('studentHome.downloading')}>
                                                     <div className="progress-bar-modern indeterminate flex-1">
                                                         <div className="progress-bar-modern-fill" />
                                                     </div>
                                                     <span className="text-xs text-primary-600 dark:text-primary-400 font-medium whitespace-nowrap">
-                                                        جاري...
+                                                        {t('studentHome.savingEdit')}
                                                     </span>
                                                 </div>
                                             ) : (
                                                 <button
                                                     className="btn-modern-primary px-2.5 py-1.5 text-xs"
                                                     onClick={() => handleDownload(file)}
-                                                    title="تحميل"
+                                                    title={t('studentHome.download')}
                                                 >
                                                     <Download className="h-3.5 w-3.5" />
-                                                    تحميل
+                                                    {t('studentHome.download')}
                                                 </button>
                                             )}
                                             <button
@@ -777,28 +768,28 @@ const StudentHome: React.FC = () => {
                                                     setAiChatOpenMode('resume-if-recent');
                                                     setIsAIChatOpen(true);
                                                 }}
-                                                title="اسأل الذكاء الاصطناعي"
+                                                title={t('studentHome.askAI')}
                                             >
                                                 <Bot className="h-3.5 w-3.5" />
-                                                اسأل AI
+                                                {t('studentHome.askAI')}
                                             </button>
                                             {canModifyFile(file) && (
                                                 <>
                                                     <button
                                                         className="btn-modern-ghost px-2.5 py-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
                                                         onClick={() => handleEditOpen(file)}
-                                                        title="تعديل"
+                                                        title={t('studentHome.edit')}
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
-                                                        تعديل
+                                                        {t('studentHome.edit')}
                                                     </button>
                                                     <button
                                                         className="btn-modern-ghost px-2.5 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                                                         onClick={() => setDeleteFileId(file.id)}
-                                                        title="حذف"
+                                                        title={t('studentHome.delete')}
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />
-                                                        حذف
+                                                        {t('studentHome.delete')}
                                                     </button>
                                                 </>
                                             )}
@@ -808,18 +799,18 @@ const StudentHome: React.FC = () => {
                                             <button
                                                 className="btn-modern-ghost px-2.5 py-1.5 text-xs"
                                                 onClick={() => handlePreview(file)}
-                                                title="معاينة"
+                                                title={t('studentHome.preview')}
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
-                                                معاينة
+                                                {t('studentHome.preview')}
                                             </button>
                                             <button
                                                 className="btn-modern-outline px-2.5 py-1.5 text-xs flex items-center gap-1"
                                                 onClick={() => navigate('/login', { state: { from: 'download' } })}
-                                                title="تحميل"
+                                                title={t('studentHome.download')}
                                             >
                                                 <Lock className="h-3 w-3" />
-                                                سجّل للتحميل
+                                                {t('studentHome.loginToDownload')}
                                             </button>
                                         </div>
                                     )}
@@ -834,7 +825,7 @@ const StudentHome: React.FC = () => {
                                     onClick={() => setShowCount(prev => Math.min(prev + 5, filteredFiles.length))}
                                     className="btn-modern-primary"
                                 >
-                                    عرض المزيد ({Math.min(showCount + 5, filteredFiles.length)}/{filteredFiles.length})
+                                    {t('studentHome.showMore')} ({Math.min(showCount + 5, filteredFiles.length)}/{filteredFiles.length})
                                 </button>
                             </div>
                         )}
@@ -850,11 +841,11 @@ const StudentHome: React.FC = () => {
             />
 
             {/* Edit Modal */}
-            <Modal isOpen={!!editingFile} onClose={() => setEditingFile(null)} title="تعديل الملف">
+            <Modal isOpen={!!editingFile} onClose={() => setEditingFile(null)} title={t('studentHome.editDialogTitle')}>
                 {editingFile && (
                     <div className="space-y-4 p-4">
                         <div>
-                            <label htmlFor="edit-subject" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">اسم المقرر</label>
+                            <label htmlFor="edit-subject" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.subjectName')}</label>
                             <input
                                 id="edit-subject"
                                 type="text"
@@ -864,7 +855,7 @@ const StudentHome: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label htmlFor="edit-professor" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">اسم الدكتور</label>
+                            <label htmlFor="edit-professor" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.professorName')}</label>
                             <input
                                 id="edit-professor"
                                 type="text"
@@ -875,37 +866,37 @@ const StudentHome: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="edit-term" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">الترم</label>
+                                <label htmlFor="edit-term" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.term')}</label>
                                 <select id="edit-term" value={editTerm} onChange={(e) => setEditTerm(e.target.value as 'first' | 'second')} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-                                    <option value="first">الترم الأول</option>
-                                    <option value="second">الترم الثاني</option>
+                                    <option value="first">{t('studentHome.firstTerm')}</option>
+                                    <option value="second">{t('studentHome.secondTerm')}</option>
                                 </select>
                             </div>
                             <div>
-                                <label htmlFor="edit-level" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">المستوى</label>
+                                <label htmlFor="edit-level" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.level')}</label>
                                 <select id="edit-level" value={editLevel} onChange={(e) => setEditLevel(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-                                    <option value="">اختر المستوى</option>
-                                    <option value="1">المستوى الأول</option>
-                                    <option value="2">المستوى الثاني</option>
-                                    <option value="3">المستوى الثالث</option>
-                                    <option value="4">المستوى الرابع</option>
-                                    <option value="5">المستوى الخامس</option>
+                                    <option value="">{t('studentHome.selectLevel')}</option>
+                                    <option value="1">{t('studentHome.level1')}</option>
+                                    <option value="2">{t('studentHome.level2')}</option>
+                                    <option value="3">{t('studentHome.level3')}</option>
+                                    <option value="4">{t('studentHome.level4')}</option>
+                                    <option value="5">{t('studentHome.level5')}</option>
                                 </select>
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="edit-year" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">العام الدراسي</label>
+                            <label htmlFor="edit-year" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.academicYear')}</label>
                             <input
                                 id="edit-year"
                                 type="text"
                                 value={editAcademicYear}
                                 onChange={(e) => setEditAcademicYear(e.target.value)}
-                                placeholder="مثال: 2025"
+                                placeholder={t('studentHome.exampleYear')}
                                 className="w-full rounded-xl border border-slate-200 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all"
                             />
                         </div>
                         <div>
-                            <label htmlFor="edit-desc" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">الوصف</label>
+                            <label htmlFor="edit-desc" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.description')}</label>
                             <textarea
                                 id="edit-desc"
                                 value={editDescription}
@@ -915,13 +906,13 @@ const StudentHome: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label htmlFor="edit-tags" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">الوسوم (مفصولة بفاصلة)</label>
+                            <label htmlFor="edit-tags" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t('studentHome.tags')}</label>
                             <input
                                 id="edit-tags"
                                 type="text"
                                 value={editTags}
                                 onChange={(e) => setEditTags(e.target.value)}
-                                placeholder="محاضرة، تدريبات، امتحان"
+                                placeholder={t('studentHome.exampleTags')}
                                 className="w-full rounded-xl border border-slate-200 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all"
                             />
                         </div>
@@ -931,13 +922,13 @@ const StudentHome: React.FC = () => {
                                 disabled={savingEdit}
                                 className="btn-modern-primary flex-1"
                             >
-                                {savingEdit ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                                {savingEdit ? t('studentHome.savingEdit') : t('studentHome.saveEdits')}
                             </button>
                             <button
                                 onClick={() => setEditingFile(null)}
                                 className="btn-modern-ghost flex-1"
                             >
-                                إلغاء
+                                {t('common.cancel')}
                             </button>
                         </div>
                     </div>
@@ -945,22 +936,22 @@ const StudentHome: React.FC = () => {
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            <Modal isOpen={!!deleteFileId} onClose={() => setDeleteFileId(null)} title="تأكيد الحذف">
+            <Modal isOpen={!!deleteFileId} onClose={() => setDeleteFileId(null)} title={t('studentHome.deleteDialogTitle')}>
                 <div className="p-4 space-y-4">
-                    <p className="text-slate-700 dark:text-slate-200">هل أنت متأكد من حذف هذا الملف؟ لا يمكن التراجع عن هذا الإجراء.</p>
+                    <p className="text-slate-700 dark:text-slate-200">{t('studentHome.deleteConfirmMessage')}</p>
                     <div className="flex gap-3">
                         <button
                             onClick={handleDeleteConfirm}
                             disabled={deleting}
                             className="btn-danger flex-1"
                         >
-                            {deleting ? 'جاري الحذف...' : 'نعم، حذف'}
+                            {deleting ? t('studentHome.deleting') : t('studentHome.yesDelete')}
                         </button>
                         <button
                             onClick={() => setDeleteFileId(null)}
                             className="btn-modern-ghost flex-1"
                         >
-                            إلغاء
+                            {t('common.cancel')}
                         </button>
                     </div>
                 </div>

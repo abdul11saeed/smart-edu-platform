@@ -7,6 +7,7 @@ import {
     LogOut,
     Menu,
     Moon,
+    Settings,
     Sun,
     X,
 } from 'lucide-react';
@@ -17,7 +18,7 @@ import {
     markNotificationAsRead,
     Notification,
 } from '../../services/notificationService';
-import LanguageSwitcher from '../ui/LanguageSwitcher';
+import i18n from '../../i18n';
 
 const UnifiedHeader = ({
     onMenuClick,
@@ -38,6 +39,7 @@ const UnifiedHeader = ({
     } = useAppStore();
 
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -138,22 +140,6 @@ const UnifiedHeader = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Night mode toggle button */}
-                    <button
-                        onClick={() => toggleDarkMode()}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${isDarkMode
-                            ? 'bg-gradient-to-r from-primary-700 to-secondary-600 text-white shadow-lg hover:shadow-xl hover:from-primary-800 hover:to-secondary-700'
-                            : 'bg-gradient-to-r from-brown-700 to-brown-800 text-neutral-100 hover:from-brown-800 hover:to-brown-900 shadow-md hover:shadow-lg'
-                            }`}
-                        title={isDarkMode ? t('darkMode.darkModeOn') : t('darkMode.darkModeOff')}
-                        aria-label={t('darkMode.toggle')}
-                    >
-                        {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                        <span className="hidden sm:inline">{t('darkMode.toggle')}</span>
-                    </button>
-
-                    {/* Language switcher */}
-                    <LanguageSwitcher />
 
                     {/* Show login button for guests, notifications + profile for logged-in users */}
                     {isPublic ? (
@@ -269,6 +255,55 @@ const UnifiedHeader = ({
                                         >
                                             {t('nav.profile')}
                                         </Link>
+
+                                        {/* Settings button */}
+                                        <button
+                                            onClick={() => setSettingsOpen((prev) => !prev)}
+                                            className="w-full text-right px-4 py-3 flex items-center justify-between text-brown-700 dark:text-brown-300 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-colors duration-200 font-medium"
+                                        >
+                                            <span>{t('nav.settings', 'الإعدادات')}</span>
+                                            <Settings className="h-4 w-4" />
+                                        </button>
+
+                                        {settingsOpen && (
+                                            <div className="px-4 py-3 space-y-3 border-t border-brown-100 dark:border-brown-700/50 bg-brown-50/50 dark:bg-brown-900/20">
+                                                {/* Night mode toggle */}
+                                                <button
+                                                    onClick={toggleDarkMode}
+                                                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 bg-white/60 dark:bg-brown-800/60 border border-brown-200/50 dark:border-brown-700/50 text-brown-700 dark:text-brown-200 hover:border-primary-400 dark:hover:border-primary-500"
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                                                        {t('darkMode.toggle')}
+                                                    </span>
+                                                    <div className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${isDarkMode ? 'bg-primary-600' : 'bg-brown-300'}`}>
+                                                        <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-300 ${isDarkMode ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                                    </div>
+                                                </button>
+
+                                                {/* Language switcher */}
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => { i18n.changeLanguage('ar'); localStorage.setItem('i18nextLng', 'ar'); }}
+                                                        className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${i18n.language === 'ar'
+                                                            ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700'
+                                                            : 'bg-white/60 dark:bg-brown-800/60 border border-brown-200/50 dark:border-brown-700/50 text-brown-700 dark:text-brown-300 hover:border-primary-400 dark:hover:border-primary-500'
+                                                            }`}
+                                                    >
+                                                        العربية
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('i18nextLng', 'en'); }}
+                                                        className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${i18n.language === 'en'
+                                                            ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700'
+                                                            : 'bg-white/60 dark:bg-brown-800/60 border border-brown-200/50 dark:border-brown-700/50 text-brown-700 dark:text-brown-300 hover:border-primary-400 dark:hover:border-primary-500'
+                                                            }`}
+                                                    >
+                                                        EN
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="border-t border-brown-100 dark:border-brown-700/50 my-1"></div>
 

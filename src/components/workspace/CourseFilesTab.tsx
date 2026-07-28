@@ -289,7 +289,6 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value as SortOption)}
                                 className="appearance-none py-2 pl-8 pr-3 border border-brown-200 dark:border-brown-600 rounded-xl bg-white dark:bg-brown-800 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 text-sm transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-600"
-                                dir="rtl"
                             >
                                 <option value="newest">الأحدث</option>
                                 <option value="largest">الأكبر حجماً</option>

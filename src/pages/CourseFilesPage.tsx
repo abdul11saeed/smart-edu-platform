@@ -3,12 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useCatalogStore } from '../stores/catalogStore';
 import { useAppStore } from '../stores/appStore';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import HierarchicalSelector from '../components/navigation/HierarchicalSelector';
 import CourseFilesView from '../components/workspace/CourseFilesView';
 import { listenToCourseFiles, listenToPublicCourseFiles, FileFilters } from '../services/courseFilesService';
 import { File } from '../types';
 
 const CourseFilesPage = () => {
+    const { t } = useTranslation();
     const { courseId } = useParams<{ courseId: string }>();
     const { universities, fetchUniversities } = useCatalogStore();
     const { currentUser } = useAppStore();
@@ -26,14 +29,14 @@ const CourseFilesPage = () => {
     // SEO meta tags for the public course-files page
     useEffect(() => {
         if (courseName) {
-            document.title = `ملفات ${courseName} - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية`;
+            document.title = `${t('courseFiles.title', { name: courseName })} - ${t('app.title')}`;
             let metaDesc = document.querySelector('meta[name="description"]');
             if (!metaDesc) {
                 metaDesc = document.createElement('meta');
                 metaDesc.setAttribute('name', 'description');
                 document.head.appendChild(metaDesc);
             }
-            metaDesc.setAttribute('content', `تصفح ملفات مادة ${courseName} على منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية - معاينة المحتوى الأكاديمي وتحميله بعد التسجيل.`);
+            metaDesc.setAttribute('content', t('courseFiles.description', { name: courseName }));
             // Canonical URL for this public course-files route
             let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
             if (!canonical) {
@@ -44,9 +47,9 @@ const CourseFilesPage = () => {
             canonical.setAttribute('href', window.location.href);
         }
         return () => {
-            document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+            document.title = t('app.title');
         };
-    }, [courseName]);
+    }, [courseName, t]);
 
     // SEO: structured data (JSON-LD) for the course files page
     useEffect(() => {
@@ -57,7 +60,7 @@ const CourseFilesPage = () => {
             name: courseName,
             provider: {
                 '@type': 'Organization',
-                name: 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية',
+                name: t('app.title'),
                 url: 'https://eduai.yemen/',
             },
             hasCourseInstance: files.slice(0, 20).map((f, i) => ({
@@ -136,7 +139,7 @@ const CourseFilesPage = () => {
     };
 
     return (
-        <div className="min-h-screen" dir="rtl">
+        <div className="min-h-screen">
             <HierarchicalSelector universities={universities} courseId={courseId} />
 
             <div className="mb-6">
@@ -145,14 +148,14 @@ const CourseFilesPage = () => {
                     className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium"
                 >
                     <ArrowRight className="h-4 w-4 ml-1" />
-                    العودة للرئيسية
+                    {t('courseFiles.backToHome')}
                 </Link>
             </div>
 
             {loading ? (
                 <div className="flex items-center justify-center py-20">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-                    <p className="mr-4 text-gray-600">جاري تحميل الملفات...</p>
+                    <p className="mr-4 text-gray-600">{t('courseFiles.loading')}</p>
                 </div>
             ) : (
                 <CourseFilesView

@@ -1,14 +1,17 @@
 import { Outlet } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { useAppStore } from '../stores/appStore';
 import Footer from '../components/layout/Footer';
 
 function AuthLayout() {
+    const { t } = useTranslation();
     const { isDarkMode } = useAppStore();
 
     return (
-        <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-slate-950 via-primary-900/20 to-slate-900' : 'bg-gradient-to-br from-primary-50/60 via-white to-secondary-50/80'}`} dir="rtl">
+        <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-slate-950 via-primary-900/20 to-slate-900' : 'bg-gradient-to-br from-primary-50/60 via-white to-secondary-50/80'}`} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             {/* Logo Header - elegant navy blue */}
             <header className="py-6 px-4">
                 <div className="max-w-md mx-auto">
@@ -32,7 +35,7 @@ function AuthLayout() {
 
             {/* Footer */}
             <footer className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                <p>© {new Date().getFullYear()} منصة البرامج الاكاديميه للجامعات اليمنيه. جميع الحقوق محفوظة.</p>
+                <p>© {new Date().getFullYear()} {t('auth.copyright')}</p>
             </footer>
 
             {/* Full Footer Component */}

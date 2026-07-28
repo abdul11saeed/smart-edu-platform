@@ -1,21 +1,22 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 const ContactPage = () => {
     const { t } = useTranslation();
 
     // SEO meta tags
     useEffect(() => {
-        document.title = `${t('contact.title')} - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية`;
+        document.title = `${t('contact.title')} - ${t('app.title')}`;
         let metaDesc = document.querySelector('meta[name="description"]');
         if (!metaDesc) {
             metaDesc = document.createElement('meta');
             metaDesc.setAttribute('name', 'description');
             document.head.appendChild(metaDesc);
         }
-        metaDesc.setAttribute('content', `منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية - تواصل معنا عبر الهاتف +967 736 856 463 أو البريد الإلكتروني alhmyrybdalhfyz39@gmail.com.`);
+        metaDesc.setAttribute('content', t('contact.metaDescription'));
         return () => {
-            document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+            document.title = t('app.title');
         };
     }, [t]);
 

@@ -165,7 +165,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
     };
 
     return (
-        <div dir="rtl" className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-3xl mx-auto text-gray-900 dark:text-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-3xl mx-auto text-gray-900 dark:text-gray-100">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold flex items-center">
                     <FileText className="h-5 w-5 ml-2 text-primary-500 dark:text-primary-400" />

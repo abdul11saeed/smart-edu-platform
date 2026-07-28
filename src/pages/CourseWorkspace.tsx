@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import {
     FileText,
     MessageSquare,
@@ -86,14 +87,14 @@ const CourseWorkspace = () => {
     // SEO meta tags for the public course workspace page
     useEffect(() => {
         if (course?.name) {
-            document.title = `${course.name} - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية`;
+            document.title = `${t('courseWorkspace.title', { name: course.name })} - ${t('app.title')}`;
             let metaDesc = document.querySelector('meta[name="description"]');
             if (!metaDesc) {
                 metaDesc = document.createElement('meta');
                 metaDesc.setAttribute('name', 'description');
                 document.head.appendChild(metaDesc);
             }
-            metaDesc.setAttribute('content', `تصفح مادة ${course.name} على منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية: الملفات الأكاديمية، المناقشات، والدردشة. سجّل دخولك للتحميل والمشاركة.`);
+            metaDesc.setAttribute('content', t('courseWorkspace.description', { name: course.name }));
             // Canonical URL for this public course route
             let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
             if (!canonical) {
@@ -104,9 +105,9 @@ const CourseWorkspace = () => {
             canonical.setAttribute('href', window.location.href);
         }
         return () => {
-            document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+            document.title = t('app.title');
         };
-    }, [course?.name]);
+    }, [course?.name, t]);
 
     // SEO: structured data (JSON-LD) for the course workspace page
     useEffect(() => {
@@ -117,7 +118,7 @@ const CourseWorkspace = () => {
             name: course.name,
             provider: {
                 '@type': 'Organization',
-                name: 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية',
+                name: t('app.title'),
                 url: 'https://eduai.yemen/',
             },
         };
@@ -189,7 +190,7 @@ const CourseWorkspace = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Context Header */}
             <div className="bg-white dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20">
                 <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-primary-50/60 to-transparent dark:from-primary-900/20 dark:to-transparent" />
@@ -204,7 +205,7 @@ const CourseWorkspace = () => {
                         <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
                         <span className="font-semibold text-primary-600">{course.name}</span>
                         <span className="mr-3 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                            نشط
+                            {t('courseWorkspace.active')}
                         </span>
                     </div>
 

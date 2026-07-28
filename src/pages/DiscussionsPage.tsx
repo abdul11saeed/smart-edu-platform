@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { MessageCircle, Send, ThumbsUp, User, Clock, Reply, Search, BookOpen, Edit, Trash2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Discussion, Comment, University, College, Major, Course as CourseType } from '../types';
@@ -761,7 +762,7 @@ const DiscussionsPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-4xl mx-auto">
         {/* Navigation buttons - unified interface */}
         <div className="flex gap-2 mb-6 bg-brown-100 dark:bg-brown-800 p-1 rounded-xl w-fit">

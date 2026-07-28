@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { Mail, Shield, Calendar, Plus, Pencil, Check, X, Clock } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 import { getUserFromRealtimeDB, uploadProfilePicture, updateUserProfile } from '../services/authService';
@@ -97,7 +98,7 @@ const ProfilePage = () => {
 
     const formatDate = (timestamp?: number) => {
         if (!timestamp) return t('profile.notAvailable');
-        return new Date(timestamp).toLocaleDateString('ar-SA', {
+        return new Date(timestamp).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'ar-SA', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -116,7 +117,7 @@ const ProfilePage = () => {
 
     const formatDateTime = (timestamp?: number) => {
         if (!timestamp) return t('profile.notAvailable');
-        return new Date(timestamp).toLocaleDateString('ar-SA', {
+        return new Date(timestamp).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'ar-SA', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -131,15 +132,15 @@ const ProfilePage = () => {
         const years = Math.floor(days / 365);
         const months = Math.floor((days % 365) / 30);
         if (years > 0) {
-            return `${t('profile.memberSince')} ${years} ${years === 1 ? 'سنة' : 'سنوات'}${months > 0 ? ` و ${months} ${months === 1 ? 'شهر' : 'أشهر'}` : ''}`;
+            return t('profile.memberSinceYears', { years });
         }
-        if (months > 0) return `${t('profile.memberSince')} ${months} ${months === 1 ? 'شهر' : 'أشهر'}`;
-        return `${t('profile.memberSince')} ${days} ${days === 1 ? 'يوم' : 'أيام'}`;
+        if (months > 0) return t('profile.memberSinceMonths', { months });
+        return t('profile.memberSinceDays', { days });
     };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
+            <div className="flex items-center justify-center min-h-[60vh]" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E40AF] border-t-transparent"></div>
                     <p className="mt-4 text-slate-600 dark:text-blue-200/70">{t('common.loading')}</p>
@@ -150,7 +151,7 @@ const ProfilePage = () => {
 
     if (!currentUser) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
+            <div className="flex items-center justify-center min-h-[60vh]" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="text-center">
                     <p className="text-slate-600 dark:text-blue-200/70 mb-4">{t('profile.loginRequiredViewProfile')}</p>
                     <button
@@ -165,7 +166,7 @@ const ProfilePage = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6" dir="rtl">
+        <div className="max-w-2xl mx-auto space-y-6" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             <div ref={editContainerRef}>
             {/* Profile Header Card */}
             <div className="rounded-2xl border border-slate-200/80 dark:border-blue-400/20 bg-white dark:bg-[#0F172A] shadow-lg shadow-primary-500/5 overflow-hidden">

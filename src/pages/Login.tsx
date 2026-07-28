@@ -161,7 +161,7 @@ const Login: React.FC = () => {
 
           <div className="flex items-center justify-between mt-2">
             <Link to="/reset-password" className="text-sm text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] transition-colors">
-               {t('auth.forgotPassword', 'نسيت كلمة المرور؟')}
+                {t('auth.forgotPassword')}
             </Link>
           </div>
 
