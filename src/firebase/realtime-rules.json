@@ -1,46 +1,45 @@
 {
   "rules": {
     "users": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
       "$uid": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
-        ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() == 'admin') && !(root.child('users').child($uid).child('isPermanentAdmin').val() == true)"
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() == 'admin') && !(root.child('users').child($uid).child('isPermanentAdmin').val() == true)"
       }
     },
     "universities": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+      ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && root.child('users').child(auth.uid).child('role').val() == 'admin'"
     },
     "analytics": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && root.child('users').child(auth.uid).child('role').val() == 'admin'",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && root.child('users').child(auth.uid).child('role').val() == 'admin'",
+      ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && root.child('users').child(auth.uid).child('role').val() == 'admin'"
     },
     "activityFeed": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && root.child('users').child(auth.uid).child('role').val() == 'admin'",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && root.child('users').child(auth.uid).child('role').val() == 'admin'",
+      ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && root.child('users').child(auth.uid).child('role').val() == 'admin'"
     },
     "chat_rooms": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
       "$roomId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-        ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+        ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
         "messages": {
-          ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+          ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
           "$messageId": {
-            ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-            ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (!data.exists() || data.child('senderId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+            ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+            ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (!data.exists() || data.child('senderId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
             "readBy": {
               "$userId": {
-                ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-                ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && auth.uid === $userId"
+                ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+                ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && auth.uid === $userId"
               }
             },
             "reactions": {
               "$emoji": {
-                ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+                ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
                 "$uid": {
-                  ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-                  ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && auth.uid === $uid"
+                  ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+                  ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && auth.uid === $uid"
                 }
               }
             }
@@ -50,38 +49,38 @@
     },
     "chat": {
       "$courseId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
         "$messageId": {
-          ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-          ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (!data.exists() || data.child('senderId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+          ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+          ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (!data.exists() || data.child('senderId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
         }
       }
     },
     "chat_reactions": {
       "$chatId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
         "$messageId": {
-          ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+          ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
           "$emoji": {
-            ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+            ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
             "$userId": {
-              ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-              ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && auth.uid === $userId"
+              ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+              ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && auth.uid === $userId"
             }
           }
         }
       }
     },
     "discussions": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
       "$discussionId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-        ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (!data.exists() || data.child('authorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+        ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (!data.exists() || data.child('authorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
         "comments": {
-          ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+          ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
           "$commentId": {
-            ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-            ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (!data.exists() || data.child('authorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+            ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+            ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (!data.exists() || data.child('authorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
           }
         }
       }
@@ -90,37 +89,37 @@
       ".read": true,
       "$discussionId": {
         ".read": true,
-        ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (!data.exists() || data.child('authorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+        ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (!data.exists() || data.child('authorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
       }
     },
     "discussion_likes": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
       "$discussionId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
         "$userId": {
-          ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-          ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && auth.uid === $userId"
+          ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+          ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && auth.uid === $userId"
         }
       }
     },
     "comment_likes": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
       "$discussionId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
         "$commentId": {
-          ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+          ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
           "$userId": {
-            ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
-            ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && auth.uid === $userId"
+            ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
+            ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && auth.uid === $userId"
           }
         }
       }
     },
     "notifications": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())",
+      ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()))",
       "$notificationId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && data.child('toUserId').val() === auth.uid",
-        ".write": "auth != null && root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val()) && (!data.exists() || data.child('toUserId').val() === newData.child('toUserId').val()) && (root.child('users').child(auth.uid).child('role').val() == 'admin' || newData.child('fromUserId').val() === auth.uid)"
+        ".read": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && data.child('toUserId').val() === auth.uid",
+        ".write": "auth != null && !(root.child('users').child(auth.uid).child('isBanned').val() == true && (root.child('users').child(auth.uid).child('banExpiresAt').val() == 0 || now < root.child('users').child(auth.uid).child('banExpiresAt').val())) && (!data.exists() || data.child('toUserId').val() === newData.child('toUserId').val()) && (root.child('users').child(auth.uid).child('role').val() == 'admin' || newData.child('fromUserId').val() === auth.uid)"
       }
     }
   }
