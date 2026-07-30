@@ -227,14 +227,14 @@ const DiscussionsPage = () => {
   // SEO meta tags
   useEffect(() => {
       if (!currentUser) {
-          document.title = 'المناقشات - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+          document.title = t('discussions.seoTitle');
           let metaDesc = document.querySelector('meta[name="description"]');
           if (!metaDesc) {
               metaDesc = document.createElement('meta');
               metaDesc.setAttribute('name', 'description');
               document.head.appendChild(metaDesc);
           }
-          metaDesc.setAttribute('content', 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية - تصفح المناقشات الأكاديمية العامة والتفاعل مع الطلاب الجامعيين.');
+          metaDesc.setAttribute('content', t('discussions.seoDescription'));
           // Canonical URL for this public discussions route
           let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
           if (!canonical) {
@@ -245,9 +245,9 @@ const DiscussionsPage = () => {
           canonical.setAttribute('href', window.location.href);
       }
       return () => {
-          document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+          document.title = t('app.title');
       };
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   // SEO: structured data (JSON-LD) for the discussions page
   useEffect(() => {
@@ -255,11 +255,11 @@ const DiscussionsPage = () => {
       const data = {
           '@context': 'https://schema.org',
           '@type': 'ItemList',
-          name: 'مناقشات أكاديمية',
+          name: t('discussions.seoStructuredName'),
           itemListElement: discussions.slice(0, 20).map((d, i) => ({
               '@type': 'ListItem',
               position: i + 1,
-              name: d.title || 'مناقشة',
+              name: d.title || t('discussions.seoFallbackName'),
               description: d.content ? d.content.slice(0, 200) : undefined,
           })),
       };
@@ -271,7 +271,7 @@ const DiscussionsPage = () => {
       return () => {
           document.getElementById('jsonld-discussions')?.remove();
       };
-  }, [currentUser, discussions]);
+  }, [currentUser, discussions, t]);
 
   // Feed discussion-search queries into the recommendation engine (interest
   // signal). Debounced and fire-and-forget so it never blocks the UI/search.
@@ -536,8 +536,8 @@ const DiscussionsPage = () => {
                   <button
                     onClick={() => setEditingDiscussion(null)}
                     className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                    aria-label="إغلاق"
-                    title="إغلاق"
+                    aria-label={t('common.close')}
+                    title={t('common.close')}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18"></line>

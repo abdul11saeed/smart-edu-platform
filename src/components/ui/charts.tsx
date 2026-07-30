@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ============================================================
 // Lightweight, dependency-free chart components (pure SVG/CSS)
@@ -48,8 +49,9 @@ export const HorizontalBarChart: React.FC<{
     data: BarItem[];
     color?: string;
 }> = ({ data, color = '#6366f1' }) => {
+    const { t } = useTranslation();
     const max = Math.max(1, ...data.map((d) => d.value));
-    if (data.length === 0) return <p className="text-sm text-gray-400">لا توجد بيانات كافية.</p>;
+    if (data.length === 0) return <p className="text-sm text-gray-400">{t('charts.noData')}</p>;
     return (
         <div className="space-y-3">
             {data.map((d, i) => {
@@ -94,8 +96,9 @@ export const VerticalBarsChart: React.FC<{
     heightClass?: string;
 }> = ({ data, color = '#6366f1', heightClass = 'h-44' }) => {
     const max = Math.max(1, ...data.map((d) => d.value));
+    const { t } = useTranslation();
     const uid = useId().replace(/:/g, '');
-    if (data.length === 0) return <p className="text-sm text-gray-400">لا توجد بيانات كافية.</p>;
+    if (data.length === 0) return <p className="text-sm text-gray-400">{t('charts.noData')}</p>;
     const peakIndex = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
     return (
         <div className={`flex items-end gap-1.5 ${heightClass}`}>
@@ -167,8 +170,9 @@ export const AreaLineChart: React.FC<{
 }> = ({ data, color = '#6366f1' }) => {
     const W = 100;
     const H = 44;
+    const { t } = useTranslation();
     const uid = useId().replace(/:/g, '');
-    if (data.length === 0) return <p className="text-sm text-gray-400">لا توجد بيانات كافية.</p>;
+    if (data.length === 0) return <p className="text-sm text-gray-400">{t('charts.noData')}</p>;
     const max = Math.max(1, ...data.map((d) => d.value));
     const n = data.length;
     const pts = data.map((d, i) => {
@@ -283,8 +287,9 @@ export const DonutChart: React.FC<{ data: DonutSlice[] }> = ({ data }) => {
     const total = data.reduce((s, d) => s + d.value, 0) || 1;
     const R = 15.9155;
     const C = 2 * Math.PI * R;
+    const { t } = useTranslation();
     let offset = 0;
-    if (data.length === 0) return <p className="text-sm text-gray-400">لا توجد بيانات كافية.</p>;
+    if (data.length === 0) return <p className="text-sm text-gray-400">{t('charts.noData')}</p>;
     return (
         <div className="flex items-center gap-5 flex-wrap">
             <div className="relative shrink-0">
@@ -315,7 +320,7 @@ export const DonutChart: React.FC<{ data: DonutSlice[] }> = ({ data }) => {
                     <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
                         {total.toLocaleString('en-US')}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">الإجمالي</span>
+                    <span className="text-[10px] text-gray-400 font-medium">{t('charts.total')}</span>
                 </div>
             </div>
             <div className="space-y-2 text-sm flex-1 min-w-[150px]">

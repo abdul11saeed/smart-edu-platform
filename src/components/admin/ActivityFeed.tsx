@@ -8,6 +8,8 @@ import {
     GraduationCap,
     FileText,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { Activity as ActivityType } from '../../services/dataService';
 
 interface ActivityFeedProps {
@@ -36,6 +38,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     onClearActivities,
     hasMore,
 }) => {
+    const { t } = useTranslation();
     const iconConfig = useMemo(() => ACTIVITY_ICONS, []);
 
     return (
@@ -44,9 +47,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                 <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-l from-primary-600 to-primary-700 text-white ml-2 shadow-md shadow-primary-500/20">
                     <Activity className="h-4 w-4" />
                 </div>
-                أحدث الأنشطة
+                {t('admin.latestActivities')}
                 <span className="mr-auto text-xs font-medium text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">
-                    {activities.length} نشاط
+                    {activities.length} {t('admin.activityCount')}
                 </span>
             </h2>
             <div className="space-y-2">
@@ -55,8 +58,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center">
                             <Activity className="h-8 w-8 text-neutral-300" />
                         </div>
-                        <p className="text-neutral-500 font-medium">لا توجد أنشطة حديثة</p>
-                        <p className="text-xs text-neutral-400 mt-1">ستظهر الأنشطة هنا عند حدوثها</p>
+                        <p className="text-neutral-500 font-medium">{t('admin.noActivities')}</p>
+                        <p className="text-xs text-neutral-400 mt-1">{t('admin.activitiesAppearHere')}</p>
                     </div>
                 ) : (
                     <div className="relative">
@@ -88,13 +91,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                                             </p>
                                             {isRecent && (
                                                 <span className="shrink-0 px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-full animate-pulse">
-                                                    جديد
+                                                    {t('activity.new')}
                                                 </span>
                                             )}
                                         </div>
                                         <p className="text-xs text-neutral-500 mt-1 truncate">{activity.description}</p>
                                         <span className="text-[10px] text-neutral-400 mt-1.5 block font-medium">
-                                            {new Date(activity.timestamp).toLocaleString('ar-SA', {
+                                            {new Date(activity.timestamp).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
                                                 hour: '2-digit',
                                                 minute: '2-digit',
                                                 day: 'numeric',
@@ -117,7 +120,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         onClick={onClearActivities}
                         className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 rounded-xl transition-all duration-200 shadow-sm shadow-red-500/20 hover:shadow-md hover:shadow-red-500/30 hover:-translate-y-0.5 active:scale-[0.97]"
                     >
-                        مسح جميع الأنشطة
+                        {t('admin.clearAllActivities')}
                     </button>
                     {hasMore && (
                         <button
@@ -125,7 +128,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                             disabled={isLoadingMore}
                             className="px-4 py-2 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
                         >
-                            {isLoadingMore ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            {isLoadingMore ? t('common.loading') : t('admin.loadMore')}
                         </button>
                     )}
                 </div>

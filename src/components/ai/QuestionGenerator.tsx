@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, Download, Save } from 'lucide-react';
 import { aiService, Question } from '../../utils/aiService';
 
@@ -8,23 +9,24 @@ interface QuestionGeneratorProps {
     onClose?: () => void;
 }
 
-const createLocalQuestions = (text: string, count: number) => {
+const createLocalQuestions = (text: string, count: number, t: any) => {
     const sentences = text.split(/[.!?。\n]+/).map(s => s.trim()).filter(s => s.length > 20);
     return Array.from({ length: count }, (_, index) => {
         const source = sentences[index % Math.max(sentences.length, 1)] || text.slice(0, 160);
         const masked = source.replace(/[^\s\u0600-\u06FFA-Za-z0-9]/g, '').split(/\s+/).filter(Boolean);
-        const keyword = masked[Math.floor(masked.length / 2)] || 'المفهوم';
+        const keyword = masked[Math.floor(masked.length / 2)] || t('ai.questions.fallbackKeyword');
         return {
             id: `local-${index}-${Date.now()}`,
             type: 'multiple-choice' as const,
-            question: `ما الفكرة الرئيسية في الجملة التي تحتوي على "${keyword}"؟`,
-            options: [source.slice(0, 120), 'فكرة غير مرتبطة بالموضوع', 'مثال عكسي فقط', 'تعريف غير دقيق'],
+            question: t('ai.questions.fallbackQuestion', { keyword }),
+            options: [source.slice(0, 120), t('ai.questions.unrelatedIdea'), t('ai.questions.reverseExample'), t('ai.questions.inaccurateDefinition')],
             answer: source.slice(0, 120)
         };
     });
 };
 
 const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGeneratorProps) => {
+    const { t, i18n } = useTranslation();
     const [questionType, setQuestionType] = useState<'true-false' | 'multiple-choice' | 'both'>('multiple-choice');
     const [numQuestions, setNumQuestions] = useState(5);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -33,23 +35,24 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
     const [isSaving, setIsSaving] = useState(false);
     const [manualText, setManualText] = useState('');
 
-    const contentToProcess = (fileContent?.trim() && !fileContent.startsWith('[ملف')) ? fileContent : manualText;
+    const contentToProcess = (fileContent?.trim() && !['[ملف', '[File'].some(prefix => fileContent?.startsWith(prefix))) ? fileContent : manualText;
 
     const generateQuestions = async () => {
         if (!contentToProcess?.trim()) return;
 
         setIsGenerating(true);
         try {
-            const result = await aiService.generateQuestions({
-                text: contentToProcess,
-                questionType: questionType === 'both' ? 'multiple-choice' : questionType,
-                numQuestions
-            });
+             const result = await aiService.generateQuestions({
+                 text: contentToProcess,
+                 questionType: questionType === 'both' ? 'multiple-choice' : questionType,
+                 numQuestions,
+                 language: i18n.language
+             });
             setGeneratedQuestions(result.questions);
         } catch (error) {
             console.error('Error generating questions:', error);
             // Fallback
-            setGeneratedQuestions(createLocalQuestions(contentToProcess, numQuestions));
+            setGeneratedQuestions(createLocalQuestions(contentToProcess, numQuestions, t));
         } finally {
             setIsGenerating(false);
         }
@@ -61,8 +64,9 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
         setIsExporting(true);
 
         // Create text content
-        let content = `الأسئلة Generated from منصة البرامج الاكاديميه للجامعات اليمنيه Platform\n`;
-        content += `Date: ${new Date().toLocaleDateString('ar-SA')}\n`;
+        const locale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
+        let content = `${t('ai.questions.title')}\n`;
+        content += `${t('ai.questions.fromFile', { name: fileName || 'export' })}\n`;
         content += `${'='.repeat(50)}\n\n`;
 
         generatedQuestions.forEach((q, index) => {
@@ -72,7 +76,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                     content += `   ${String.fromCharCode(97 + i)}) ${opt}\n`;
                 });
             }
-            content += `   Answer: ${q.answer}\n\n`;
+            content += `   ${t('ai.questions.answer')} ${q.answer}\n\n`;
         });
 
         // Create and download file
@@ -100,11 +104,11 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
             id: Date.now().toString(),
             fileName: fileName || 'Unknown',
             questions: generatedQuestions,
-            createdAt: new Date().toLocaleDateString('ar-SA')
+            createdAt: new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')
         });
         localStorage.setItem('saved_questions', JSON.stringify(savedQuestions));
 
-        alert('تم حفظ الأسئلة بنجاح!');
+        alert(t('ai.questions.savedSuccess'));
         setIsSaving(false);
     };
 
@@ -120,9 +124,9 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                                 name={`q-${q.id}`}
                                 value="true"
                                 className="ml-2"
-                                defaultChecked={q.answer === 'صواب'}
+                                defaultChecked={q.answer === t('ai.questions.true')}
                             />
-                            <label className="text-gray-700 dark:text-gray-300">صواب</label>
+                            <label className="text-gray-700 dark:text-gray-300">{t('ai.questions.true')}</label>
                         </div>
                         <div className="flex items-center">
                             <input
@@ -130,13 +134,13 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                                 name={`q-${q.id}`}
                                 value="false"
                                 className="ml-2"
-                                defaultChecked={q.answer === 'خطأ'}
+                                defaultChecked={q.answer === t('ai.questions.false')}
                             />
-                            <label className="text-gray-700 dark:text-gray-300">خطأ</label>
+                            <label className="text-gray-700 dark:text-gray-300">{t('ai.questions.false')}</label>
                         </div>
                     </div>
                     <div className="mt-2 text-sm text-green-600 dark:text-green-400">
-                        الإجابة: {q.answer === 'صواب' ? 'صواب' : 'خطأ'}
+                        {t('ai.questions.answer')} {q.answer === t('ai.questions.true') ? t('ai.questions.true') : t('ai.questions.false')}
                     </div>
                 </div>
             );
@@ -158,18 +162,18 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                     </div>
                 ))}
                 <div className="mt-2 text-sm text-green-600 dark:text-green-400">
-                    الإجابة: {q.answer}
+                    {t('ai.questions.answer')} {q.answer}
                 </div>
             </div>
         );
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-3xl mx-auto text-gray-900 dark:text-gray-100">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-3xl mx-auto text-gray-900 dark:text-gray-100">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold flex items-center">
                     <FileText className="h-5 w-5 ml-2 text-primary-500 dark:text-primary-400" />
-                    توليد الأسئلة
+                    {t('ai.questions.title')}
                 </h2>
                 {onClose && (
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -179,17 +183,17 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
             </div>
 
             {fileName && (
-                <p className="text-sm text-gray-800 dark:text-gray-200 mb-4">توليد الأسئلة من: {fileName}</p>
+                <p className="text-sm text-gray-800 dark:text-gray-200 mb-4">{t('ai.questions.fromFile', { name: fileName })}</p>
             )}
 
-            {(!fileContent?.trim() || fileContent.startsWith('[ملف')) && (
+            {(!fileContent?.trim() || ['[ملف', '[File'].some(prefix => fileContent?.startsWith(prefix))) && (
                 <div className="rounded-lg border border-dashed border-accent-200 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/30 p-4 text-center text-gray-800 dark:text-gray-200 mb-6">
-                    <p className="font-medium mb-2">لم يتم استخراج نص الملف تلقائياً</p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">الصق نص الملف هنا ليتم توليد الأسئلة منه.</p>
+                    <p className="font-medium mb-2">{t('ai.questions.notExtracted')}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{t('ai.questions.pasteText')}</p>
                     <textarea
                         value={manualText}
                         onChange={(e) => setManualText(e.target.value)}
-                        placeholder="الصق نص الملف أو الملاحظات هنا..."
+                        placeholder={t('ai.questions.pastePlaceholder')}
                         className="w-full rounded-lg border border-accent-200 dark:border-accent-700 p-3 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-accent-500 dark:bg-gray-700"
                         rows={6}
                     />
@@ -199,7 +203,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
             <div className="space-y-4 mb-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                        نوع الأسئلة
+                        {t('ai.questions.questionType')}
                     </label>
                     <div className="space-y-2">
                         <label className="flex items-center">
@@ -210,7 +214,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                                 onChange={(e) => setQuestionType(e.target.value as 'true-false')}
                                 className="ml-2"
                             />
-                            صواب / خطأ
+                            {t('ai.questions.trueFalse')}
                         </label>
                         <label className="flex items-center">
                             <input
@@ -220,7 +224,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                                 onChange={(e) => setQuestionType(e.target.value as 'multiple-choice')}
                                 className="ml-2"
                             />
-                            اختيار من متعدد
+                            {t('ai.questions.multipleChoice')}
                         </label>
                         <label className="flex items-center">
                             <input
@@ -230,14 +234,14 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                                 onChange={(e) => setQuestionType(e.target.value as 'both')}
                                 className="ml-2"
                             />
-                            كلاهما
+                            {t('ai.questions.both')}
                         </label>
                     </div>
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                        عدد الأسئلة
+                        {t('ai.questions.numQuestions')}
                     </label>
                     <select
                         value={numQuestions}
@@ -257,12 +261,12 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                 disabled={isGenerating || !contentToProcess?.trim()}
                 className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isGenerating ? 'جاري التوليد...' : 'توليد الأسئلة'}
+                {isGenerating ? t('ai.questions.generating') : t('ai.questions.generateButton')}
             </button>
 
             {generatedQuestions.length > 0 && (
                 <div className="mt-6">
-                    <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">الأسئلة المُولّدة</h3>
+                    <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">{t('ai.questions.generatedTitle')}</h3>
                     <div className="max-h-96 overflow-y-auto">
                         {generatedQuestions.map(renderQuestion)}
                     </div>
@@ -273,7 +277,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                             className="bg-secondary-600 text-white py-2 px-4 rounded-lg hover:bg-secondary-700 disabled:opacity-50 flex items-center"
                         >
                             <Download className="h-4 w-4 ml-2" />
-                            {isExporting ? 'جاري التصدير...' : 'تصدير'}
+                            {isExporting ? t('ai.questions.exporting') : t('ai.questions.export')}
                         </button>
                         <button
                             onClick={saveToCourse}
@@ -281,7 +285,7 @@ const QuestionGenerator = ({ fileName, fileContent, onClose }: QuestionGenerator
                             className="bg-accent-600 text-white py-2 px-4 rounded-lg hover:bg-accent-700 disabled:opacity-50 flex items-center"
                         >
                             <Save className="h-4 w-4 ml-2" />
-                            {isSaving ? 'جاري الحفظ...' : 'حفظ'}
+                            {isSaving ? t('ai.questions.saving') : t('ai.questions.save')}
                         </button>
                     </div>
                 </div>

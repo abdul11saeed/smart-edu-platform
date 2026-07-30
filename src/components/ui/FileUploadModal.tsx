@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
@@ -9,6 +10,7 @@ interface FileUploadModalProps {
 }
 
 const FileUploadModal = ({ isOpen, onClose }: FileUploadModalProps) => {
+    const { t } = useTranslation();
     return (
         <Transition appear show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-[9999]" onClose={onClose}>
@@ -49,7 +51,7 @@ const FileUploadModal = ({ isOpen, onClose }: FileUploadModalProps) => {
                                                 </svg>
                                             </div>
                                             <Dialog.Title className="text-xl font-bold text-white">
-                                                رفع الملفات
+                                                {t('fileUploadModal.title')}
                                             </Dialog.Title>
                                         </div>
                                         <button
@@ -60,7 +62,7 @@ const FileUploadModal = ({ isOpen, onClose }: FileUploadModalProps) => {
                                         </button>
                                     </div>
                                     <p className="relative mt-2 text-sm text-white/80">
-                                        ارفع ملفاتك ومذكراتك لمقررتك بسهولة
+                                        {t('fileUploadModal.description')}
                                     </p>
                                 </div>
 

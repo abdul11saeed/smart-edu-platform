@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import Modal from '../ui/Modal';
+import { useTranslation } from 'react-i18next';
 import { MODAL_LABELS, MODAL_PLACEHOLDERS, MODAL_LABEL_ARABIC } from './constants';
 
 interface AddEditModalProps {
@@ -38,6 +39,8 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
     onMajorChange,
     onAddItem,
 }) => {
+    const { t } = useTranslation();
+
     if (!activeModal) return null;
 
     const isUsersModal = activeModal === 'users';
@@ -51,12 +54,12 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
             <div className="p-3 sm:p-4 lg:p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                     <h3 className="text-lg font-semibold">
-                        {isUsersModal ? MODAL_LABELS.users : MODAL_LABELS[activeModal as keyof typeof MODAL_LABELS]}
+                        {isUsersModal ? t(MODAL_LABELS.users) : t(MODAL_LABELS[activeModal as keyof typeof MODAL_LABELS])}
                     </h3>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
-                        title="إغلاق"
+                        title={t('common.close')}
                     >
                         <X className="h-5 w-5 sm:h-6 sm:w-6" />
                     </button>
@@ -66,13 +69,13 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                     <div className="w-full space-y-3 sm:space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">
-                                {MODAL_LABEL_ARABIC[activeModal as keyof typeof MODAL_LABEL_ARABIC]}
+                                {t(MODAL_LABEL_ARABIC[activeModal as keyof typeof MODAL_LABEL_ARABIC])}
                             </label>
                             <input
                                 type="text"
                                 value={newItemName}
                                 onChange={(e) => onNameChange(e.target.value)}
-                                placeholder={MODAL_PLACEHOLDERS[activeModal as keyof typeof MODAL_PLACEHOLDERS]}
+                                placeholder={t(MODAL_PLACEHOLDERS[activeModal as keyof typeof MODAL_PLACEHOLDERS])}
                                 className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                             />
                         </div>
@@ -105,15 +108,15 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                         {activeModal === 'college' && (
                             <div>
                                 <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">
-                                    اختر الجامعة الأم لكلية جديدة
+                                    {t('admin.selectParentUniversity')}
                                 </label>
                                 <select
                                     value={selectedUniversityForCollege}
                                     onChange={(e) => onUniversityForCollegeChange(e.target.value)}
-                                    title="اختر الجامعة الأم"
+                                    title={t('admin.selectParentUniversity')}
                                     className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                                 >
-                                    <option value="">اختر الجامعة الأم...</option>
+                                    <option value="">{t('admin.selectParentUniversity')}</option>
                                     {universities.map((uni) => (
                                         <option key={uni.id} value={uni.id}>{uni.name}</option>
                                     ))}
@@ -126,7 +129,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                             disabled={isAddingItem}
                             className="btn-ripple w-full bg-gradient-to-l from-[#1E40AF] to-[#0F172A] dark:from-blue-600 dark:to-blue-800 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-[#1E40AF]/25 hover:from-[#0F172A] hover:to-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
-                            {isAddingItem ? 'جاري الإضافة...' : 'إضافة'}
+                            {isAddingItem ? t('admin.adding') : t('common.add')}
                         </button>
                     </div>
                 )}
@@ -150,12 +153,13 @@ const UniversityChainSelect: React.FC<UniversityChainSelectProps> = ({
     onUniversityChange,
     onCollegeChange,
 }) => {
+    const { t } = useTranslation();
     const selectedUni = universities.find(u => u.id === selectedUniversityId);
 
     return (
         <div className="space-y-2 sm:space-y-3">
             <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">اختر الجامعة أولاً</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">{t('admin.selectUniversityFirst')}</label>
                 <select
                     value={selectedUniversityId}
                     onChange={(e) => {
@@ -164,7 +168,7 @@ const UniversityChainSelect: React.FC<UniversityChainSelectProps> = ({
                     }}
                     className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                 >
-                    <option value="">اختر الجامعة...</option>
+                    <option value="">{t('admin.selectUniversity')}</option>
                     {universities.map((uni) => (
                         <option key={uni.id} value={uni.id}>{uni.name}</option>
                     ))}
@@ -173,13 +177,13 @@ const UniversityChainSelect: React.FC<UniversityChainSelectProps> = ({
 
             {selectedUni && (
                 <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">اختر الكلية</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">{t('admin.selectCollege')}</label>
                     <select
                         value={selectedCollegeId}
                         onChange={(e) => onCollegeChange(e.target.value)}
                         className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                     >
-                        <option value="">اختر الكلية...</option>
+                        <option value="">{t('admin.selectCollege')}</option>
                         {selectedUni.colleges?.map((col: any) => (
                             <option key={col.id} value={col.id}>{col.name}</option>
                         ))}
@@ -209,13 +213,14 @@ const CourseChainSelect: React.FC<CourseChainSelectProps> = ({
     onCollegeChange,
     onMajorChange,
 }) => {
+    const { t } = useTranslation();
     const selectedUni = universities.find(u => u.id === selectedUniversityId);
     const selectedCol = selectedUni?.colleges?.find((c: any) => c.id === selectedCollegeId);
 
     return (
         <div className="space-y-2 sm:space-y-3">
             <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">اختر الجامعة أولاً</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">{t('admin.selectUniversityFirst')}</label>
                 <select
                     value={selectedUniversityId}
                     onChange={(e) => {
@@ -225,7 +230,7 @@ const CourseChainSelect: React.FC<CourseChainSelectProps> = ({
                     }}
                     className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                 >
-                    <option value="">اختر الجامعة...</option>
+                    <option value="">{t('admin.selectUniversity')}</option>
                     {universities.map((uni) => (
                         <option key={uni.id} value={uni.id}>{uni.name}</option>
                     ))}
@@ -235,7 +240,7 @@ const CourseChainSelect: React.FC<CourseChainSelectProps> = ({
             {selectedUni && (
                 <>
                     <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">اختر الكلية</label>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">{t('admin.selectCollege')}</label>
                         <select
                             value={selectedCollegeId}
                             onChange={(e) => {
@@ -244,7 +249,7 @@ const CourseChainSelect: React.FC<CourseChainSelectProps> = ({
                             }}
                             className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                         >
-                            <option value="">اختر الكلية...</option>
+                            <option value="">{t('admin.selectCollege')}</option>
                             {selectedUni.colleges?.map((col: any) => (
                                 <option key={col.id} value={col.id}>{col.name}</option>
                             ))}
@@ -253,13 +258,13 @@ const CourseChainSelect: React.FC<CourseChainSelectProps> = ({
 
                     {selectedCollegeId && (
                         <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">اختر التخصص</label>
+                            <label className="block text-sm font-medium text-neutral-700 mb-1 sm:mb-2">{t('admin.selectMajor')}</label>
                             <select
                                 value={selectedMajorId}
                                 onChange={(e) => onMajorChange(e.target.value)}
                                 className="w-full p-2 sm:p-2.5 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
                             >
-                                <option value="">اختر التخصص...</option>
+                                <option value="">{t('admin.selectMajor')}</option>
                                 {selectedCol?.majors?.map((maj: any) => (
                                     <option key={maj.id} value={maj.id}>{maj.name}</option>
                                 ))}

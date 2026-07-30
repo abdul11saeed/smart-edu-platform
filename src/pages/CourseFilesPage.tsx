@@ -66,7 +66,7 @@ const CourseFilesPage = () => {
             hasCourseInstance: files.slice(0, 20).map((f, i) => ({
                 '@type': 'MediaObject',
                 position: i + 1,
-                name: f.name || 'ملف',
+                name: f.name || 'File',
                 description: f.description || undefined,
             })),
         };

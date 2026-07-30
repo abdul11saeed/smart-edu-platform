@@ -19,6 +19,8 @@ import {
     AlertTriangle,
     Layers,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { Card } from '../components/ui/Card';
 import { SkeletonList, SkeletonCard } from '../components/ui/Skeleton';
 import {
@@ -38,20 +40,24 @@ interface KpiProps {
     bg: string;
     suffix?: string;
 }
-const KpiCard: React.FC<KpiProps> = ({ title, value, icon: Icon, color, bg, suffix }) => (
-    <Card className="relative overflow-hidden">
-        <div className={`absolute -left-4 -top-4 w-20 h-20 rounded-full ${bg} opacity-10`}></div>
-        <div className="relative flex items-center justify-between">
-            <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-                <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString('en-US')}{suffix}</p>
+const KpiCard: React.FC<KpiProps> = ({ title, value, icon: Icon, color, bg, suffix }) => {
+    const { i18n } = useTranslation();
+    const locale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
+    return (
+        <Card className="relative overflow-hidden">
+            <div className={`absolute -left-4 -top-4 w-20 h-20 rounded-full ${bg} opacity-10`}></div>
+            <div className="relative flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+                    <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString(locale)}{suffix}</p>
+                </div>
+                <div className={`p-3 rounded-lg ${bg}`}>
+                    <Icon className="h-5 w-5 text-white" />
+                </div>
             </div>
-            <div className={`p-3 rounded-lg ${bg}`}>
-                <Icon className="h-5 w-5 text-white" />
-            </div>
-        </div>
-    </Card>
-);
+        </Card>
+    );
+};
 
 // ---------- Section wrapper ----------
 const Section: React.FC<{ title: string; icon: React.ElementType; subtitle?: string; children: React.ReactNode }> = ({
@@ -96,9 +102,11 @@ const initialData: AdminAnalytics = {
 };
 
 const AdminReports: React.FC = () => {
+    const { t, i18n } = useTranslation();
     const [data, setData] = useState<AdminAnalytics>(initialData);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const locale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -108,11 +116,11 @@ const AdminReports: React.FC = () => {
             setData(result);
         } catch (err) {
             console.error('[AdminReports] Failed to load analytics:', err);
-            setError('تعذّر تحميل بيانات التقارير. حاول مرة أخرى.');
+            setError(t('adminReports.errorLoading'));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         load();
@@ -127,7 +135,7 @@ const AdminReports: React.FC = () => {
     const topCourse = data.topCoursesByDownloads[0];
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir={i18n.language.startsWith('ar') ? 'rtl' : 'ltr'}>
             {/* Header */}
             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -138,17 +146,17 @@ const AdminReports: React.FC = () => {
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                    التقارير والتحليلات
+                                    {t('adminReports.title')}
                                 </h1>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    لوحة تقارير شاملة لمدراء المنصة فقط
+                                    {t('adminReports.subtitle')}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             {data.generatedAt > 0 && !loading && (
                                 <span className="text-xs text-gray-400 hidden sm:block">
-                                    آخر تحديث: {new Date(data.generatedAt).toLocaleString('ar-SA')}
+                                    {t('adminReports.lastUpdated', { date: new Date(data.generatedAt).toLocaleString(locale) })}
                                 </span>
                             )}
                             <button
@@ -157,7 +165,7 @@ const AdminReports: React.FC = () => {
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
                             >
                                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                                تحديث
+                                {t('adminReports.refresh')}
                             </button>
                         </div>
                     </div>
@@ -189,14 +197,14 @@ const AdminReports: React.FC = () => {
                     <>
                         {/* KPI ROW */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <KpiCard title="إجمالي المستخدمين" value={data.kpis.totalUsers} icon={Users} color="text-blue-600" bg="bg-blue-500" />
-                            <KpiCard title="الملفات المرفوعة" value={data.kpis.totalFiles} icon={FileText} color="text-green-600" bg="bg-green-500" />
-                            <KpiCard title="إجمالي التنزيلات" value={data.kpis.totalDownloads} icon={Download} color="text-indigo-600" bg="bg-indigo-500" />
-                            <KpiCard title="المناقشات" value={data.kpis.totalDiscussions} icon={MessageSquare} color="text-purple-600" bg="bg-purple-500" />
-                            <KpiCard title="الردود" value={data.kpis.totalComments} icon={MessageCircle} color="text-teal-600" bg="bg-teal-500" />
-                            <KpiCard title="الإعجابات" value={data.kpis.totalLikes} icon={ThumbsUp} color="text-pink-600" bg="bg-pink-500" />
-                            <KpiCard title="المستخدمون النشطون" value={data.kpis.activeUsers} icon={Activity} color="text-orange-600" bg="bg-orange-500" />
-                            <KpiCard title="معدل التفاعل" value={data.kpis.totalUsers ? Math.min(100, Math.round((data.kpis.activeUsers / data.kpis.totalUsers) * 100)) : 0} icon={TrendingUp} color="text-cyan-600" bg="bg-cyan-500" suffix="%" />
+                            <KpiCard title={t('adminReports.totalUsers')} value={data.kpis.totalUsers} icon={Users} color="text-blue-600" bg="bg-blue-500" />
+                            <KpiCard title={t('adminReports.totalFiles')} value={data.kpis.totalFiles} icon={FileText} color="text-green-600" bg="bg-green-500" />
+                            <KpiCard title={t('adminReports.totalDownloads')} value={data.kpis.totalDownloads} icon={Download} color="text-indigo-600" bg="bg-indigo-500" />
+                            <KpiCard title={t('adminReports.totalDiscussions')} value={data.kpis.totalDiscussions} icon={MessageSquare} color="text-purple-600" bg="bg-purple-500" />
+                            <KpiCard title={t('adminReports.totalComments')} value={data.kpis.totalComments} icon={MessageCircle} color="text-teal-600" bg="bg-teal-500" />
+                            <KpiCard title={t('adminReports.totalLikes')} value={data.kpis.totalLikes} icon={ThumbsUp} color="text-pink-600" bg="bg-pink-500" />
+                            <KpiCard title={t('adminReports.activeUsers')} value={data.kpis.activeUsers} icon={Activity} color="text-orange-600" bg="bg-orange-500" />
+                            <KpiCard title={t('adminReports.engagementRate')} value={data.kpis.totalUsers ? Math.min(100, Math.round((data.kpis.activeUsers / data.kpis.totalUsers) * 100)) : 0} icon={TrendingUp} color="text-cyan-600" bg="bg-cyan-500" suffix="%" />
                         </div>
 
                         {/* INSIGHT BANNER */}
@@ -205,18 +213,18 @@ const AdminReports: React.FC = () => {
                                 <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white">
                                     <CalendarDays className="h-6 w-6 opacity-80" />
                                     <div>
-                                        <p className="text-sm opacity-90">أكثر أيام الموقع استخداماً</p>
+                                        <p className="text-sm opacity-90">{t('adminReports.busiestDay')}</p>
                                         <p className="text-lg font-bold">
-                                            {busiestDay && busiestDay.count > 0 ? busiestDay.name : 'لا توجد بيانات'}
+                                            {busiestDay && busiestDay.count > 0 ? busiestDay.name : t('adminReports.noDataDay')}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white">
                                     <Flame className="h-6 w-6 opacity-80" />
                                     <div>
-                                        <p className="text-sm opacity-90">المقرر الأكثر تنزيلاً</p>
+                                        <p className="text-sm opacity-90">{t('adminReports.topCourse')}</p>
                                         <p className="text-lg font-bold truncate">
-                                            {topCourse && topCourse.downloads > 0 ? topCourse.courseName : 'لا توجد بيانات'}
+                                            {topCourse && topCourse.downloads > 0 ? topCourse.courseName : t('adminReports.noDataCourse')}
                                         </p>
                                     </div>
                                 </div>
@@ -225,22 +233,22 @@ const AdminReports: React.FC = () => {
 
                         {/* ROW: Top courses + Top discussions */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <Section title="المقررات الأكثر تنزيلاً" icon={Download} subtitle="حسب إجمالي مرات التنزيل">
+                            <Section title={t('adminReports.topCoursesByDownloads')} icon={Download} subtitle={t('adminReports.byTotalDownloads')}>
                                 {data.topCoursesByDownloads.length > 0 ? (
                                     <HorizontalBarChart
                                         color="#6366f1"
                                         data={data.topCoursesByDownloads.map((c) => ({
                                             label: c.courseName,
                                             value: c.downloads,
-                                            sublabel: `${c.filesCount} ملف`,
+                                            sublabel: `${c.filesCount} ${t('adminReports.filesUploaded', { count: c.filesCount })}`,
                                         }))}
                                     />
                                 ) : (
-                                    <p className="text-sm text-gray-400">لا توجد عمليات تنزيل مسجّلة بعد.</p>
+                                    <p className="text-sm text-gray-400">{t('adminReports.noDownloadsYet')}</p>
                                 )}
                             </Section>
 
-                            <Section title="المستخدمون الأكثر نشاطاً" icon={Award} subtitle="حسب الملفات والمناقشات والردود والنشاط">
+                            <Section title={t('adminReports.mostActiveUsers')} icon={Award} subtitle={t('adminReports.byFilesDiscussionsActivity')}>
                                 {data.mostActiveUsers.length > 0 ? (
                                     <div className="space-y-3">
                                         {data.mostActiveUsers.map((u, i) => (
@@ -253,23 +261,23 @@ const AdminReports: React.FC = () => {
                                                         {u.name}
                                                     </p>
                                                     <p className="text-xs text-gray-400 truncate">
-                                                        {[u.filesUploaded > 0 ? `${u.filesUploaded} ملف` : '', u.discussionsCreated > 0 ? `${u.discussionsCreated} مناقشة` : '', u.commentsMade > 0 ? `${u.commentsMade} رد` : '', u.activeDays > 0 ? `${u.activeDays} يوم نشاط` : ''].filter(Boolean).join(' · ') || 'لا تفاصيل'}
+                                                        {[u.filesUploaded > 0 ? `${u.filesUploaded} ${t('adminReports.filesUploaded', { count: u.filesUploaded })}` : '', u.discussionsCreated > 0 ? `${u.discussionsCreated} ${t('adminReports.discussionsCreated', { count: u.discussionsCreated })}` : '', u.commentsMade > 0 ? `${u.commentsMade} ${t('adminReports.commentsMade', { count: u.commentsMade })}` : '', u.activeDays > 0 ? `${u.activeDays} ${t('adminReports.activeDays', { count: u.activeDays })}` : ''].filter(Boolean).join(' · ') || t('adminReports.noDetails')}
                                                     </p>
                                                 </div>
                                                 <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                                    {u.score.toLocaleString('en-US')}
+                                                    {u.score.toLocaleString(locale)}
                                                 </span>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-400">لا يوجد نشاط مستخدمين مسجّل بعد.</p>
+                                    <p className="text-sm text-gray-400">{t('adminReports.noActivityYet')}</p>
                                 )}
                             </Section>
                         </div>
 
                         {/* ROW: Top discussions */}
-                        <Section title="المناقشات الأكثر تفاعلاً" icon={MessageSquare} subtitle="الأكثر رداً واحتفاءً بالإعجابات">
+                        <Section title={t('adminReports.topDiscussions')} icon={MessageSquare} subtitle={t('adminReports.byRepliesLikes')}>
                             {data.topDiscussions.length > 0 ? (
                                 <div className="space-y-2">
                                     {data.topDiscussions.map((d, i) => (
@@ -288,16 +296,16 @@ const AdminReports: React.FC = () => {
                                                     {d.title}
                                                 </Link>
                                                 <p className="text-xs text-gray-400 truncate">
-                                                    بواسطة {d.authorName}
+                                                    {t('adminReports.by')} {d.authorName}
                                                     {d.courseName ? ` · ${d.courseName}` : ''}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-3 text-xs shrink-0">
-                                                <span className="flex items-center gap-1 text-teal-600" title="الردود">
+                                                <span className="flex items-center gap-1 text-teal-600" title={t('adminReports.replies')}>
                                                     <MessageCircle className="h-4 w-4" />
                                                     {d.commentsCount}
                                                 </span>
-                                                <span className="flex items-center gap-1 text-pink-600" title="الإعجابات">
+                                                <span className="flex items-center gap-1 text-pink-600" title={t('adminReports.likes')}>
                                                     <ThumbsUp className="h-4 w-4" />
                                                     {d.likesCount}
                                                 </span>
@@ -306,31 +314,31 @@ const AdminReports: React.FC = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-gray-400">لا توجد مناقشات بعد.</p>
+                                <p className="text-sm text-gray-400">{t('adminReports.noDiscussionsYet')}</p>
                             )}
                         </Section>
 
                         {/* ROW: charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <Section title="نشاط آخر 7 أيام" icon={Activity} subtitle="عدد الأحداث اليومية">
+                            <Section title={t('adminReports.weeklyActivity')} icon={Activity} subtitle={t('adminReports.dailyEvents')}>
                                 <AreaLineChart
                                     data={data.weeklyActivity.map((d) => ({ label: d.name, value: d.count }))}
                                     color="#10b981"
                                 />
                             </Section>
 
-                            <Section title="ساعات النشاط الذروة" icon={Clock} subtitle="توزيع النشاط على مدار اليوم">
+                            <Section title={t('adminReports.peakHours')} icon={Clock} subtitle={t('adminReports.activityDistribution')}>
                                 <AreaLineChart
                                     data={peakHoursData}
                                     color="#6366f1"
                                 />
                             </Section>
 
-                            <Section title="أيام الأسبوع الأكثر نشاطاً" icon={CalendarDays} subtitle="أيام استخدام الموقع">
+                            <Section title={t('adminReports.weekdayActivity')} icon={CalendarDays} subtitle={t('adminReports.siteUsageDays')}>
                                 <VerticalBarsChart data={data.weekdayActivity.map((d) => ({ label: d.name, value: d.count }))} color="#f59e0b" heightClass="h-44" />
                             </Section>
 
-                            <Section title="توزيع أنواع الملفات" icon={PieChart} subtitle="الحصة النسبية لكل نوع">
+                            <Section title={t('adminReports.fileTypeDistribution')} icon={PieChart} subtitle={t('adminReports.relativeShare')}>
                                 <DonutChart
                                     data={data.fileTypeDistribution.map((d) => ({ label: d.name, value: d.count }))}
                                 />
@@ -338,14 +346,14 @@ const AdminReports: React.FC = () => {
                         </div>
 
                         {/* ROW: Top colleges */}
-                        <Section title="الكليات الأكثر محتوى" icon={Layers} subtitle="حسب عدد الملفات المرفوعة">
+                        <Section title={t('adminReports.topColleges')} icon={Layers} subtitle={t('adminReports.byUploadedFiles')}>
                             {data.topColleges.length > 0 ? (
                                 <HorizontalBarChart
                                     color="#14b8a6"
                                     data={data.topColleges.map((c) => ({ label: c.name, value: c.count }))}
                                 />
                             ) : (
-                                <p className="text-sm text-gray-400">لا توجد بيانات كافية.</p>
+                                <p className="text-sm text-gray-400">{t('adminReports.notEnoughData')}</p>
                             )}
                         </Section>
                     </>

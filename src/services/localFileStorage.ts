@@ -1,4 +1,5 @@
 import { File as AppFile } from '../types';
+import i18n from '../i18n';
 
 const MAX_TEXT_PREVIEW_CHARS = 250000;
 
@@ -32,7 +33,7 @@ export const extractTextPreview = async (file: File): Promise<string> => {
     try {
       await ensurePdfJs();
       if (!pdfjsLib) {
-        return '[ملف PDF - لا يمكن استخراج النص تلقائياً]';
+        return i18n.t('ai.fileExtraction.unreadablePdf');
       }
       const data = new Uint8Array(await file.arrayBuffer());
       const loadOptions: any = { data };
@@ -51,10 +52,10 @@ export const extractTextPreview = async (file: File): Promise<string> => {
         return content.items.map((item: any) => item.str).join(' ');
       }));
       const text = truncateText(normalizeWhitespace(pages.join('\n')));
-      return text || '[ملف PDF - لا يمكن استخراج النص تلقائياً]';
+      return text || i18n.t('ai.fileExtraction.unreadablePdf');
     } catch (error) {
       console.warn('PDF text extraction failed:', error);
-      return '[ملف PDF - لا يمكن استخراج النص تلقائياً]';
+      return i18n.t('ai.fileExtraction.unreadablePdf');
     }
   }
 
@@ -64,17 +65,17 @@ export const extractTextPreview = async (file: File): Promise<string> => {
       const JSZip = (await import('jszip')).default;
       const zip = await JSZip.loadAsync(await file.arrayBuffer());
       const doc = await zip.file('word/document.xml')?.async('string');
-      if (!doc) return '[ملف DOCX - لا يمكن استخراج النص تلقائياً]';
+      if (!doc) return i18n.t('ai.fileExtraction.unreadableDocx');
       const runs = doc.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) || [];
       const text = runs
         .map((m: string) => m.replace(/<w:t[^>]*>/g, '').replace(/<\/w:t>/g, ''))
         .join(' ')
         .replace(/<\/w:p>/g, '\n');
       const normalized = truncateText(normalizeWhitespace(text));
-      return normalized || '[ملف DOCX - لا يمكن استخراج النص تلقائياً]';
+      return normalized || i18n.t('ai.fileExtraction.unreadableDocx');
     } catch (error) {
       console.warn('DOCX text extraction failed:', error);
-      return '[ملف DOCX - لا يمكن استخراج النص تلقائياً]';
+      return i18n.t('ai.fileExtraction.unreadableDocx');
     }
   }
 
@@ -96,10 +97,10 @@ export const extractTextPreview = async (file: File): Promise<string> => {
         if (slideText) texts.push(slideText);
       }
       const text = truncateText(normalizeWhitespace(texts.join('\n')));
-      return text || '[ملف PPTX - لا يمكن استخراج النص تلقائياً]';
+      return text || i18n.t('ai.fileExtraction.unreadablePptx');
     } catch (error) {
       console.warn('PPTX text extraction failed:', error);
-      return '[ملف PPTX - لا يمكن استخراج النص تلقائياً]';
+      return i18n.t('ai.fileExtraction.unreadablePptx');
     }
   }
 
@@ -114,7 +115,7 @@ export const extractTextPreview = async (file: File): Promise<string> => {
     return truncateText(normalizeWhitespace(text));
   }
 
-  return '[ملف ' + (extension ? extension.toUpperCase() : 'غير معروف') + ' - لا يمكن استخراج النص تلقائياً]';
+  return i18n.t('ai.fileExtraction.unreadableUnknown', { ext: extension ? extension.toUpperCase() : 'UNKNOWN' });
 };
 
 const isTextLikeExtension = (extension: string) => {
@@ -134,7 +135,7 @@ const normalizeWhitespace = (text: string) => {
 
 const truncateText = (text: string) => {
   if (text.length <= MAX_TEXT_PREVIEW_CHARS) return text;
-  return text.slice(0, MAX_TEXT_PREVIEW_CHARS) + '\n\n[تم اختصار النص]';
+  return text.slice(0, MAX_TEXT_PREVIEW_CHARS) + '\n\n' + i18n.t('ai.fileExtraction.truncated');
 };
 
 const readFileAsText = (file: File): Promise<string> => {
@@ -289,7 +290,7 @@ export const getScannedFileImageAttachments = async (
     const images = await extractFileImagesFromFile(blob, name);
     if (!images.length) return null;
     return images.map((content, i) => ({
-      name: `${name} (صورة ${i + 1})`,
+      name: `${name} (${i18n.t('ai.fileExtraction.imagePrefix')} ${i + 1})`,
       content,
       readable: false as const,
     }));

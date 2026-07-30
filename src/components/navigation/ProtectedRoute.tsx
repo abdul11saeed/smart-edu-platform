@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 
@@ -10,6 +11,7 @@ import { useAppStore } from '../../stores/appStore';
  * Handles loading state to prevent crashes during auth initialization.
  */
 function ProtectedRoute() {
+  const { t } = useTranslation();
   const currentUser = useAppStore((state) => state.currentUser);
   const isLoading = useAppStore((state) => state.isLoading);
 
@@ -21,7 +23,7 @@ function ProtectedRoute() {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
           <p className="mt-4 text-gray-600">
-            {isOffline ? 'لا يوجد اتصال بالإنترنت - جاري المحاولة...' : 'جاري التحقق من الجلسة...'}
+            {isOffline ? t('protectedRoute.offline') : t('protectedRoute.checkingSession')}
           </p>
         </div>
       </div>

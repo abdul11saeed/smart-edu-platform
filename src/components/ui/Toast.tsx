@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 // Toast Types
@@ -99,7 +100,8 @@ interface ToastContainerProps {
 }
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeToast }) => {
-  return (
+   const { t } = useTranslation();
+   return (
     <div className="fixed top-4 right-4 z-toast flex flex-col gap-3 max-w-sm w-full pointer-events-none">
       {toasts.map((toast) => (
         <div
@@ -122,7 +124,7 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeToast }) 
           <button
             onClick={() => removeToast(toast.id)}
             className="shrink-0 p-1 rounded-lg hover:bg-brown-200/50 dark:hover:bg-brown-700/50 text-brown-500 dark:text-brown-400 transition-colors"
-            aria-label="إغلاق الإشعار"
+            aria-label={t('toast.close')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -140,7 +142,8 @@ interface ToastProps {
 }
 
 export const Toast: React.FC<ToastProps> = ({ type, message, onClose }) => {
-  return (
+   const { t } = useTranslation();
+   return (
     <div
       className={`
         flex items-start gap-3 p-4
@@ -159,7 +162,7 @@ export const Toast: React.FC<ToastProps> = ({ type, message, onClose }) => {
         <button
           onClick={onClose}
           className="shrink-0 p-1 rounded-lg hover:bg-brown-200/50 dark:hover:bg-brown-700/50 text-brown-500 dark:text-brown-400 transition-colors"
-          aria-label="إغلاق الإشعار"
+          aria-label={t('toast.close')}
         >
           <X className="h-4 w-4" />
         </button>

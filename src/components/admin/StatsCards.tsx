@@ -1,4 +1,5 @@
 import { Users, FileText, Building, GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Stats {
     totalUsers: number;
@@ -15,27 +16,29 @@ interface StatsCardsProps {
 }
 
 const StatsCards: React.FC<StatsCardsProps> = ({ stats, universityCount }) => {
+    const { t, i18n } = useTranslation();
+    const locale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
     return (
         <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             <StatCard
                 icon={<Users className="h-8 w-8 shrink-0" />}
-                label="إجمالي المستخدمين"
-                value={stats.totalUsers > 0 ? stats.totalUsers.toLocaleString() : '-'}
+                label={t('admin.totalUsers')}
+                value={stats.totalUsers > 0 ? stats.totalUsers.toLocaleString(locale) : '-'}
                 gradientFrom="from-primary-500"
                 gradientTo="to-primary-700"
                 iconBg="bg-primary-100 text-primary-700"
             />
             <StatCard
                 icon={<FileText className="h-8 w-8 shrink-0" />}
-                label="إجمالي الملفات"
-                value={stats.totalFiles > 0 ? stats.totalFiles.toLocaleString() : '-'}
+                label={t('admin.totalFiles')}
+                value={stats.totalFiles > 0 ? stats.totalFiles.toLocaleString(locale) : '-'}
                 gradientFrom="from-secondary-500"
                 gradientTo="to-secondary-700"
                 iconBg="bg-secondary-100 text-secondary-700"
             />
             <StatCard
                 icon={<Building className="h-8 w-8 shrink-0" />}
-                label="إجمالي الجامعات"
+                label={t('admin.totalUniversities')}
                 value={stats.totalUniversities || universityCount}
                 gradientFrom="from-accent-500"
                 gradientTo="to-accent-700"
@@ -43,7 +46,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, universityCount }) => {
             />
             <StatCard
                 icon={<GraduationCap className="h-8 w-8 shrink-0" />}
-                label="إجمالي المسارات"
+                label={t('admin.totalCourses')}
                 value={stats.totalCourses}
                 gradientFrom="from-primary-500"
                 gradientTo="to-primary-700"

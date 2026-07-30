@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, Copy } from 'lucide-react';
 
 export interface CodeBlockProps {
@@ -62,8 +63,8 @@ const LANGUAGE_LABELS: Record<string, string> = {
     bash: 'Bash',
     sh: 'Shell',
     shell: 'Shell',
-    plaintext: 'نص',
-    text: 'نص',
+    plaintext: 'codeBlock.plaintext',
+    text: 'codeBlock.text',
 };
 
 /**
@@ -78,12 +79,14 @@ const LANGUAGE_LABELS: Record<string, string> = {
  *  - forced LTR direction (code must stay left-to-right even in an RTL app)
  */
 const CodeBlock = memo(function CodeBlock({ language = 'text', className, children }: CodeBlockProps) {
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
 
     const rawText = useMemo(() => extractText(children), [children]);
 
     const lang = (language || 'text').toLowerCase();
-    const label = LANGUAGE_LABELS[lang] || (lang === 'text' ? 'نص' : lang.toUpperCase());
+    const rawLabel = LANGUAGE_LABELS[lang];
+    const label = typeof rawLabel === 'string' && rawLabel.startsWith('codeBlock.') ? t(rawLabel) : (rawLabel || lang.toUpperCase());
 
     const handleCopy = useCallback(async () => {
         try {
@@ -116,19 +119,19 @@ const CodeBlock = memo(function CodeBlock({ language = 'text', className, childr
                 <button
                     type="button"
                     onClick={handleCopy}
-                    title={copied ? 'تم النسخ' : 'نسخ الكود'}
-                    aria-label={copied ? 'تم النسخ' : 'نسخ الكود'}
+                    title={copied ? t('codeBlock.copied') : t('codeBlock.copy')}
+                    aria-label={copied ? t('codeBlock.copied') : t('codeBlock.copy')}
                     className="inline-flex items-center gap-1 rounded-md px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                     {copied ? (
                         <>
                             <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-400" />
-                            <span className="text-green-400 hidden sm:inline">تم النسخ</span>
+                            <span className="text-green-400 hidden sm:inline">{t('codeBlock.copied')}</span>
                         </>
                     ) : (
                         <>
                             <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                            <span className="hidden sm:inline">نسخ</span>
+                            <span className="hidden sm:inline">{t('codeBlock.copy')}</span>
                         </>
                     )}
                 </button>

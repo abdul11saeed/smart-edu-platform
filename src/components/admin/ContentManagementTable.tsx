@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit2, Trash2, Check, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ContentItem } from './types';
 
 interface ContentManagementTableProps {
@@ -15,20 +16,6 @@ interface ContentManagementTableProps {
     onEditNameChange: (value: string) => void;
 }
 
-const TYPE_ARABIC_LABEL: Record<string, string> = {
-    university: 'جامعة',
-    college: 'كلية',
-    major: 'تخصص',
-    course: 'مسار',
-};
-
-const TYPE_COLORS: Record<string, { bg: string; text: string; badge: string }> = {
-    university: { bg: 'bg-primary-50', text: 'text-primary-700', badge: 'bg-primary-100 text-primary-800' },
-    college: { bg: 'bg-secondary-50', text: 'text-secondary-700', badge: 'bg-secondary-100 text-secondary-800' },
-    major: { bg: 'bg-accent-50', text: 'text-accent-700', badge: 'bg-accent-100 text-accent-800' },
-    course: { bg: 'bg-sage-50', text: 'text-sage-700', badge: 'bg-sage-100 text-sage-800' },
-};
-
 const ContentManagementTable: React.FC<ContentManagementTableProps> = ({
     items,
     editingItem,
@@ -41,32 +28,52 @@ const ContentManagementTable: React.FC<ContentManagementTableProps> = ({
     onDeleteItem,
     onEditNameChange,
 }) => {
+    const { t } = useTranslation();
     const isProcessing = isEditingContent || isDeleting;
+
+    const getTypeLabel = (type: string): string => {
+        switch (type) {
+            case 'university': return t('admin.typeUniversity');
+            case 'college': return t('admin.typeCollege');
+            case 'major': return t('admin.typeMajor');
+            case 'course': return t('admin.typeCourse');
+            default: return type;
+        }
+    };
+
+    const getStatusLabel = (status: string): string => {
+        return status === 'active' ? t('admin.active') : t('admin.inactive');
+    };
 
     return (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-neutral-200/60 shadow-lg shadow-neutral-200/50 p-4 sm:p-6 lg:p-8 mt-6 sm:mt-8 hover:shadow-xl hover:shadow-neutral-300/50 transition-all duration-300">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <h2 className="text-lg sm:text-xl font-bold text-neutral-800 flex items-center">
                     <span className="inline-block w-1 h-6 sm:h-8 bg-gradient-to-b from-primary-600 to-secondary-600 rounded-full ml-3"></span>
-                    إدارة المحتوى التعليمي
+                    {t('admin.contentManagement')}
                 </h2>
                 <span className="text-xs font-medium text-neutral-400 bg-neutral-100 px-2.5 py-1 rounded-full">
-                    {items.length} عنصر
+                    {t('admin.itemsCount', { count: items.length })}
                 </span>
             </div>
             <div className="overflow-x-auto overflow-y-auto max-h-[60vh] sm:max-h-[70vh] custom-scrollbar rounded-xl">
                 <table className="min-w-[320px] w-full divide-y divide-neutral-100 text-sm sm:text-base">
                     <thead>
                         <tr className="bg-gradient-to-l from-neutral-50 to-neutral-100/50">
-                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider rounded-r-lg">النوع</th>
-                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">الاسم</th>
-                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">الحالة</th>
-                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider rounded-l-lg">الإجراءات</th>
+                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider rounded-r-lg">{t('admin.type')}</th>
+                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">{t('admin.name')}</th>
+                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">{t('admin.status')}</th>
+                            <th className="px-3 sm:px-6 py-3.5 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider rounded-l-lg">{t('admin.actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-neutral-100">
                         {items.map((item, index) => {
-                            const typeColors = TYPE_COLORS[item.type] || TYPE_COLORS.university;
+                            const typeColors = {
+                                university: { bg: 'bg-primary-50', text: 'text-primary-700', badge: 'bg-primary-100 text-primary-800' },
+                                college: { bg: 'bg-secondary-50', text: 'text-secondary-700', badge: 'bg-secondary-100 text-secondary-800' },
+                                major: { bg: 'bg-accent-50', text: 'text-accent-700', badge: 'bg-accent-100 text-accent-800' },
+                                course: { bg: 'bg-sage-50', text: 'text-sage-700', badge: 'bg-sage-100 text-sage-800' },
+                            }[item.type] || { bg: 'bg-primary-50', text: 'text-primary-700', badge: 'bg-primary-100 text-primary-800' };
                             return (
                                 <tr
                                     key={item.id}
@@ -74,7 +81,7 @@ const ContentManagementTable: React.FC<ContentManagementTableProps> = ({
                                 >
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${typeColors.badge}`}>
-                                            {TYPE_ARABIC_LABEL[item.type]}
+                                            {getTypeLabel(item.type)}
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-neutral-800 font-medium">
@@ -94,7 +101,7 @@ const ContentManagementTable: React.FC<ContentManagementTableProps> = ({
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${item.status === 'active' ? 'bg-success-100 text-success-700' : 'bg-neutral-100 text-neutral-500'}`}>
-                                            {item.status === 'active' ? 'نشط' : 'غير نشط'}
+                                            {getStatusLabel(item.status)}
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-neutral-500">
@@ -104,18 +111,18 @@ const ContentManagementTable: React.FC<ContentManagementTableProps> = ({
                                                     onClick={onSaveEdit}
                                                     disabled={isProcessing}
                                                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-l from-success-600 to-success-700 hover:from-success-700 hover:to-success-800 rounded-lg transition-all shadow-sm shadow-success-500/20 disabled:opacity-50"
-                                                    title="حفظ"
+                                                    title={t('admin.save')}
                                                 >
                                                     <Check className="h-3.5 w-3.5" />
-                                                    حفظ
+                                                    {t('admin.save')}
                                                 </button>
                                                 <button
                                                     onClick={onCancelEdit}
                                                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
-                                                    title="إلغاء"
+                                                    title={t('admin.cancel')}
                                                 >
                                                     <X className="h-3.5 w-3.5" />
-                                                    إلغاء
+                                                    {t('admin.cancel')}
                                                 </button>
                                             </div>
                                         ) : (
@@ -124,19 +131,19 @@ const ContentManagementTable: React.FC<ContentManagementTableProps> = ({
                                                     onClick={() => onStartEdit(item)}
                                                     disabled={isProcessing}
                                                     className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors disabled:opacity-50"
-                                                    title="تعديل"
+                                                    title={t('admin.edit')}
                                                 >
                                                     <Edit2 className="h-3.5 w-3.5" />
-                                                    تعديل
+                                                    {t('admin.edit')}
                                                 </button>
                                                 <button
                                                     onClick={() => onDeleteItem(item.id)}
                                                     disabled={isProcessing}
                                                     className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
-                                                    title="حذف"
+                                                    title={t('admin.delete')}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
-                                                    حذف
+                                                    {t('admin.delete')}
                                                 </button>
                                             </div>
                                         )}

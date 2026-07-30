@@ -206,7 +206,7 @@ const Register: React.FC = () => {
 
           <div className="text-center">
             <Link to="/login" className="text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] transition-colors">
-              {t('auth.alreadyHaveAccount', 'لديك حساب بالفعل؟ سجل الدخول')}
+              {t('auth.alreadyHaveAccount')}
             </Link>
           </div>
         </form>

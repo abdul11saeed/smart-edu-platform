@@ -290,7 +290,8 @@ export const uploadCourseFile = async (
         (async () => {
             try {
                 const textPreview = await extractTextPreview(file);
-                if (textPreview && !textPreview.startsWith('[ملف')) {
+                // Backward-compatible check: both Arabic ([ملف) and English ([File) prefixes
+                if (textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix))) {
                     await updateDoc(doc(db, 'courseFiles', fileId), {
                         localTextPreview: textPreview
                     }).catch(e => console.warn('Failed to update text preview:', e));

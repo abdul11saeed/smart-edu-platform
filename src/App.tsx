@@ -273,18 +273,24 @@ function App() {
           onClose={() => { setIsAIChatOpen(false); setAiChatInitialFile(null); }}
           currentUser={currentUser}
           initialSelectedFile={aiChatInitialFile}
-           courseFiles={currentCourseFiles.map(f => ({
-             id: f.id,
-             name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
-             content: f.localTextPreview || f.downloadURL || f.url || undefined,
-             readable: !!(f.localTextPreview && !f.localTextPreview.startsWith('[ملف'))
-           }))}
-           allFiles={allUserFiles.map(f => ({
-             id: f.id,
-             name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
-             content: f.localTextPreview || f.downloadURL || f.url || undefined,
-             readable: !!(f.localTextPreview && !f.localTextPreview.startsWith('[ملف'))
-           }))}
+           courseFiles={currentCourseFiles.map(f => {
+              const textPreview = f.localTextPreview;
+              return {
+                 id: f.id,
+                 name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
+                 content: textPreview || f.downloadURL || f.url || undefined,
+                 readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
+              };
+            })}
+            allFiles={allUserFiles.map(f => {
+              const textPreview = f.localTextPreview;
+              return {
+                 id: f.id,
+                 name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
+                 content: textPreview || f.downloadURL || f.url || undefined,
+                 readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
+              };
+            })}
         />
 
         {/* Floating Action Buttons */}

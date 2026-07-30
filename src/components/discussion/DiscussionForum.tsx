@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MessageCircle, Send, ThumbsUp, User, Clock, Reply } from 'lucide-react';
 import { Discussion, Comment } from '../../types';
 import { useAppStore } from '../../stores/appStore';
@@ -26,6 +27,7 @@ interface DiscussionForumProps {
 }
 
 const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
+    const { t, i18n } = useTranslation();
     const { currentUser } = useAppStore();
     const navigate = useNavigate();
     const [discussions, setDiscussions] = useState<Discussion[]>([]);
@@ -150,7 +152,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
     const handleCreateDiscussion = async () => {
         if (!newDiscussion.title.trim() || !newDiscussion.content.trim()) return;
         if (!currentUser) {
-            alert('الرجاء تسجيل الدخول للمشاركة');
+            alert(t('discussions.loginRequiredCreate'));
             return;
         }
 
@@ -174,14 +176,14 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
             setShowNewDiscussion(false);
         } catch (error) {
             console.error('Error creating discussion:', error);
-            alert('حدث خطأ أثناء إنشاء المناقشة');
+            alert(t('discussions.errorCreating'));
         }
     };
 
     const handleAddComment = async (discussionId: string) => {
         if (!newComment.trim()) return;
         if (!currentUser) {
-            alert('الرجاء تسجيل الدخول للتعليق');
+            alert(t('discussions.loginRequiredComment'));
             return;
         }
 
@@ -201,13 +203,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
             setNewComment('');
         } catch (error) {
             console.error('Error adding comment:', error);
-            alert('حدث خطأ أثناء إضافة التعليق');
+            alert(t('discussions.errorCommenting'));
         }
     };
 
     const handleLike = async (discussionId: string) => {
         if (!currentUser) {
-            alert('الرجاء تسجيل الدخول للإعجاب');
+            alert(t('discussions.loginRequiredLike'));
             return;
         }
 
@@ -226,7 +228,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
     const handleSendMessage = async () => {
         if (!newMessage.trim()) return;
         if (!currentUser) {
-            alert('الرجاء تسجيل الدخول لإرسال رسالة');
+            alert(t('discussions.loginRequiredChat'));
             return;
         }
 
@@ -246,7 +248,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
             setNewMessage('');
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('حدث خطأ أثناء إرسال الرسالة');
+            alert(t('discussions.errorChat'));
         }
     };
 
@@ -263,9 +265,9 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                         onClick={() => setSelectedDiscussionId(null)}
                         className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline mb-4 flex items-center transition-colors duration-200"
                     >
-                        ← العودة للمناقشات
+                        {t('discussions.backToDiscussions')}
                     </button>
-                    <p className="text-brown-500 dark:text-neutral-400">حدث خطأ في تحميل المناقشة</p>
+                    <p className="text-brown-500 dark:text-neutral-400">{t('discussions.errorLoading')}</p>
                 </div>
             );
         }
@@ -276,7 +278,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                         onClick={() => setSelectedDiscussionId(null)}
                     className="text-primary-600 hover:text-primary-700 hover:underline mb-4 flex items-center transition-colors duration-200"
                 >
-                    ← العودة للمناقشات
+                    {t('discussions.backToDiscussions')}
                 </button>
 
                 <div className="border-b border-primary-200 dark:border-primary-800 pb-4 mb-4">
@@ -286,7 +288,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                         <span className="ml-1">{selectedDiscussion.authorName}</span>
                         {selectedDiscussion.authorRole === 'admin' && (
                             <span className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-xs rounded-md font-medium">
-                                مدير الموقع
+                                {t('discussions.siteAdmin')}
                             </span>
                         )}
                         <Clock className="h-4 w-4 mr-3 ml-3 text-brown-400 dark:text-brown-500" />
@@ -296,11 +298,11 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                 </div>
 
                 <div className="mb-6">
-                    <h4 className="font-semibold mb-4 text-lg text-brown-900 dark:text-neutral-100">التعليقات ({Array.isArray(selectedDiscussion.comments) ? selectedDiscussion.comments.length : 0})</h4>
+                    <h4 className="font-semibold mb-4 text-lg text-brown-900 dark:text-neutral-100">{t('discussions.comments', { count: Array.isArray(selectedDiscussion.comments) ? selectedDiscussion.comments.length : 0 })}</h4>
 
                     {(!Array.isArray(selectedDiscussion.comments) || selectedDiscussion.comments.length === 0) ? (
                         <div className="text-center py-8 text-brown-500 dark:text-neutral-400 bg-brown-50 dark:bg-brown-800/50 rounded-xl border border-dashed border-brown-200 dark:border-brown-700">
-                            لا توجد تعليقات بعد
+                            {t('discussions.noCommentsYet')}
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -311,7 +313,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                         <span className="font-medium ml-1 text-brown-900 dark:text-neutral-100">{comment.authorName}</span>
                                         {comment.authorRole === 'admin' && (
                                             <span className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-xs rounded-md font-medium">
-                                                مدير الموقع
+                                                {t('discussions.siteAdmin')}
                                             </span>
                                         )}
                                         <Clock className="h-4 w-4 mr-3 ml-3 text-brown-400 dark:text-brown-500" />
@@ -330,13 +332,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                             type="text"
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="اكتب تعليقك..."
+                            placeholder={t('discussions.commentPlaceholder')}
                             className="flex-1 p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
                             onKeyPress={(e) => e.key === 'Enter' && handleAddComment(selectedDiscussion.id)}
                         />
                         <button
                             onClick={() => handleAddComment(selectedDiscussion.id)}
-                            title="إرسال التعليق"
+                            title={t('discussions.sendComment')}
                             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:scale-[0.98] transition-all duration-200 shadow-sm hover:shadow-md"
                         >
                             <Send className="h-5 w-5" />
@@ -348,7 +350,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
     }
 
     return (
-        <div className="space-y-4">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="space-y-4">
             {/* Toggle between Discussions and Chat */}
             <div className="flex gap-2 mb-4 bg-brown-100 dark:bg-brown-800 p-1 rounded-xl w-fit">
                 <button
@@ -359,7 +361,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-200/50 dark:hover:bg-gray-600/50'
                     }`}
                 >
-                    المناقشات
+                    {t('discussions.discussionsTab')}
                 </button>
                 <button
                     onClick={() => setShowChat(true)}
@@ -369,7 +371,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-200/50 dark:hover:bg-gray-600/50'
                     }`}
                 >
-                    الدردشة
+                    {t('discussions.chatTab')}
                 </button>
             </div>
 
@@ -379,14 +381,14 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-semibold flex items-center text-brown-800 dark:text-neutral-100">
                             <MessageCircle className="h-5 w-5 mr-2 text-primary-500" />
-                            منصة النقاشات والمناقشات
+                            {t('discussions.platformTitle')}
                         </h2>
                         {currentUser && (
                             <button
                                 onClick={() => setShowNewDiscussion(!showNewDiscussion)}
                                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-medium"
                             >
-                                مناقشة جديدة
+                                {t('discussions.newDiscussion')}
                             </button>
                         )}
                     </div>
@@ -397,13 +399,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                 type="text"
                                 value={newDiscussion.title}
                                 onChange={(e) => setNewDiscussion({ ...newDiscussion, title: e.target.value })}
-                                placeholder="عنوان المناقشة..."
+                                placeholder={t('discussions.discussionTitle')}
                                 className="w-full p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
                             />
                             <textarea
                                 value={newDiscussion.content}
                                 onChange={(e) => setNewDiscussion({ ...newDiscussion, content: e.target.value })}
-                                placeholder="محتوى المناقشة..."
+                                placeholder={t('discussions.discussionContent')}
                                 rows={3}
                                 className="w-full p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
                             />
@@ -412,27 +414,27 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                     onClick={handleCreateDiscussion}
                                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-medium"
                                 >
-                                    نشر المناقشة
+                                    {t('discussions.publishDiscussion')}
                                 </button>
                                 <button
                                     onClick={() => setShowNewDiscussion(false)}
                                     className="px-4 py-2 border border-brown-200 dark:border-brown-600 rounded-lg hover:bg-brown-50 dark:hover:bg-brown-700 hover:border-brown-300 active:scale-[0.98] transition-all duration-200 font-medium text-brown-700 dark:text-neutral-200"
                                 >
-                                    إلغاء
+                                    {t('discussions.cancel')}
                                 </button>
                             </div>
                         </div>
                     )}
 
                     {isLoading ? (
-                        <div className="text-center py-8 text-brown-500 dark:text-neutral-400">جاري التحميل...</div>
+                        <div className="text-center py-8 text-brown-500 dark:text-neutral-400">{t('discussions.loading')}</div>
                     ) : discussions.length === 0 ? (
                         <div className="text-center py-14 bg-brown-50 dark:bg-brown-800/50 rounded-xl border-2 border-dashed border-primary-200 dark:border-primary-800">
                             <MessageCircle className="h-12 w-12 mx-auto mb-4 text-primary-400 dark:text-primary-500" />
                             <p className="text-lg sm:text-xl font-bold text-brown-700 dark:text-neutral-200 leading-relaxed px-4">
                                 {currentUser
-                                    ? 'لا توجد مناقشات بعد. كن أول من يبدأ مناقشة!'
-                                    : 'لا توجد مناقشات لعرضها لهذه المادة بعد'}
+                                    ? t('discussions.noDiscussionsYet')
+                                    : t('discussions.noDiscussionsForCourse')}
                             </p>
                         </div>
                     ) : (
@@ -451,10 +453,10 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                                 <User className="h-3 w-3 mr-1 text-brown-400 dark:text-brown-500" />
                                                 <span className="ml-1">{discussion.authorName}</span>
                                                 {discussion.authorRole === 'admin' && (
-                                                    <span className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-xs rounded-md font-medium">
-                                                        مدير الموقع
-                                                    </span>
-                                                )}
+                                                        <span className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-xs rounded-md font-medium">
+                                                            {t('discussions.siteAdmin')}
+                                                        </span>
+                                                    )}
                                                 <Clock className="h-3 w-3 mr-3 ml-3 text-brown-400 dark:text-brown-500" />
                                                 <span>{formatDate(discussion.createdAt)}</span>
                                             </div>
@@ -467,7 +469,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                                         ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30'
                                                         : 'text-brown-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                                 }`}
-                                                aria-label={getLikeInfo(discussion.id).likedByCurrentUser ? 'إلغاء الإعجاب' : 'إعجاب'}
+                                                aria-label={getLikeInfo(discussion.id).likedByCurrentUser ? t('discussions.unlike') : t('discussions.like')}
                                             >
                                                 <ThumbsUp className={`h-4 w-4 ${getLikeInfo(discussion.id).likedByCurrentUser ? 'fill-current' : ''}`} />
                                                 <span className="text-sm font-medium">{getLikeInfo(discussion.id).likeCount}</span>
@@ -487,13 +489,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                         <div className="text-center py-8 bg-gradient-to-br from-primary-50 to-[#FFFBEB] dark:from-primary-900/20 dark:to-brown-900 rounded-xl border-2 border-dashed border-primary-300 dark:border-primary-700 mt-4">
                             <User className="h-12 w-12 mx-auto mb-3 text-primary-500 dark:text-primary-400" />
                             <p className="text-lg sm:text-xl font-bold text-brown-700 dark:text-neutral-200 mb-5 leading-relaxed px-4">
-                                الرجاء تسجيل الدخول للمشاركة في المناقشات
+                                {t('discussions.loginToParticipate')}
                             </p>
                             <button
                                 onClick={() => navigate('/login')}
                                 className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200 font-semibold text-base"
                             >
-                                تسجيل الدخول
+                                {t('discussions.loginButton')}
                             </button>
                         </div>
                     )}
@@ -503,13 +505,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                 <div className="bg-[#FFFBEB] dark:bg-brown-900 rounded-xl border border-brown-200 dark:border-brown-700 p-6 shadow-sm">
                     <h2 className="text-xl font-semibold mb-4 flex items-center text-brown-800 dark:text-neutral-100">
                         <MessageCircle className="h-5 w-5 mr-2 text-primary-500" />
-                        الدردشة العامة
+                        {t('discussions.publicChat')}
                     </h2>
 
                     <div ref={chatContainerRef} className="h-64 sm:h-80 md:h-96 overflow-y-auto border border-brown-200 dark:border-brown-700 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 bg-brown-50 dark:bg-brown-800/50 custom-scrollbar">
                         {chatMessages.length === 0 ? (
                             <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                                لا توجد رسائل بعد. ابدأ المحادثة!
+                                {t('discussions.noMessagesYet')}
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -527,7 +529,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                             <span className="font-medium text-brown-900 dark:text-neutral-100">{message.authorName}</span>
                                             {message.authorRole === 'admin' && (
                                                 <span className="ml-2 px-1.5 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-xs rounded-md font-medium">
-                                                    مدير الموقع
+                                                    {t('discussions.siteAdmin')}
                                                 </span>
                                             )}
                                             <Clock className="h-3 w-3 mr-2 ml-2 text-brown-400 dark:text-brown-500" />
@@ -546,13 +548,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                                 type="text"
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="اكتب رسالتك..."
+                                placeholder={t('discussions.messagePlaceholder')}
                                 className="flex-1 p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             />
                             <button
                                 onClick={handleSendMessage}
-                                title="إرسال الرسالة"
+                                title={t('discussions.sendMessage')}
                                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200"
                             >
                                 <Send className="h-5 w-5" />
@@ -560,7 +562,7 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                         </div>
                     ) : (
                         <div className="text-center text-brown-500 dark:text-neutral-400 bg-brown-50 dark:bg-brown-800/50 rounded-xl p-4 border border-dashed border-brown-200 dark:border-brown-700">
-                            <p>الرجاء تسجيل الدخول للدردشة</p>
+                            <p>{t('discussions.loginToChat')}</p>
                         </div>
                     )}
                 </div>

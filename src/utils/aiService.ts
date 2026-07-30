@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 /**
  * Frontend AI service.
  *
@@ -52,6 +54,7 @@ interface BaseInput {
     conversationMessages?: ChatMessage[];
     /** In this app the caller passes the chat sessionId here (see AIChat). */
     userId?: string;
+    language?: string;
 }
 
 interface SummarizeInput extends BaseInput {
@@ -80,6 +83,7 @@ interface TranslateInput extends BaseInput {
 interface ChatInput {
     messages: ChatMessage[];
     sessionId?: string;
+    language?: string;
 }
 
 // Split the model response into bullet/numbered list items.
@@ -141,7 +145,7 @@ const callAI = async (payload: Record<string, unknown>): Promise<string> => {
             body: JSON.stringify(payload),
         });
     } catch (e) {
-        throw new Error('تعذر الوصول إلى خدمة الذكاء الاصطناعي. تحقق من اتصالك بالخادم.');
+        throw new Error(i18n.t('ai.connectionError'));
     }
 
     if (!res.ok) {
@@ -169,6 +173,7 @@ export const aiService = {
             context: input.context,
             messages: input.conversationMessages,
             sessionId: input.userId,
+            language: input.language,
             attachments,
         });
         return { summary: content, keyPoints: extractListItems(content) };
@@ -181,6 +186,7 @@ export const aiService = {
             context: input.context,
             messages: input.conversationMessages,
             sessionId: input.userId,
+            language: input.language,
             attachments,
         });
         return { explanation: content };
@@ -197,6 +203,7 @@ export const aiService = {
             questionType: input.questionType,
             messages: input.conversationMessages,
             sessionId: input.userId,
+            language: input.language,
             attachments,
         });
         return { questions: parseQuestions(content) };
@@ -210,6 +217,7 @@ export const aiService = {
             fileName: input.fileName,
             messages: input.conversationMessages,
             sessionId: input.userId,
+            language: input.language,
             attachments,
         });
         return { translatedText: content };
@@ -220,6 +228,7 @@ export const aiService = {
             taskType: 'chat',
             messages: input.messages,
             sessionId: input.sessionId,
+            language: input.language,
             attachments,
         });
         return { response: content };

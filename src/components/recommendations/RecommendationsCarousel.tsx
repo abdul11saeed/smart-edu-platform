@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Pause, Play, Sparkles, AlertTriangle } from 'lucide-react';
 import RecommendationCard from './RecommendationCard';
 import { RecommendationContent, RecommendationItemWithStatus } from '../../types';
@@ -40,6 +41,7 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
     const didDragRef = useRef(false);
     const reloadAttemptsRef = useRef(0);
     const MAX_RELOAD_ATTEMPTS = 10; // Increased to ensure cards are always filled
+    const { t, i18n } = useTranslation();
 
     const { handleSave, handleLike, handleHide, canInteract } = useRecommendationActions({
         userId: isPublic ? undefined : userId,
@@ -245,13 +247,13 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-red-500" />
-                        <span className="text-sm text-red-700 dark:text-red-300">تعذر تحميل الاقتراحات. يرجى التحقق من الاتصال والمحاولة مرة أخرى.</span>
+                        <span className="text-sm text-red-700 dark:text-red-300">{t('recommendations.carousel.errorLoading')}</span>
                     </div>
                     <button
                         onClick={() => setReloadKey(k => k + 1)}
                         className="px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-[0.97]"
                     >
-                        🔄 إعادة المحاولة
+                        {t('recommendations.carousel.retry')}
                     </button>
                 </div>
             </div>
@@ -266,7 +268,7 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
             <div className="bg-gradient-to-l from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 sm:p-6 shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary-500" />
-                    {isPublic ? 'محتوى موصى به' : 'مقترحات لك'}
+                    {isPublic ? t('recommendations.carousel.publicContent') : t('recommendations.carousel.recommendedForYou')}
                 </h2>
                 <div className="flex gap-4">
                     {[1, 2, 3].map(i => (
@@ -282,19 +284,19 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
     }
 
     return (
-        <div className="bg-gradient-to-l from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 sm:p-6 shadow-sm border border-blue-100/50 dark:border-blue-800/30">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="bg-gradient-to-l from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 sm:p-6 shadow-sm border border-blue-100/50 dark:border-blue-800/30">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary-500" />
-                    {isPublic ? 'محتوى موصى به' : 'مقترحات لك'}
+                    {isPublic ? t('recommendations.carousel.publicContent') : t('recommendations.carousel.recommendedForYou')}
                 </h2>
                 {onViewAll && (
                     <button
                         onClick={onViewAll}
                         className="text-sm font-semibold text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 flex items-center gap-1.5 transition-all duration-200 bg-primary-50 dark:bg-primary-900/20 px-4 py-2 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:shadow-md hover:scale-[1.03] active:scale-[0.97]"
                     >
-                        عرض جميع الاقتراحات
-                        <ChevronLeft className="h-4 w-4" />
+                        {t('recommendations.carousel.viewAll')}
+                        {i18n.language === 'ar' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </button>
                 )}
             </div>
@@ -307,12 +309,15 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                     tabIndex={0}
                     role="group"
                     aria-roledescription="carousel"
-                    aria-label={isPublic ? 'محتوى موصى به' : 'مقترحات لك'}
+                    aria-label={isPublic ? t('recommendations.carousel.publicContent') : t('recommendations.carousel.recommendedForYou')}
                     onKeyDown={(e) => {
-                        if (e.key === 'ArrowRight') {
+                        const isRtl = i18n.language === 'ar';
+                        const nextKey = isRtl ? 'ArrowLeft' : 'ArrowRight';
+                        const prevKey = isRtl ? 'ArrowRight' : 'ArrowLeft';
+                        if (e.key === nextKey) {
                             e.preventDefault();
                             goToNext();
-                        } else if (e.key === 'ArrowLeft') {
+                        } else if (e.key === prevKey) {
                             e.preventDefault();
                             goToPrevious();
                         }
@@ -333,9 +338,8 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                 >
                     <div
                         className="flex transition-transform duration-500 ease-out"
-                        style={{
-                            direction: 'ltr',
-                            transform: `translateX(calc(${currentIndex * 100}% - ${dragOffset}px))`,
+                            style={{
+                                transform: `translateX(calc(-${currentIndex * 100}% + ${dragOffset}px))`,
                             cursor: isDragging ? 'grabbing' : 'grab',
                         }}
                     >
@@ -388,17 +392,17 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                     <>
                         <button
                             onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-200 hover:scale-110 active:scale-90 hover:shadow-xl"
-                            aria-label="السابق"
+                            className={`absolute top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-200 hover:scale-110 active:scale-90 hover:shadow-xl ${i18n.language === 'ar' ? 'right-3' : 'left-3'}`}
+                            aria-label={t('recommendations.carousel.previous')}
                         >
-                            <ChevronLeft className="h-6 w-6" />
+                            <ChevronRight className="h-6 w-6" />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); goToNext(); }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-200 hover:scale-110 active:scale-90 hover:shadow-xl"
-                            aria-label="التالي"
+                            className={`absolute top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-200 hover:scale-110 active:scale-90 hover:shadow-xl ${i18n.language === 'ar' ? 'left-3' : 'right-3'}`}
+                            aria-label={t('recommendations.carousel.next')}
                         >
-                            <ChevronRight className="h-6 w-6" />
+                            <ChevronLeft className="h-6 w-6" />
                         </button>
                         {showAutoAdvanceToggle && (
                             <button
@@ -407,8 +411,8 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                                     setIsAutoAdvancePaused(prev => !prev);
                                 }}
                                 className="absolute top-2 right-2 z-10 p-2.5 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-200 hover:scale-110 active:scale-90"
-                                aria-label={isAutoAdvancePaused ? 'تشغيل التقدم التلقائي' : 'إيقاف التقدم التلقائي'}
-                                title={isAutoAdvancePaused ? 'تشغيل التقدم التلقائي' : 'إيقاف التقدم التلقائي'}
+                                aria-label={isAutoAdvancePaused ? t('recommendations.carousel.playAutoplay') : t('recommendations.carousel.pauseAutoplay')}
+                                title={isAutoAdvancePaused ? t('recommendations.carousel.playAutoplay') : t('recommendations.carousel.pauseAutoplay')}
                             >
                                 {isAutoAdvancePaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
                             </button>
@@ -430,7 +434,7 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                                         : 'bg-brown-300 dark:bg-brown-600 hover:bg-brown-400 dark:hover:bg-brown-500'
                                     }
                                 `}
-                                aria-label={`الذهاب إلى الاقتراح ${index + 1}`}
+                                aria-label={t('recommendations.carousel.goToSuggestion', { num: index + 1 })}
                             />
                         ))}
                     </div>

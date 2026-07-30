@@ -189,7 +189,7 @@ const Login: React.FC = () => {
                 <div className="w-full border-t border-brown-300/80 dark:border-brown-600/20" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white/80 dark:bg-brown-900/60 text-brown-500 dark:text-[#D4A77A]/60">{t('common.or', 'أو')}</span>
+                <span className="px-2 bg-white/80 dark:bg-brown-900/60 text-brown-500 dark:text-[#D4A77A]/60">{t('common.or')}</span>
               </div>
             </div>
 

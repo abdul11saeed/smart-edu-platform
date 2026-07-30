@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { useAppStore } from '../../stores/appStore';
 import { useCatalogStore } from '../../stores/catalogStore';
 import { University, College, Major, Course, File as AppFile } from '../../types';
@@ -12,6 +14,7 @@ interface FileUploadFormProps {
 }
 
 export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId }: FileUploadFormProps) {
+    const { t } = useTranslation();
     const { currentCourseFiles, setCurrentCourseFiles, currentUser, addUserFile } = useAppStore();
     const { universities, fetchUniversities, isLoading: catalogLoading } = useCatalogStore();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -151,7 +154,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 (c: Course) => c.name.toLowerCase().trim() === value.trim().toLowerCase()
             );
             if (duplicate) {
-                setCourseDuplicateWarning(`المقرر "${duplicate.name}" موجود مسبقاً في هذا التخصص. يرجى اختياره من القائمة بدلاً من كتابته.`);
+                setCourseDuplicateWarning(t('upload.duplicateCourseWarning', { name: duplicate.name }));
             } else {
                 setCourseDuplicateWarning(null);
             }
@@ -169,52 +172,52 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
         e.preventDefault();
         // Ensure user is authenticated before attempting upload to satisfy storage rules
         if (!auth?.currentUser) {
-            setUploadMessage({ type: 'error', text: 'الرجاء تسجيل الدخول قبل رفع الملفات.' });
+            setUploadMessage({ type: 'error', text: t('upload.loginRequired') });
             return;
         }
 
         if (!selectedFile) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار ملف للرفع' });
+            setUploadMessage({ type: 'error', text: t('upload.selectFileError') });
             return;
         }
 
         if (!selectedUniversity) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار الجامعة' });
+            setUploadMessage({ type: 'error', text: t('upload.selectUniversityError') });
             return;
         }
 
         if (!selectedCollege) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار الكلية' });
+            setUploadMessage({ type: 'error', text: t('upload.selectCollegeError') });
             return;
         }
 
         if (!selectedMajor) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار التخصص' });
+            setUploadMessage({ type: 'error', text: t('upload.selectMajorError') });
             return;
         }
 
         if (!selectedTerm) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار الترم' });
+            setUploadMessage({ type: 'error', text: t('upload.selectTermError') });
             return;
         }
 
         if (!selectedLevel) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار المستوى' });
+            setUploadMessage({ type: 'error', text: t('upload.selectLevelError') });
             return;
         }
 
         if (!selectedAcademicYear) {
-            setUploadMessage({ type: 'error', text: 'الرجاء اختيار العام الدراسي' });
+            setUploadMessage({ type: 'error', text: t('upload.selectYearError') });
             return;
         }
 
         if (!professorName.trim()) {
-            setUploadMessage({ type: 'error', text: 'الرجاء إدخال اسم الدكتور' });
+            setUploadMessage({ type: 'error', text: t('upload.enterProfessorError') });
             return;
         }
 
         if (!currentUser) {
-            setUploadMessage({ type: 'error', text: 'الرجاء تسجيل الدخول لرفع الملفات' });
+            setUploadMessage({ type: 'error', text: t('upload.loginToUpload') });
             return;
         }
 
@@ -230,7 +233,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
             // If course comes from URL parameter - use it directly
             if (urlCourseId) {
                 effectiveCourseId = urlCourseId;
-                effectiveCourseName = subjectName.trim() || 'مقرر محدد';
+                effectiveCourseName = subjectName.trim() || t('upload.selectedCourse');
             }
             // If course selected from dropdown - use it
             else if (selectedCourse) {
@@ -246,7 +249,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 if (duplicate) {
                     setUploadMessage({
                         type: 'error',
-                        text: `المقرر "${duplicate.name}" موجود مسبقاً في هذا التخصص. يرجى اختياره من القائمة.`
+                        text: t('upload.duplicateCourseWarning', { name: duplicate.name })
                     });
                     return;
                 }
@@ -262,7 +265,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 effectiveCourseName = newCourse.name;
             }
             else {
-                setUploadMessage({ type: 'error', text: 'يرجى اختيار أو كتابة اسم المقرر' });
+                setUploadMessage({ type: 'error', text: t('upload.enterCourseNameError') });
                 return;
             }
 
@@ -295,7 +298,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
             );
 
             if (!uploadResult.success) {
-                throw new Error(uploadResult.error || 'فشل رفع الملف');
+                throw new Error(uploadResult.error || t('upload.uploadFailed'));
             }
 
             const url = uploadResult.url!;
@@ -359,11 +362,11 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
 
             setUploadMessage({
                 type: 'success',
-                text: urlCourseId 
-                    ? 'تم رفع الملف بنجاح!' 
-                    : selectedCourse 
-                        ? 'تم رفع الملف بنجاح!' 
-                        : 'تم إنشاء المقرر الجديد ورفع الملف بنجاح!'
+                text: urlCourseId
+                    ? t('upload.success')
+                    : selectedCourse
+                        ? t('upload.success')
+                        : t('upload.successNewCourse')
             });
 
             setTimeout(() => {
@@ -394,25 +397,25 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
             console.error('Upload error:', error);
 
             // Provide more specific error messages
-            let errorMessage = 'حدث خطأ أثناء رفع الملف. يرجى المحاولة مرة أخرى.';
+            let errorMessage = t('upload.uploadError');
 
             if (error instanceof Error) {
                 const errorMessageText = error.message;
 
                 if (errorMessageText.includes('انتهت مهلة') || errorMessageText.includes('timeout') || errorMessageText.includes('TIMED_OUT')) {
-                    errorMessage = 'استغرق العمل وقتاً أطول من المتوقع. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
+                    errorMessage = t('upload.timeoutError');
                 } else if (errorMessageText.includes('CORS') || errorMessageText.includes('cors')) {
-                    errorMessage = 'خطأ في الإعدادات الأمنية للخادم. يرجى التواصل مع مدير النظام.';
+                    errorMessage = t('upload.corsError');
                 } else if (errorMessageText.includes('network') || errorMessageText.includes('Network')) {
-                    errorMessage = 'خطأ في الاتصال بالإنترنت. يرجى التحقق من اتصالك.';
+                    errorMessage = t('upload.networkError');
                 } else if (errorMessageText.includes('quota') || errorMessageText.includes('Quota')) {
-                    errorMessage = 'تم تجاوز الحد المسموح للتخزين. يرجى المحاولة لاحقاً.';
+                    errorMessage = t('upload.quotaError');
                 } else if (errorMessageText.includes('unauthorized') || errorMessageText.includes('permission')) {
-                    errorMessage = 'ليس لديك صلاحيات كافية لرفع الملفات.';
+                    errorMessage = t('upload.permissionError');
                 } else if (errorMessageText.includes('فشل رفع الملف')) {
-                    errorMessage = 'فشل رفع الملف إلى التخزين. يرجى التحقق من الملف والمحاولة مرة أخرى.';
+                    errorMessage = t('upload.uploadFailed');
                 } else if (errorMessageText.includes('فشل الحصول على رابط')) {
-                    errorMessage = 'تم الرفع ولكن فشل إنشاء رابط التنزيل. يرجى المحاولة مرة أخرى.';
+                    errorMessage = t('upload.linkError');
                 }
             }
 
@@ -428,7 +431,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
             <div className="max-w-2xl mx-auto p-6 bg-white/90 backdrop-blur-md rounded-2xl border border-brown-200/80 shadow-card">
                 <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">جاري تحميل البيانات...</p>
+                    <p className="text-gray-600">{t('upload.loadingData')}</p>
                 </div>
             </div>
         );
@@ -443,13 +446,13 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">تم بنجاح!</h3>
-                    <p className="text-gray-600 mb-6">تم رفع الملف بنجاح إلى Firebase</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{t('upload.successTitle')}</h3>
+                    <p className="text-gray-600 mb-6">{t('upload.successMessage')}</p>
                     <button
                         onClick={() => setHideFormAfterSuccess(false)}
                         className="btn btn-primary"
                     >
-                        رفع ملف آخر
+                        {t('upload.uploadAnother')}
                     </button>
                 </div>
             </div>
@@ -462,14 +465,14 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
         : [];
 
     return (
-        <div ref={dropdownRef} className="max-w-2xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-white/95 via-primary-50/20 to-white/95 backdrop-blur-md rounded-2xl border border-primary-100/40 shadow-xl shadow-primary-500/5 file-upload-form form-container-mobile">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 bg-gradient-to-l from-primary-700 to-secondary-600 bg-clip-text text-transparent">رفع ملفات الطالب</h2>
+        <div ref={dropdownRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-white/95 via-primary-50/20 to-white/95 backdrop-blur-md rounded-2xl border border-primary-100/40 shadow-xl shadow-primary-500/5 file-upload-form form-container-mobile">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 bg-gradient-to-l from-primary-700 to-secondary-600 bg-clip-text text-transparent">{t('upload.title')}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 {/* File Selection */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        اختيار الملف
+                        {t('upload.selectFile')}
                     </label>
                     <div className="flex items-center justify-center w-full">
                         <label className="flex flex-col items-center justify-center w-full h-32 sm:h-36 border-2 border-dashed border-primary-300 rounded-2xl cursor-pointer bg-gradient-to-br from-primary-50/50 to-secondary-50/30 hover:from-primary-100/60 hover:to-secondary-100/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-400 group">
@@ -483,8 +486,8 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                     <p className="text-sm font-medium text-primary-700 bg-primary-50 px-3 py-1 rounded-full">{selectedFile.name}</p>
                                 ) : (
                                     <>
-                                        <p className="text-sm font-medium text-primary-600">اضغط لاختيار الملف</p>
-                                        <p className="text-xs text-primary-400 mt-1">PDF, DOC, PPT, TXT, RTF, MD, CSV, JSON</p>
+                                        <p className="text-sm font-medium text-primary-600">{t('upload.clickToSelect')}</p>
+                                        <p className="text-xs text-primary-400 mt-1">{t('upload.supportedFormats')}</p>
                                     </>
                                 )}
                             </div>
@@ -504,15 +507,15 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                     {/* When courseId is provided via URL, show clear indication */}
                     {urlCourseId && (
                         <div className="text-sm text-primary-700 bg-gradient-to-r from-primary-50 to-secondary-50/50 p-3 rounded-xl border border-primary-200/60">
-                            <strong className="text-primary-800">المقرر محدد من الرابط:</strong> {urlCourseId}
-                            <p className="mt-1 text-xs text-primary-500">تم اختيار المسار الأكاديمي تلقائياً. يمكنك تغيير اسم المقرر يدوياً أدناه.</p>
+                            <strong className="text-primary-800">{t('upload.courseFromLink')}</strong> {urlCourseId}
+                            <p className="mt-1 text-xs text-primary-500">{t('upload.courseAutoSelected')}</p>
                         </div>
                     )}
 
                     {/* University Selection */}
                     <div>
                         <label className="block text-sm font-semibold text-brown-700 mb-2">
-                            الجامعة <span className="text-red-500">*</span>
+                            {t('upload.university')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <button
@@ -520,7 +523,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                 onClick={() => setOpenDropdown(openDropdown === 'university' ? null : 'university')}
                                 className="input flex items-center justify-between !border-brown-200 hover:!border-primary-400 hover:shadow-md hover:shadow-primary-500/10"
                             >
-                                <span className="truncate">{selectedUniversity?.name || 'اختر الجامعة'}</span>
+                                <span className="truncate">{selectedUniversity?.name || t('upload.selectUniversity')}</span>
                                 <svg className="w-4 h-4 flex-shrink-0 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                             </button>
                             {openDropdown === 'university' && (
@@ -538,7 +541,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                     {/* College Selection - always visible, disabled until university selected */}
                     <div>
                         <label className="block text-sm font-semibold text-brown-700 mb-2">
-                            الكلية <span className="text-red-500">*</span>
+                            {t('upload.college')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <button
@@ -547,7 +550,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                 onClick={() => selectedUniversity && setOpenDropdown(openDropdown === 'college' ? null : 'college')}
                                 className={`input flex items-center justify-between !border-brown-200 hover:!border-primary-400 hover:shadow-md hover:shadow-primary-500/10 ${!selectedUniversity ? '!bg-brown-100/50 !border-brown-200 !text-brown-400 cursor-not-allowed' : ''}`}
                             >
-                                <span className="truncate">{selectedCollege?.name || (selectedUniversity ? 'اختر الكلية' : 'اختر الجامعة أولاً')}</span>
+                                <span className="truncate">{selectedCollege?.name || (selectedUniversity ? t('upload.selectCollege') : t('upload.selectUniversityFirst'))}</span>
                                 <svg className="w-4 h-4 flex-shrink-0 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                             </button>
                             {openDropdown === 'college' && selectedUniversity && (
@@ -565,7 +568,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                     {/* Major Selection - always visible, disabled until college selected */}
                     <div>
                         <label className="block text-sm font-semibold text-brown-700 mb-2">
-                            التخصص <span className="text-red-500">*</span>
+                            {t('upload.major')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <button
@@ -574,7 +577,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                 onClick={() => selectedCollege && setOpenDropdown(openDropdown === 'major' ? null : 'major')}
                                 className={`input flex items-center justify-between !border-brown-200 hover:!border-primary-400 hover:shadow-md hover:shadow-primary-500/10 ${!selectedCollege ? '!bg-brown-100/50 !border-brown-200 !text-brown-400 cursor-not-allowed' : ''}`}
                             >
-                                <span className="truncate">{selectedMajor?.name || (selectedCollege ? 'اختر التخصص' : 'اختر الكلية أولاً')}</span>
+                                <span className="truncate">{selectedMajor?.name || (selectedCollege ? t('upload.selectMajor') : t('upload.selectCollegeFirst'))}</span>
                                 <svg className="w-4 h-4 flex-shrink-0 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                             </button>
                             {openDropdown === 'major' && selectedCollege && (
@@ -593,7 +596,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                     {selectedMajor && !urlCourseId && (
                         <div>
                             <label className="block text-sm font-semibold text-brown-700 mb-2">
-                                المقرر <span className="text-red-500">*</span>
+                                {t('upload.course')} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <button
@@ -601,7 +604,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                     onClick={() => setOpenDropdown(openDropdown === 'course' ? null : 'course')}
                                     className="input flex items-center justify-between !border-brown-200 hover:!border-primary-400 hover:shadow-md hover:shadow-primary-500/10"
                                 >
-                                    <span className="truncate">{selectedCourse ? availableCourses.find(c => c.id === selectedCourse.id)?.name : (availableCourses.length > 0 ? 'اختر المقرر' : 'لا توجد مقررات متاحة')}</span>
+                                    <span className="truncate">{selectedCourse ? availableCourses.find(c => c.id === selectedCourse.id)?.name : (availableCourses.length > 0 ? t('upload.selectCourse') : t('upload.noCoursesAvailable'))}</span>
                                     <svg className="w-4 h-4 flex-shrink-0 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                 </button>
                                 {openDropdown === 'course' && (
@@ -612,7 +615,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                             </li>
                                         ))}
                                         <li onClick={() => { handleCourseChange('manual'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right truncate">
-                                            مقرر جديد (اكتب اسم المقرر)
+                                            {t('upload.newCourse')}
                                         </li>
                                     </ul>
                                 )}
@@ -624,13 +627,13 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                     {showManualCourseInput && (
                         <div>
                             <label className="block text-sm font-semibold text-brown-700 mb-2">
-                                اسم المقرر الجديد <span className="text-red-500">*</span>
+                                {t('upload.newCourseName')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={subjectName}
                                 onChange={(e) => handleSubjectNameChange(e.target.value)}
-                                placeholder="أدخل اسم المقرر (مثل: الرياضيات المتقدمة)"
+                                placeholder={t('upload.enterCourseName')}
                                 className={`input ${courseDuplicateWarning ? 'border-error-500 bg-error-50 focus:ring-error-500/50 focus:border-error-500' : ''}`}
                                 required
                             />
@@ -651,7 +654,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 {/* Term/Semester Selection */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        الترم <span className="text-red-500">*</span>
+                        {t('upload.term')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                         <button
@@ -659,13 +662,13 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                             onClick={() => setOpenDropdown(openDropdown === 'term' ? null : 'term')}
                             className="input flex items-center justify-between !border-brown-200 hover:!border-primary-400 hover:shadow-md hover:shadow-primary-500/10"
                         >
-                            <span>{selectedTerm === 'first' ? 'الترم الأول' : selectedTerm === 'second' ? 'الترم الثاني' : 'اختر الترم'}</span>
+                            <span>{selectedTerm === 'first' ? t('upload.firstTerm') : selectedTerm === 'second' ? t('upload.secondTerm') : t('upload.selectTerm')}</span>
                             <svg className="w-4 h-4 flex-shrink-0 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </button>
                         {openDropdown === 'term' && (
                             <ul className="absolute z-20 w-full max-w-[100vw] bg-white border border-gray-300 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto" style={{ left: '0', right: '0' }}>
-                                <li onClick={() => { setSelectedTerm('first'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">الترم الأول</li>
-                                <li onClick={() => { setSelectedTerm('second'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">الترم الثاني</li>
+                                <li onClick={() => { setSelectedTerm('first'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.firstTerm')}</li>
+                                <li onClick={() => { setSelectedTerm('second'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.secondTerm')}</li>
                             </ul>
                         )}
                     </div>
@@ -674,7 +677,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 {/* Level Selection (1-5) */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        المستوى <span className="text-red-500">*</span>
+                        {t('upload.level')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                         <button
@@ -682,17 +685,17 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                             onClick={() => setOpenDropdown(openDropdown === 'level' ? null : 'level')}
                             className="input flex items-center justify-between !border-brown-200 hover:!border-primary-400 hover:shadow-md hover:shadow-primary-500/10"
                         >
-                            <span>{selectedLevel ? `المستوى ${selectedLevel}` : 'اختر المستوى'}</span>
+                            <span>{selectedLevel ? `${t('upload.level')} ${selectedLevel}` : t('upload.selectLevel')}</span>
                             <svg className="w-4 h-4 flex-shrink-0 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </button>
                         {openDropdown === 'level' && (
                             <ul className="absolute z-20 w-full max-w-[100vw] bg-white border border-gray-300 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto" style={{ left: '0', right: '0' }}>
-                                <li onClick={() => { setSelectedLevel(''); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">اختر المستوى</li>
-                                <li onClick={() => { setSelectedLevel('1'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">المستوى الأول</li>
-                                <li onClick={() => { setSelectedLevel('2'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">المستوى الثاني</li>
-                                <li onClick={() => { setSelectedLevel('3'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">المستوى الثالث</li>
-                                <li onClick={() => { setSelectedLevel('4'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">المستوى الرابع</li>
-                                <li onClick={() => { setSelectedLevel('5'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">المستوى الخامس</li>
+                                <li onClick={() => { setSelectedLevel(''); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.selectLevel')}</li>
+                                <li onClick={() => { setSelectedLevel('1'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.level1')}</li>
+                                <li onClick={() => { setSelectedLevel('2'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.level2')}</li>
+                                <li onClick={() => { setSelectedLevel('3'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.level3')}</li>
+                                <li onClick={() => { setSelectedLevel('4'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.level4')}</li>
+                                <li onClick={() => { setSelectedLevel('5'); setOpenDropdown(null); }} className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-right">{t('upload.level5')}</li>
                             </ul>
                         )}
                     </div>
@@ -701,14 +704,14 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 {/* Academic Year Selection - Year Input */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        العام الدراسي <span className="text-red-500">*</span>
+                        {t('upload.academicYear')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="number"
-                        aria-label="اختر العام الدراسي"
+                        aria-label={t('upload.academicYear')}
                         value={selectedAcademicYear}
                         onChange={(e) => setSelectedAcademicYear(e.target.value)}
-                        placeholder="مثال: 2025"
+                        placeholder={t('upload.exampleYear')}
                         className="input"
                         min="2000"
                         max="2099"
@@ -719,12 +722,12 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 {/* Description */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        الوصف <span className="text-gray-400">(اختياري)</span>
+                        {t('upload.description')} <span className="text-gray-400">{t('upload.descriptionOptional')}</span>
                     </label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="أضف ملاحظات أو تفاصيل إضافية..."
+                        placeholder={t('upload.descriptionPlaceholder')}
                         className="input resize-none"
                         rows={2}
                     />
@@ -733,13 +736,13 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 {/* Tags */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        الوسوم <span className="text-gray-400">(اختياري)</span>
+                        {t('upload.tags')} <span className="text-gray-400">{t('upload.tagsOptional')}</span>
                     </label>
                     <input
                         type="text"
                         value={tags}
                         onChange={(e) => setTags(e.target.value)}
-                        placeholder="محاضرة، تدريبات، امتحان (مفصولة بفاصلة)"
+                        placeholder={t('upload.tagsPlaceholder')}
                         className="input"
                     />
                 </div>
@@ -747,13 +750,13 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                 {/* Doctor Name - Manual Input */}
                 <div>
                     <label className="block text-sm font-semibold text-brown-700 mb-2">
-                        اسم الدكتور المدرس للمادة <span className="text-red-500">*</span>
+                        {t('upload.professorName')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         value={professorName}
                         onChange={(e) => setProfessorName(e.target.value)}
-                        placeholder="أدخل اسم الدكتور"
+                        placeholder={t('upload.enterProfessorName')}
                         className="input"
                         required
                     />
@@ -764,7 +767,7 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium"
                         style={{ color: '#7B4D2A' }}>
-                            <span>{uploadProgress >= 100 ? 'جاري حفظ البيانات...' : 'جاري الرفع...'}</span>
+                            <span>{uploadProgress >= 100 ? t('upload.savingData') : t('upload.uploading')}</span>
                             <span className="text-primary-700">{uploadProgress}%</span>
                         </div>
                         <div className="progress-bar-modern">
@@ -775,12 +778,12 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                         </div>
                         {uploadProgress >= 100 && (
                             <p className="text-xs text-primary-600 text-center font-medium">
-                                تم اكتمال الرفع، جاري حفظ البيانات في قاعدة البيانات...
+                                {t('upload.uploadComplete')}
                             </p>
                         )}
                         {uploadProgress > 0 && uploadProgress < 100 && (
                             <p className="text-xs text-brown-400 text-center">
-                                يرجى الانتظار حتى اكتمال الرفع
+                                {t('upload.pleaseWait')}
                             </p>
                         )}
                     </div>
@@ -817,14 +820,14 @@ export default function FileUploadForm({ onUploadSuccess, courseId: urlCourseId 
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            {uploadProgress >= 100 ? 'جاري حفظ البيانات...' : 'جاري الرفع...'}
+                            {uploadProgress >= 100 ? t('upload.savingData') : t('upload.uploading')}
                         </>
                     ) : (
                         <span className="flex items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
-                            رفع الملف
+                            {t('common.upload')}
                         </span>
                     )}
                 </button>

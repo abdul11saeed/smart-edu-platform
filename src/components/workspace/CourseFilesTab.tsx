@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     AlertCircle,
     ArrowUpDown,
@@ -38,20 +39,21 @@ interface CourseFilesTabProps {
 type SortOption = 'newest' | 'largest' | 'ai';
 
 type AutoTagType =
-    | 'ملخص'
-    | 'امتحان سابق'
-    | 'محاضرة'
-    | 'تدريبات'
-    | 'واجب'
-    | 'ملف PDF'
-    | 'مستند'
-    | 'شرائح'
-    | 'ملف آخر';
+    | 'summary'
+    | 'exam'
+    | 'lecture'
+    | 'exercises'
+    | 'homework'
+    | 'pdf'
+    | 'document'
+    | 'slides'
+    | 'other';
 
 const CourseFilesTab = ({ courseId, course, university, college, major }: CourseFilesTabProps) => {
     // keep props for suggested resources logic
     void college;
     void major;
+    const { t, i18n } = useTranslation();
 
     const { currentCourseFiles, setCurrentCourseFiles, currentUser } = useAppStore();
     const navigate = useNavigate();
@@ -93,7 +95,8 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
     }, [courseId, setCurrentCourseFiles]);
 
     const canUseAIWithFile = (file: FileType) => {
-        return Boolean(file.localTextPreview && !file.localTextPreview.startsWith('[ملف'));
+        const preview = file.localTextPreview;
+        return Boolean(preview && !['[ملف', '[File'].some(prefix => preview.startsWith(prefix)));
     };
 
     const getFileContent = (file: FileType) => {
@@ -107,36 +110,51 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
 
         const includesAny = (arr: string[]) => arr.some((k) => haystack.includes(k));
 
-        if (includesAny(['ملخص', 'summary', 'ملخّص', 'key points', 'points'])) return 'ملخص';
-        if (includesAny(['امتحان', 'سابق', 'midterm', 'final exam', 'exam', 'questions'])) return 'امتحان سابق';
-        if (includesAny(['محاضرة', 'lecture'])) return 'محاضرة';
-        if (includesAny(['تدريبات', 'training', 'practice', 'exercises'])) return 'تدريبات';
-        if (includesAny(['واجب', 'assignment', 'homework'])) return 'واجب';
+        if (includesAny(['ملخص', 'summary', 'ملخّص', 'key points', 'points'])) return 'summary';
+        if (includesAny(['امتحان', 'سابق', 'midterm', 'final exam', 'exam', 'questions'])) return 'exam';
+        if (includesAny(['محاضرة', 'lecture'])) return 'lecture';
+        if (includesAny(['تدريبات', 'training', 'practice', 'exercises'])) return 'exercises';
+        if (includesAny(['واجب', 'assignment', 'homework'])) return 'homework';
 
-        if (file.type === 'pdf') return 'ملف PDF';
-        if (file.type === 'doc') return 'مستند';
-        if (file.type === 'ppt') return 'شرائح';
+        if (file.type === 'pdf') return 'pdf';
+        if (file.type === 'doc') return 'document';
+        if (file.type === 'ppt') return 'slides';
 
-        return 'ملف آخر';
+        return 'other';
+    };
+
+    const getTagLabel = (tag: AutoTagType): string => {
+        const labelMap: Record<AutoTagType, string> = {
+            summary: t('courseFiles.autoTags.summary'),
+            exam: t('courseFiles.autoTags.exam'),
+            lecture: t('courseFiles.autoTags.lecture'),
+            exercises: t('courseFiles.autoTags.exercises'),
+            homework: t('courseFiles.autoTags.homework'),
+            pdf: t('courseFiles.autoTags.pdf'),
+            document: t('courseFiles.autoTags.document'),
+            slides: t('courseFiles.autoTags.slides'),
+            other: t('courseFiles.autoTags.other'),
+        };
+        return labelMap[tag] || tag;
     };
 
     const getTagStyle = (tag: AutoTagType) => {
         switch (tag) {
-            case 'ملخص':
+            case 'summary':
                 return { bg: 'bg-sage-50', text: 'text-sage-700', border: 'border-sage-200', darkBg: 'dark:bg-sage-950', darkText: 'dark:text-sage-300', darkBorder: 'dark:border-sage-800' };
-            case 'امتحان سابق':
+            case 'exam':
                 return { bg: 'bg-primary-50', text: 'text-primary-700', border: 'border-primary-200', darkBg: 'dark:bg-primary-950', darkText: 'dark:text-primary-300', darkBorder: 'dark:border-primary-800' };
-            case 'محاضرة':
+            case 'lecture':
                 return { bg: 'bg-secondary-50', text: 'text-secondary-700', border: 'border-secondary-200', darkBg: 'dark:bg-secondary-950', darkText: 'dark:text-secondary-300', darkBorder: 'dark:border-secondary-800' };
-            case 'تدريبات':
+            case 'exercises':
                 return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', darkBg: 'dark:bg-amber-950', darkText: 'dark:text-amber-300', darkBorder: 'dark:border-amber-800' };
-            case 'واجب':
+            case 'homework':
                 return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', darkBg: 'dark:bg-rose-950', darkText: 'dark:text-rose-300', darkBorder: 'dark:border-rose-800' };
-            case 'ملف PDF':
+            case 'pdf':
                 return { bg: 'bg-primary-50', text: 'text-primary-700', border: 'border-primary-200', darkBg: 'dark:bg-primary-950', darkText: 'dark:text-primary-300', darkBorder: 'dark:border-primary-800' };
-            case 'مستند':
+            case 'document':
                 return { bg: 'bg-secondary-50', text: 'text-secondary-700', border: 'border-secondary-200', darkBg: 'dark:bg-secondary-950', darkText: 'dark:text-secondary-300', darkBorder: 'dark:border-secondary-800' };
-            case 'شرائح':
+            case 'slides':
                 return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', darkBg: 'dark:bg-amber-950', darkText: 'dark:text-amber-300', darkBorder: 'dark:border-amber-800' };
             default:
                 return { bg: 'bg-brown-50', text: 'text-brown-700', border: 'border-brown-200', darkBg: 'dark:bg-brown-900', darkText: 'dark:text-brown-300', darkBorder: 'dark:border-brown-700' };
@@ -260,7 +278,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
     };
 
     return (
-        <div className="space-y-6">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="space-y-6">
             {/* Search, Sort - Vibrant Gradient Toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div className="relative flex-1 max-w-md">
@@ -269,7 +287,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                     </div>
                     <input
                         type="text"
-                        placeholder="البحث في الملفات..."
+                        placeholder={t('courseFiles.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pr-10 pl-4 py-2.5 border border-brown-200 dark:border-brown-600 rounded-xl bg-white dark:bg-brown-800 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-600"
@@ -278,21 +296,21 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
 
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="text-sm text-brown-700 dark:text-neutral-200 whitespace-nowrap bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-950/50 dark:to-secondary-950/50 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-primary-200/60 dark:border-primary-700/40 font-semibold shadow-sm shadow-primary-500/5">
-                        {filteredAndSortedFiles.length} ملف
+                        {t('courseFiles.filesCount', { count: filteredAndSortedFiles.length })}
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-brown-500 dark:text-neutral-400 whitespace-nowrap">فرز:</span>
+                        <span className="text-sm text-brown-500 dark:text-neutral-400 whitespace-nowrap">{t('courseFiles.sortLabel')}</span>
                         <div className="relative">
                             <select
-                                aria-label="فرز الملفات"
+                                aria-label={t('courseFiles.sortFiles')}
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value as SortOption)}
                                 className="appearance-none py-2 pl-8 pr-3 border border-brown-200 dark:border-brown-600 rounded-xl bg-white dark:bg-brown-800 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 text-sm transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-600"
                             >
-                                <option value="newest">الأحدث</option>
-                                <option value="largest">الأكبر حجماً</option>
-                                <option value="ai">الأكثر استخداماً للـ AI</option>
+                                <option value="newest">{t('courseFiles.sortNewest')}</option>
+                                <option value="largest">{t('courseFiles.sortLargest')}</option>
+                                <option value="ai">{t('courseFiles.sortAI')}</option>
                             </select>
                             <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400 pointer-events-none" />
                         </div>
@@ -306,8 +324,8 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-500 text-white flex items-center justify-center animate-bounce-in shadow-lg shadow-primary-500/25">
                         <FileText className="h-8 w-8" />
                     </div>
-                    <p className="text-lg font-medium text-brown-700 dark:text-neutral-200">لا توجد ملفات بعد</p>
-                    <p className="text-sm text-brown-500 dark:text-neutral-400 mt-1">كن أول من يرفع ملفاً لهذه المادة</p>
+                    <p className="text-lg font-medium text-brown-700 dark:text-neutral-200">{t('courseFiles.noFilesYet')}</p>
+                    <p className="text-sm text-brown-500 dark:text-neutral-400 mt-1">{t('courseFiles.beFirstToUpload')}</p>
                 </div>
             ) : (
                 <>
@@ -340,9 +358,9 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
 
                                                 <span
                                                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border animate-tag-pop ${tagStyle.bg} ${tagStyle.text} ${tagStyle.border} ${tagStyle.darkBg} ${tagStyle.darkText} ${tagStyle.darkBorder}`}
-                                                    title="وسم تلقائي"
+                                                    title={t('courseFiles.autoTag')}
                                                 >
-                                                    {tag}
+                                                    {getTagLabel(tag)}
                                                 </span>
                                             </div>
 
@@ -370,7 +388,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                             {file.storageMode === 'local' && (
                                                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 px-2 py-0.5 rounded-full w-fit border border-amber-200 dark:border-amber-800/40">
                                                     <AlertCircle className="h-3 w-3" />
-                                                    مخزن محلياً
+                                                    {t('courseFiles.storedLocally')}
                                                 </p>
                                             )}
 
@@ -384,14 +402,14 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                         <button
                                             onClick={() => handlePreview(file)}
                                             className="btn-modern-ghost p-1.5"
-                                            title="معاينة"
+                                            title={t('courseFiles.preview')}
                                         >
                                             <Eye className="h-3.5 w-3.5" />
                                         </button>
                                         <button
                                             onClick={() => openFileTool(file, 'summarizer')}
                                             className="btn-modern-ghost p-1.5 text-sage-600 hover:text-sage-700 hover:bg-sage-50 dark:text-sage-400 dark:hover:bg-sage-900/20"
-                                            title="تلخيص"
+                                            title={t('courseFiles.summarize')}
                                         >
                                             <Sparkles className="h-3.5 w-3.5" />
                                         </button>
@@ -399,7 +417,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                         <button
                                             onClick={() => openFileTool(file, 'explainer')}
                                             className="btn-modern-ghost p-1.5 text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
-                                            title="شرح"
+                                            title={t('courseFiles.explain')}
                                         >
                                             <BookOpen className="h-3.5 w-3.5" />
                                         </button>
@@ -407,7 +425,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                         <button
                                             onClick={() => openFileTool(file, 'translator')}
                                             className="btn-modern-ghost p-1.5 text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:bg-secondary-900/20"
-                                            title="ترجمة"
+                                            title={t('courseFiles.translate')}
                                         >
                                             <Languages className="h-3.5 w-3.5" />
                                         </button>
@@ -415,7 +433,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                         <button
                                             onClick={() => openFileTool(file, 'questions')}
                                             className="btn-modern-ghost p-1.5 text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:bg-secondary-900/20"
-                                            title="توليد أسئلة"
+                                            title={t('courseFiles.generateQuestions')}
                                         >
                                             <Sparkles className="h-3.5 w-3.5" />
                                         </button>
@@ -423,7 +441,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                         <button
                                             onClick={() => handleDownload(file, file.name)}
                                             className="btn-modern-primary p-1.5"
-                                            title="تحميل"
+                                            title={t('courseFiles.download')}
                                             disabled={isDownloading === file.name}
                                         >
                                             <Download className={`h-3.5 w-3.5 ${isDownloading === file.name ? 'animate-spin-slow' : ''}`} />
@@ -441,7 +459,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                 onClick={() => setFilesToShow(prev => Math.min(prev + 5, filteredAndSortedFiles.length))}
                                 className="btn-modern-primary"
                             >
-                                عرض المزيد ({Math.max(0, filteredAndSortedFiles.length - filesToShow)} ملفات إضافية)
+                                {t('courseFiles.showMore', { count: Math.max(0, filteredAndSortedFiles.length - filesToShow) })}
                             </button>
                         </div>
                     )}

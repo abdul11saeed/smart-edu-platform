@@ -6,7 +6,7 @@ const AboutPage = () => {
 
     // SEO meta tags
     useEffect(() => {
-        document.title = `${t('about.title')} - منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية`;
+        document.title = `${t('about.title')} - ${t('app.name')}`;
         let metaDesc = document.querySelector('meta[name="description"]');
         if (!metaDesc) {
             metaDesc = document.createElement('meta');
@@ -15,7 +15,7 @@ const AboutPage = () => {
         }
         metaDesc.setAttribute('content', t('app.description'));
         return () => {
-            document.title = 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية';
+            document.title = t('app.name');
         };
     }, [t]);
 

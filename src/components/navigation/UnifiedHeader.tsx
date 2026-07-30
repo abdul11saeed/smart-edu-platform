@@ -175,7 +175,7 @@ const UnifiedHeader = ({
                                                 {t('notifications.title')}
                                             </span>
                                             {unreadCount > 0 && (
-                                                <span className="text-xs bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-0.5 rounded-full font-medium shadow-sm">{unreadCount} غير مقروء</span>
+                                                <span className="text-xs bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-0.5 rounded-full font-medium shadow-sm">{t('notifications.unreadCountText', { count: unreadCount })}</span>
                                             )}
                                         </div>
                                         {notifications.filter(n => !n.read).length === 0 ? (
@@ -193,7 +193,7 @@ const UnifiedHeader = ({
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-medium text-brown-800 dark:text-neutral-100 text-sm">{notification.title}</div>
                                                                 {notification.body && <div className="text-xs text-brown-500 dark:text-neutral-400 mt-1 line-clamp-2">{notification.body}</div>}
-                                                                <p className="text-xs text-brown-400 dark:text-neutral-500 mt-1">من: {notification.fromUserName}</p>
+                                                                <p className="text-xs text-brown-400 dark:text-neutral-500 mt-1">{t('notifications.fromLabel', { name: notification.fromUserName })}</p>
                                                             </div>
                                                         </div>
                                                     </button>
@@ -222,12 +222,12 @@ const UnifiedHeader = ({
                                 <button
                                     onClick={() => setUserMenuOpen((prev) => !prev)}
                                     className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-600 text-white font-semibold shadow-lg hover:shadow-xl hover:ring-2 hover:ring-primary-400/50 hover:scale-110 transition-all duration-300 border border-white/20 overflow-hidden"
-                                    title={currentUser?.name || 'الحساب'}
+                                    title={currentUser?.name || t('nav.account')}
                                 >
                                     {currentUser?.photoURL ? (
                                         <img
                                             src={currentUser.photoURL}
-                                            alt={currentUser.name || 'الحساب'}
+                                            alt={currentUser.name || t('nav.account')}
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
@@ -261,7 +261,7 @@ const UnifiedHeader = ({
                                             onClick={() => setSettingsOpen((prev) => !prev)}
                                             className="w-full text-right px-4 py-3 flex items-center justify-between text-brown-700 dark:text-brown-300 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-colors duration-200 font-medium"
                                         >
-                                            <span>{t('nav.settings', 'الإعدادات')}</span>
+                                            <span>{t('admin.settings')}</span>
                                             <Settings className="h-4 w-4" />
                                         </button>
 
@@ -290,7 +290,7 @@ const UnifiedHeader = ({
                                                             : 'bg-white/60 dark:bg-brown-800/60 border border-brown-200/50 dark:border-brown-700/50 text-brown-700 dark:text-brown-300 hover:border-primary-400 dark:hover:border-primary-500'
                                                             }`}
                                                     >
-                                                        العربية
+                                                        {t('language.ar')}
                                                     </button>
                                                     <button
                                                         onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('i18nextLng', 'en'); }}
@@ -299,7 +299,7 @@ const UnifiedHeader = ({
                                                             : 'bg-white/60 dark:bg-brown-800/60 border border-brown-200/50 dark:border-brown-700/50 text-brown-700 dark:text-brown-300 hover:border-primary-400 dark:hover:border-primary-500'
                                                             }`}
                                                     >
-                                                        EN
+                                                        {t('language.en')}
                                                     </button>
                                                 </div>
                                             </div>

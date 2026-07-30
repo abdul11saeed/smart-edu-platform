@@ -15,6 +15,7 @@ import {
     ShieldOff
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { useAppStore } from '../stores/appStore';
 import { useChat } from '../hooks/useChat';
 import { createNotification, markNotificationAsRead, getUserNotifications } from '../services/notificationService';
@@ -239,20 +240,22 @@ const PrivateChatPage = () => {
         }, {} as Record<string, ChatRoomMessage[]>);
     }, [messages, currentUser?.id, targetUserId]);
 
-    const renderMessageGroup = (date: string, dateMessages: ChatRoomMessage[]) => (
-        <div key={date}>
-            <div className="flex items-center my-4">
-                <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
-                <span className="px-3 text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(date).toLocaleDateString('ar-SA', {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    })}
-                </span>
-                <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
-            </div>
+    const renderMessageGroup = (date: string, dateMessages: ChatRoomMessage[]) => {
+        const locale = i18n.language === 'en' ? 'en-US' : 'ar-SA';
+        return (
+            <div key={date}>
+                <div className="flex items-center my-4">
+                    <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+                    <span className="px-3 text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(date).toLocaleDateString(locale, {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        })}
+                    </span>
+                    <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+                </div>
 
             {dateMessages.map((message) => {
                 if (deletedForMe.has(message.id)) return null;
@@ -490,7 +493,7 @@ const PrivateChatPage = () => {
                 );
             })}
         </div>
-    );
+    };
 
     return (
         <div className="container mx-auto px-4 py-6 max-w-4xl">

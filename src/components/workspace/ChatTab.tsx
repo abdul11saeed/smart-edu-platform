@@ -1,4 +1,5 @@
 import { MessageCircle, Send, Smile, Reply, Copy, X, Edit3, Trash2, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../stores/appStore';
 import { useChat } from '../../hooks/useChat';
 
@@ -8,6 +9,7 @@ interface ChatTabProps {
 }
 
 const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
+    const { t, i18n } = useTranslation();
     const { currentUser } = useAppStore();
 
     // Use the shared chat hook (single source of truth for chat logic)
@@ -50,7 +52,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
     const handleCopyMessage = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
-            setToastMessage('تم نسخ الرسالة');
+            setToastMessage(t('chat.messageCopied'));
         } catch (err) {
             console.error('Failed to copy:', err);
         }
@@ -58,7 +60,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
     };
 
     return (
-        <div className="flex flex-col h-full min-h-[400px] max-h-[80vh] bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex flex-col h-full min-h-[400px] max-h-[80vh] bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
             {/* Header */}
             <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
                 <div className="flex items-center">
@@ -66,8 +68,8 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">غرفة دردشة {courseName}</h3>
-                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">محادثة خاصة بالمقرر - رسائل فورية</p>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">{t('chat.courseChat', { courseName })}</h3>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('chat.coursePrivateChat', { courseName })}</p>
                     </div>
                 </div>
             </div>
@@ -80,7 +82,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                             onClick={loadOlderMessages}
                             className="text-xs text-green-600 dark:text-green-400 hover:underline"
                         >
-                            تحميل الرسائل السابقة
+                            {t('chat.loadPreviousMessages')}
                         </button>
                     </div>
                 )}
@@ -88,13 +90,13 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                 {isLoading ? (
                     <div className="text-center text-gray-400 dark:text-gray-500 py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-3"></div>
-                        <p>جاري تحميل الرسائل...</p>
+                        <p>{t('chat.loadingMessages')}</p>
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="text-center text-gray-400 dark:text-gray-500 py-8">
                         <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 opacity-50" />
-                        <p>لا توجد رسائل بعد</p>
-                        <p className="text-xs sm:text-sm">كن أول من يرسل رسالة</p>
+                        <p>{t('chat.noMessageYet')}</p>
+                        <p className="text-xs sm:text-sm">{t('chat.beFirst')}</p>
                     </div>
                 ) : (
                     messages.map((msg) => {
@@ -153,7 +155,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                             <textarea
                                                 value={editingText}
                                                 onChange={(e) => setEditingText(e.target.value)}
-                                                placeholder="تعديل الرسالة"
+                                                placeholder={t('chat.replyTo')}
                                                 className={`w-full p-2 rounded-lg text-sm resize-none ${isCurrentUser
                                                     ? 'bg-green-400/20 text-white placeholder-green-200'
                                                     : 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400'
@@ -166,7 +168,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                                     onClick={handleSaveEdit}
                                                     className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700"
                                                 >
-                                                    حفظ
+                                                    {t('common.save')}
                                                 </button>
                                                 <button
                                                     onClick={() => {
@@ -175,19 +177,19 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                                     }}
                                                     className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-xs hover:bg-gray-400 dark:hover:bg-gray-500"
                                                 >
-                                                    إلغاء
+                                                    {t('common.cancel')}
                                                 </button>
                                             </div>
                                         </div>
                                     ) : (
                                         <p className="text-sm px-2.5 sm:px-3 py-1 sm:py-1.5">
                                             {msg.isDeleted ? (
-                                                <span className="italic opacity-60">تم حذف هذه الرسالة</span>
+                                                <span className="italic opacity-60">{t('chat.messageDeleted')}</span>
                                             ) : (
                                                 <>
                                                     {msg.text}
                                                     {msg.editedAt && (
-                                                        <span className="text-[10px] sm:text-xs opacity-60 mr-1">(معدل)</span>
+                                                        <span className="text-[10px] sm:text-xs opacity-60 mr-1">{t('chat.edited')}</span>
                                                     )}
                                                 </>
                                             )}
@@ -242,12 +244,12 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                 <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                         <Reply className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                        <span className="text-gray-500 dark:text-gray-400">رد على:</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t('chat.replyTo')}</span>
                         <span className="text-gray-700 dark:text-gray-200 truncate max-w-[150px] sm:max-w-[200px]">
                             {replyTo.senderName}: {replyTo.text}
                         </span>
                     </div>
-                    <button onClick={cancelReply} className="p-0.5 sm:p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title="إلغاء الرد" aria-label="إلغاء الرد">
+                    <button onClick={cancelReply} className="p-0.5 sm:p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title={t('chat.cancelReply')} aria-label={t('chat.cancelReply')}>
                         <X className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
                     </button>
                 </div>
@@ -279,13 +281,13 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                         <button onClick={() => handleEdit(menuMessage)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                                            <span>تعديل</span>
+                                            <span>{t('common.edit')}</span>
                                         </button>
                                         <div className="border-t border-gray-100 dark:border-gray-700 my-0.5 sm:my-1"></div>
                                         <button onClick={() => handleDelete(menuMessage.id)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
                                             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                            <span>حذف للجميع</span>
+                                            <span>{t('chat.deleteForEveryone')}</span>
                                         </button>
                                     </>
                                 ) : (
@@ -293,12 +295,12 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                         <button onClick={() => handleReply(menuMessage)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <Reply className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                                            <span>رد</span>
+                                            <span>{t('chat.reply')}</span>
                                         </button>
                                         <button onClick={() => handleCopyMessage(menuMessage.text)}
                                             className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <Copy className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
-                                            <span>نسخ</span>
+                                            <span>{t('common.copy')}</span>
                                         </button>
                                         <div className="border-t border-gray-100 dark:border-gray-700 my-0.5 sm:my-1"></div>
                                         <div className="px-2.5 sm:px-4 py-1 sm:py-2 flex flex-wrap gap-0.5 sm:gap-1 max-h-[200px] overflow-y-auto">
@@ -321,7 +323,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
             {(messageSent || toastMessage) && (
                 <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in z-50">
                     <Check className="h-4 w-4" />
-                    <span>{toastMessage || 'تم إرسال الرسالة'}</span>
+                    <span>{toastMessage || t('chat.messageSent')}</span>
                 </div>
             )}
 
@@ -333,8 +335,8 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                             className={`p-1.5 sm:p-2 rounded-lg transition-colors ${showEmojiPicker ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                                 }`}
-                            title="إضافة رمز تعبيري"
-                            aria-label="إضافة رمز تعبيري"
+                            title={t('chat.addEmoji')}
+                            aria-label={t('chat.addEmoji')}
                         >
                             <Smile className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
@@ -363,7 +365,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onClick={() => setShowEmojiPicker(false)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="اكتب رسالتك..."
+                        placeholder={t('chat.typeMessage')}
                         className="flex-1 min-w-0 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 text-sm"
                         disabled={!currentUser}
                     />
@@ -371,14 +373,14 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         onClick={handleSendMessage}
                         disabled={!newMessage.trim() || !currentUser}
                         className="p-2 sm:p-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                        title="إرسال"
-                        aria-label="إرسال"
+                        title={t('chat.send')}
+                        aria-label={t('chat.send')}
                     >
                         <Send className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
                 </div>
                 {!currentUser && (
-                    <p className="text-[10px] sm:text-xs text-red-500 mt-1.5 sm:mt-2">يجب تسجيل الدخول لإرسال رسائل</p>
+                    <p className="text-[10px] sm:text-xs text-red-500 mt-1.5 sm:mt-2">{t('chat.errorSendingMessage')}</p>
                 )}
             </div>
         </div>

@@ -18,7 +18,8 @@ import {
   Copy,
   Check,
   MessageSquare,
-  PanelLeft
+  PanelLeft,
+  PanelRight
 } from 'lucide-react';
 import { aiService, ExplainResponse, SummarizeResponse, Question, ChatMessage } from '../../utils/aiService';
 import { MarkdownRenderer } from '../markdown';
@@ -143,6 +144,7 @@ const timeAgo = (ts: number): string => {
 
  const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser = null, initialSelectedFile }: AIChatProps) => {
     const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar';
     const [messages, setMessages] = useState<Message[]>([makeGreeting(t)]);
    const [inputMessage, setInputMessage] = useState('');
    const [isLoading, setIsLoading] = useState(false);
@@ -330,6 +332,16 @@ const timeAgo = (ts: number): string => {
     }
   }, [messages, isLoading]);
 
+  // Update welcome message when language changes so it always matches the selected language
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length > 0 && prev[0].role === 'ai' && prev[0].type === 'text') {
+        return [{ ...prev[0], content: t('ai.welcome') }];
+      }
+      return prev;
+    });
+  }, [i18n.language, t]);
+
   // Keep the chat sized to the visible viewport so the virtual keyboard never hides the input
   useEffect(() => {
     if (!isOpen) return;
@@ -411,42 +423,42 @@ const timeAgo = (ts: number): string => {
   const quickActions: QuickAction[] = [
     {
       id: 'explain',
-      label: 'شرح مفهوم',
+      label: t('ai.tools.explain'),
       icon: <Lightbulb className="w-5 h-5" />,
-      description: 'شرح أي مفهوم دراسي',
-      hint: 'اكتب المفهوم الذي تريد شرحه...',
+      description: t('ai.tools.explainHint'),
+      hint: t('ai.tools.explainHint'),
       action: 'explain'
     },
     {
       id: 'summarize',
-      label: 'تلخيص محتوى',
+      label: t('ai.tools.summarize'),
       icon: <FileText className="w-5 h-5" />,
-      description: 'تلخيص ملفات وملاحظات',
-      hint: 'اختر ملفاً ثم اضغط إرسال للتلخيص',
+      description: t('ai.tools.summarizeHint'),
+      hint: t('ai.tools.summarizeHint'),
       action: 'summarize'
     },
     {
       id: 'questions',
-      label: 'توليد أسئلة',
+      label: t('ai.tools.questions'),
       icon: <FileQuestion className="w-5 h-5" />,
-      description: 'إنشاء أسئلة اختبار',
-      hint: 'اختر ملفاً ثم اضغط إرسال لتوليد الأسئلة',
+      description: t('ai.tools.questionsHint'),
+      hint: t('ai.tools.questionsHint'),
       action: 'generate-questions'
     },
     {
       id: 'translate',
-      label: 'ترجمة ملف',
+      label: t('ai.tools.translate'),
       icon: <Languages className="w-5 h-5" />,
-      description: 'ترجمة محتوى ملف',
-      hint: 'اختر ملفاً ثم اضغط إرسال للترجمة',
+      description: t('ai.tools.translateHint'),
+      hint: t('ai.tools.translateHint'),
       action: 'translate'
     },
     {
       id: 'general',
-      label: 'سؤال عام',
+      label: t('ai.tools.general'),
       icon: <HelpCircle className="w-5 h-5" />,
-      description: 'الإجابة على أي سؤال',
-      hint: 'اكتب سؤالك هنا...',
+      description: t('ai.tools.generalHint'),
+      hint: t('ai.tools.generalHint'),
       action: 'general'
     }
   ];
@@ -526,7 +538,7 @@ const timeAgo = (ts: number): string => {
               try {
                 const fileFromBlob = new File([blob], selectedFile.name, { type: blob.type });
                 const extractedText = await extractTextPreview(fileFromBlob);
-                if (extractedText && !extractedText.startsWith('[ملف')) {
+                if (extractedText && !['[ملف', '[File'].some(prefix => extractedText.startsWith(prefix))) {
                   resolvedContent = extractedText;
                   fileReadable = true;
                 } else {
@@ -542,8 +554,11 @@ const timeAgo = (ts: number): string => {
           }
         }
         // Case 2: content is actual readable text from local preview
-        else if (resolvedContent && !resolvedContent.startsWith('[ملف')) {
-          fileReadable = true;
+        else if (typeof resolvedContent === 'string') {
+          const resolvedStr = resolvedContent;
+          if (!['[ملف', '[File'].some(prefix => resolvedStr.startsWith(prefix))) {
+            fileReadable = true;
+          }
         }
       }
 
@@ -557,7 +572,7 @@ const timeAgo = (ts: number): string => {
 
       const hasGoodContent = selectedFile && resolvedContent &&
         typeof resolvedContent === 'string' &&
-        !resolvedContent.startsWith('[ملف');
+        !['[ملف', '[File'].some(prefix => resolvedContent.startsWith(prefix));
       let unreadableFileSelected = selectedFile !== null && !hasGoodContent && !fileReadable;
 
       // For scanned/image-only files (PDF/PPTX/images without extractable text),
@@ -601,10 +616,10 @@ const timeAgo = (ts: number): string => {
       // loses previous turns (the tool helpers are stateless and ignore history).
       const isFirstExchange = baseMessages.length <= 2;
       const keywordTool: string | null =
-        /شرح|اشرح|فسر/.test(userMessage) ? 'explain'
-          : /تلخيص|لخص/.test(userMessage) ? 'summarize'
-            : /أسئلة|اختبار/.test(userMessage) ? 'generate-questions'
-              : /ترجم|ترجمة/.test(userMessage) ? 'translate'
+        /شرح|اشرح|فسر|explain/i.test(userMessage) ? 'explain'
+          : /تلخيص|لخص|summarize/i.test(userMessage) ? 'summarize'
+            : /أسئلة|اختبار|questions/i.test(userMessage) ? 'generate-questions'
+              : /ترجم|ترجمة|translate/i.test(userMessage) ? 'translate'
                 : null;
       const effectiveTool: string | null = activeTool ?? (isFirstExchange ? keywordTool : null);
       const fileActionRequested = Boolean(effectiveTool);
@@ -614,10 +629,10 @@ const timeAgo = (ts: number): string => {
       let aiData: Message['data'];
 
       if (unreadableFileSelected && fileActionRequested) {
-        aiContent = 'لا يمكن قراءة هذا الملف تلقائياً. جرب رفع ملف TXT أو RTF أو MD أو CSV أو JSON ليتمكن الذكاء الاصطناعي من معالجتها.';
+        aiContent = t('ai.unreadableFile');
       } else if (effectiveTool === 'explain') {
         const result = await aiService.explain(
-          { concept: userMessage, context: isImageFile ? undefined : (resolvedContent || undefined), conversationMessages: chatHistory, userId: sessionId },
+          { concept: userMessage, context: isImageFile ? undefined : (resolvedContent || undefined), conversationMessages: chatHistory, userId: sessionId, language: i18n.language },
           attachments
         );
         aiContent = result.explanation;
@@ -625,10 +640,10 @@ const timeAgo = (ts: number): string => {
         aiData = result;
       } else if (effectiveTool === 'summarize') {
         if (unreadableFileSelected) {
-          aiContent = 'لا يمكن قراءة هذا الملف تلقائياً. جرب رفع ملف TXT أو RTF أو MD أو CSV أو JSON ليتمكن الذكاء الاصطناعي من معالجتها.';
+          aiContent = t('ai.unreadableFile');
         } else {
           const result = await aiService.summarize(
-            { text: textForTool || userMessage, fileName: selectedFile?.name, conversationMessages: chatHistory, userId: sessionId },
+            { text: textForTool || userMessage, fileName: selectedFile?.name, conversationMessages: chatHistory, userId: sessionId, language: i18n.language },
             attachments
           );
           aiContent = result.summary;
@@ -637,7 +652,7 @@ const timeAgo = (ts: number): string => {
         }
       } else if (effectiveTool === 'generate-questions') {
         if (unreadableFileSelected) {
-          aiContent = 'لا يمكن قراءة هذا الملف تلقائياً. جرب رفع ملف TXT أو RTF أو MD أو CSV أو JSON ليتمكن الذكاء الاصطناعي من معالجتها.';
+          aiContent = t('ai.unreadableFile');
         } else {
           const result = await aiService.generateQuestions(
             {
@@ -645,32 +660,40 @@ const timeAgo = (ts: number): string => {
               questionType: 'both',
               numQuestions: 5,
               conversationMessages: chatHistory,
-              userId: sessionId
+              userId: sessionId,
+              language: i18n.language
             },
             attachments
           );
-          aiContent = `تم توليد ${result.questions.length} سؤال:\n\n${result.questions
-            .map((q, i) => `${i + 1}. ${q.question}${q.options ? '\n   الخيارات: ' + q.options.join('، ') : ''}\n   الإجابة: ${q.answer}`)
+          aiContent = `${t('ai.questionsGenerated', { count: result.questions.length })}\n\n${result.questions
+            .map((q, i) => `${i + 1}. ${q.question}${q.options ? '\n   ' + t('ai.questions.options') + ': ' + q.options.join(', ') : ''}\n   ' + t('ai.questions.answer') + ': ${q.answer}`)
             .join('\n\n')}`;
           aiType = 'questions';
           aiData = result.questions;
         }
       } else if (effectiveTool === 'translate') {
         if (unreadableFileSelected) {
-          aiContent = 'لا يمكن قراءة هذا الملف تلقائياً. جرب رفع ملف TXT أو RTF أو MD أو CSV أو JSON ليتمكن الذكاء الاصطناعي من معالجتها.';
+          aiContent = t('ai.unreadableFile');
         } else {
+          const detectTargetLanguage = (message: string): string => {
+            const lower = message.toLowerCase();
+            const targetEnglish = lower.includes('الإنجليزية') || lower.includes('الإنجليزية') || lower.includes('english');
+            const targetFrench = lower.includes('الفرنسية') || lower.includes('الفرنسية') || lower.includes('french');
+            const targetArabic = lower.includes('العربية') || lower.includes('العربية') || lower.includes('arabic');
+            if (targetEnglish) return 'en';
+            if (targetFrench) return 'fr';
+            if (targetArabic) return 'ar';
+            return i18n.language === 'ar' ? 'en' : 'ar';
+          };
+
           const result = await aiService.translate(
             {
               text: textForTool || userMessage,
-              targetLanguage:
-                userMessage.includes('الإنجليزية') || userMessage.includes('English')
-                  ? 'الإنجليزية'
-                  : userMessage.includes('الفرنسية')
-                    ? 'الفرنسية'
-                    : 'الإنجليزية',
+              targetLanguage: detectTargetLanguage(userMessage),
               fileName: selectedFile?.name,
               conversationMessages: chatHistory,
-              userId: sessionId
+              userId: sessionId,
+              language: i18n.language
             },
             attachments
           );
@@ -678,7 +701,7 @@ const timeAgo = (ts: number): string => {
         }
       } else {
         // General chat with conversation history for session continuity
-        const chatResult = await aiService.chat({ messages: chatHistory, sessionId }, attachments);
+        const chatResult = await aiService.chat({ messages: chatHistory, sessionId, language: i18n.language }, attachments);
         aiContent = chatResult.response;
         aiType = 'text';
       }
@@ -774,13 +797,13 @@ const timeAgo = (ts: number): string => {
           <MarkdownRenderer content={message.content} className="text-gray-800 dark:text-gray-100 leading-relaxed" />
           {data.simpleExplanation && (
             <div className="bg-blue-50 dark:bg-blue-900/30 border-r-4 border-blue-500 p-3 rounded">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">الشرح البسيط:</p>
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">{t('ai.explainer.simpleExplanation')}</p>
               <p className="text-sm text-blue-700 dark:text-blue-100">{data.simpleExplanation}</p>
             </div>
           )}
           {data.examples && data.examples.length > 0 && (
             <div className="bg-green-50 dark:bg-green-900/30 border-r-4 border-green-500 p-3 rounded">
-              <p className="text-sm font-medium text-green-800 dark:text-green-200">أمثلة:</p>
+              <p className="text-sm font-medium text-green-800 dark:text-green-200">{t('ai.explainer.examples')}</p>
               <ul className="list-disc list-inside text-sm text-green-700 dark:text-green-100 space-y-1">
                 {data.examples.map((example, i) => (
                   <li key={i}>{example}</li>
@@ -799,7 +822,7 @@ const timeAgo = (ts: number): string => {
           <MarkdownRenderer content={message.content} className="text-gray-800 dark:text-gray-100" />
           {data.keyPoints && data.keyPoints.length > 0 && (
             <div className="bg-purple-50 dark:bg-purple-900/30 border-r-4 border-purple-500 p-3 rounded">
-              <p className="text-sm font-medium text-purple-800 dark:text-purple-200">النقاط الرئيسية:</p>
+              <p className="text-sm font-medium text-purple-800 dark:text-purple-200">{t('ai.summarizer.keyPoints')}</p>
               <ul className="list-disc list-inside text-sm text-purple-700 dark:text-purple-100 space-y-1">
                 {data.keyPoints.map((point, i) => (
                   <li key={i}>{point}</li>
@@ -836,12 +859,12 @@ const timeAgo = (ts: number): string => {
           <button
             onClick={() => setIsHistoryOpen(true)}
             type="button"
-            title="الملف الشخصي • المحادثات السابقة"
-            aria-label="الملف الشخصي"
+            title={t('ai.profile')}
+            aria-label={t('ai.profileName')}
             className="group relative flex items-center justify-center w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 transition-colors ring-2 ring-white/40 overflow-hidden"
           >
             {currentUser?.photoURL ? (
-              <img src={currentUser.photoURL} alt="الملف الشخصي" className="w-full h-full object-cover" />
+              <img src={currentUser.photoURL} alt={t('ai.profileName')} className="w-full h-full object-cover" />
             ) : (
               <span className="font-bold text-sm">{getInitials()}</span>
             )}
@@ -851,8 +874,8 @@ const timeAgo = (ts: number): string => {
           <button
             onClick={startNewChat}
             type="button"
-            title="محادثة جديدة"
-            aria-label="محادثة جديدة"
+            title={t('ai.newChat')}
+            aria-label={t('ai.newChat')}
             className="flex items-center justify-center w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -867,10 +890,10 @@ const timeAgo = (ts: number): string => {
             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-primary-600 rounded-full" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-[15px] leading-tight truncate">مساعد منصة البرامج الاكاديميه للجامعات اليمنيه الذكي</h3>
+            <h3 className="font-semibold text-[15px] leading-tight truncate">{t('app.title')}</h3>
             <p className="text-[11px] text-white/80 flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-300 rounded-full inline-block" />
-              متاح الآن لمساعدتك
+              {t('ai.availableNow')}
             </p>
           </div>
         </div>
@@ -881,7 +904,7 @@ const timeAgo = (ts: number): string => {
             onClick={onClose}
             type="button"
             className="flex items-center justify-center w-9 h-9 rounded-full bg-white/15 hover:bg-red-500/80 transition-colors"
-            aria-label="إغلاق النافذة"
+            aria-label={t('ai.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -894,7 +917,7 @@ const timeAgo = (ts: number): string => {
         <div className="sticky top-0 z-10 bg-white/85 dark:bg-gray-800/85 backdrop-blur border-b border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-primary-500" />
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">الأدوات السريعة</p>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('ai.quickTools')}</p>
           </div>
           <div className="relative flex gap-2 overflow-x-auto pb-1 -mb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="absolute left-0 top-0 bottom-1 w-8 bg-gradient-to-r from-white/85 dark:from-gray-800/85 to-transparent pointer-events-none z-10"></div>
@@ -925,7 +948,7 @@ const timeAgo = (ts: number): string => {
           <div className="bg-blue-50/70 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-900/40 p-3">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <p className="text-xs font-medium text-blue-700 dark:text-blue-300">اختر ملفاً للعمل عليه (اختياري)</p>
+              <p className="text-xs font-medium text-blue-700 dark:text-blue-300">{t('ai.selectFile')}</p>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {mergedFiles.map((file) => (
@@ -949,7 +972,7 @@ const timeAgo = (ts: number): string => {
         {/* Messages */}
         <div className="p-3 sm:p-4 space-y-4">
           {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={message.id} className={`flex ${message.role === 'user' ? (isRTL ? 'justify-start' : 'justify-end') : (isRTL ? 'justify-end' : 'justify-start')}`}>
               <div
                 className={`flex items-start gap-2 min-w-0 max-w-[88%] sm:max-w-[85%] ${message.role === 'user' ? 'flex-row-reverse' : ''
                   }`}
@@ -967,8 +990,8 @@ const timeAgo = (ts: number): string => {
                   {message.role === 'ai' && message.content && (
                     <button
                       onClick={() => copyMessage(message.content, message.id)}
-                      title="نسخ"
-                      aria-label="نسخ الرسالة"
+                      title={t('ai.copy')}
+                      aria-label={t('ai.copy')}
                       className="absolute -top-2 -left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full p-1 shadow"
                     >
                       {copiedId === message.id ? (
@@ -1026,7 +1049,7 @@ const timeAgo = (ts: number): string => {
               }}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
-              إلغاء
+              {t('ai.cancel')}
             </button>
           </div>
         )}
@@ -1039,7 +1062,7 @@ const timeAgo = (ts: number): string => {
               onClick={() => setSelectedFile(null)}
               type="button"
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1 shrink-0"
-              title="إزالة الملف"
+              title={t('ai.removeFile')}
             >
               <X className="h-3 w-3" />
             </button>
@@ -1055,7 +1078,7 @@ const timeAgo = (ts: number): string => {
               autoGrow(e.target);
             }}
             onKeyPress={handleKeyPress}
-            placeholder="اكتب سؤالك هنا... (اضغط Enter للإرسال)"
+            placeholder={t('ai.placeholder')}
             className="flex-1 resize-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-xl p-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none leading-relaxed"
             rows={1}
           />
@@ -1063,7 +1086,7 @@ const timeAgo = (ts: number): string => {
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
             className="flex-shrink-0 p-2.5 h-11 w-11 flex items-center justify-center bg-gradient-to-br from-primary-600 to-secondary-600 text-white rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
-            aria-label="إرسال"
+            aria-label={t('ai.send')}
           >
             <Send className="w-5 h-5" />
           </button>
@@ -1078,7 +1101,7 @@ const timeAgo = (ts: number): string => {
       />
        <aside
         dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
-        className={`absolute top-0 right-0 h-full w-[82%] max-w-[300px] bg-white dark:bg-gray-800 shadow-2xl flex flex-col transition-transform duration-300 ease-out z-30 ${isHistoryOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`absolute top-0 ${i18n.language === 'ar' ? 'right-0' : 'left-0'} h-full w-[82%] max-w-[300px] bg-white dark:bg-gray-800 shadow-2xl flex flex-col transition-transform duration-300 ease-out z-30 ${isHistoryOpen ? 'translate-x-0' : (i18n.language === 'ar' ? 'translate-x-full' : '-translate-x-full')}
           }`}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-600 to-secondary-600 text-white">
@@ -1092,19 +1115,19 @@ const timeAgo = (ts: number): string => {
             )}
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate">
-                {currentUser?.displayName || currentUser?.email || 'ملفّي'}
+                {currentUser?.displayName || currentUser?.email || t('ai.profileName')}
               </p>
               <p className="text-[11px] text-white/80 flex items-center gap-1">
-                <History className="w-3 h-3" /> المحادثات السابقة
+                <History className="w-3 h-3" /> {t('ai.previousConversations')}
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsHistoryOpen(false)}
             className="flex items-center justify-center w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 transition-colors"
-            aria-label="إغلاق"
+            aria-label={t('ai.close')}
           >
-            <PanelLeft className="w-4 h-4" />
+            {i18n.language === 'ar' ? <PanelRight className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
           </button>
         </div>
 
@@ -1114,7 +1137,7 @@ const timeAgo = (ts: number): string => {
             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            محادثة جديدة
+            {t('ai.newChat')}
           </button>
         </div>
 
@@ -1122,8 +1145,8 @@ const timeAgo = (ts: number): string => {
           {conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-gray-400 dark:text-gray-500 mt-16 px-4">
               <MessageSquare className="w-10 h-10 mb-3 opacity-60" />
-              <p className="text-sm">لا توجد محادثات سابقة بعد.</p>
-              <p className="text-xs mt-1">ستُحفظ محادثاتك هنا تلقائياً للرجوع إليها.</p>
+              <p className="text-sm">{t('ai.noHistory')}</p>
+              <p className="text-xs mt-1">{t('ai.noHistoryHint')}</p>
             </div>
           ) : (
             conversations.map((conv) => (
@@ -1140,7 +1163,7 @@ const timeAgo = (ts: number): string => {
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{conv.title}</p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
                     <History className="w-3 h-3" />
-                    {timeAgo(conv.updatedAt)} • {conv.messages.length} رسالة
+                    {timeAgo(conv.updatedAt)} • {conv.messages.length} {t('ai.messages')}
                   </p>
                 </div>
                 <span
@@ -1150,8 +1173,8 @@ const timeAgo = (ts: number): string => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') deleteConversation(conv.id, e as unknown as React.MouseEvent);
                   }}
-                  title="حذف المحادثة"
-                  aria-label="حذف المحادثة"
+                  title={t('ai.deleteConversation')}
+                  aria-label={t('ai.deleteConversation')}
                   className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-300 hover:text-red-500 transition-opacity p-1 -ml-1"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -1163,7 +1186,7 @@ const timeAgo = (ts: number): string => {
 
         <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           <p className="text-[11px] text-center text-gray-400 dark:text-gray-500">
-            تُحفظ محادثاتك على هذا الجهاز فقط
+            {t('ai.savingLocally')}
           </p>
         </div>
       </aside>

@@ -23,7 +23,7 @@ const LanguageSwitcher = () => {
         aria-label={t('language.switch', 'Change language')}
       >
         <Globe className="h-4 w-4" />
-        <span className="hidden sm:inline">{currentLang === 'ar' ? 'عربي' : 'EN'}</span>
+        <span className="hidden sm:inline">{currentLang === 'ar' ? t('language.ar') : t('language.en')}</span>
       </button>
       {open && (
         <div className="absolute end-0 mt-2 w-36 bg-[#FFFBEB]/95 dark:bg-brown-900/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-primary-500/10 border border-brown-200/50 dark:border-brown-700/30 overflow-hidden z-[60] animate-fade-in-down">
@@ -34,7 +34,7 @@ const LanguageSwitcher = () => {
               : 'text-brown-700 dark:text-brown-300 hover:bg-primary-50 dark:hover:bg-primary-900/20'
               }`}
           >
-            العربية
+            {t('language.ar')}
           </button>
           <button
             onClick={() => changeLanguage('en')}
@@ -43,7 +43,7 @@ const LanguageSwitcher = () => {
               : 'text-brown-700 dark:text-brown-300 hover:bg-primary-50 dark:hover:bg-primary-900/20'
               }`}
           >
-            English
+            {t('language.en')}
           </button>
         </div>
       )}

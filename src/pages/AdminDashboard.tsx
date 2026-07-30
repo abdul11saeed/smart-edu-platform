@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Users, Plus, X, Edit2, Trash2, UserMinus, UserPlus, Activity, Check, Upload, UserPlus as UserRegister, School } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { useCatalogStore } from '../stores/catalogStore';
 import { useAppStore } from '../stores/appStore';
 import Modal from '../components/ui/Modal';
@@ -48,6 +50,8 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 const AdminDashboard = () => {
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language.startsWith('ar');
     const { universities, fetchUniversities, isLoading: catalogLoading, subscribeToUniversities } = useCatalogStore();
     const { success: toastSuccess, error: toastError } = useToast();
     const currentUser = useAppStore((s) => s.currentUser);
@@ -169,7 +173,7 @@ const AdminDashboard = () => {
                 setStats(data);
             } catch (error) {
                 console.error('Error loading users/stats:', error);
-                toastError('حدث خطأ أثناء تحميل البيانات');
+                toastError(t('admin.dataLoadError'));
             } finally {
                 setIsUsersLoading(false);
             }
@@ -275,21 +279,21 @@ const AdminDashboard = () => {
     const getDeleteWarning = useCallback((item: ContentItem): string => {
         if (item.type === 'university') {
             const uni = universities.find(u => u.id === item.id);
-            if (!uni) return `هل أنت متأكد من حذف "${item.name}"؟`;
+            if (!uni) return t('admin.confirmDelete', { name: item.name });
             const collegeCount = uni.colleges?.length || 0;
             const majorCount = uni.colleges?.reduce((sum, col) => sum + (col.majors?.length || 0), 0) || 0;
             const courseCount = uni.colleges?.reduce((sum, col) =>
                 sum + (col.majors?.reduce((s, maj) => s + (maj.courses?.length || 0), 0) || 0), 0) || 0;
-            return `تنبيه: عند حذف "${item.name}" سيتم حذف كل ما يتعلق بها (${collegeCount} كلية, ${majorCount} تخصص, ${courseCount} مسار). هل أنت متأكد؟`;
+            return t('admin.confirmDeleteUniversity', { name: item.name, colleges: collegeCount, majors: majorCount, courses: courseCount });
         }
         if (item.type === 'college') {
             const uni = universities.find(u => Array.isArray(u.colleges) && u.colleges.some(c => c.id === item.id));
-            if (!uni) return `هل أنت متأكد من حذف "${item.name}"؟`;
+            if (!uni) return t('admin.confirmDelete', { name: item.name });
             const college = uni.colleges.find(c => c.id === item.id);
-            if (!college) return `هل أنت متأكد من حذف "${item.name}"؟`;
+            if (!college) return t('admin.confirmDelete', { name: item.name });
             const majorCount = college.majors?.length || 0;
             const courseCount = college.majors?.reduce((sum, maj) => sum + (maj.courses?.length || 0), 0) || 0;
-            return `تنبيه: عند حذف "${item.name}" سيتم حذف كل ما يتعلق بها (${majorCount} تخصص, ${courseCount} مسار). هل أنت متأكد؟`;
+            return t('admin.confirmDeleteCollege', { name: item.name, majors: majorCount, courses: courseCount });
         }
         if (item.type === 'major') {
             const uni = universities.find(u =>
@@ -297,17 +301,17 @@ const AdminDashboard = () => {
                     Array.isArray(c.majors) && c.majors.some(m => m.id === item.id)
                 )
             );
-            if (!uni) return `هل أنت متأكد من حذف "${item.name}"؟`;
+            if (!uni) return t('admin.confirmDelete', { name: item.name });
             const college = uni.colleges.find(c =>
                 Array.isArray(c.majors) && c.majors.some(m => m.id === item.id)
             );
-            if (!college) return `هل أنت متأكد من حذف "${item.name}"؟`;
+            if (!college) return t('admin.confirmDelete', { name: item.name });
             const major = college.majors.find(m => m.id === item.id);
-            if (!major) return `هل أنت متأكد من حذف "${item.name}"؟`;
+            if (!major) return t('admin.confirmDelete', { name: item.name });
             const courseCount = major.courses?.length || 0;
-            return `تنبيه: عند حذف "${item.name}" سيتم حذف كل مساراته (${courseCount} مسار). هل أنت متأكد؟`;
+            return t('admin.confirmDeleteMajor', { name: item.name, courses: courseCount });
         }
-        return `هل أنت متأكد من حذف "${item.name}"؟`;
+        return t('admin.confirmDelete', { name: item.name });
     }, [universities]);
 
     // Persisted delete of a catalog item
@@ -328,10 +332,10 @@ const AdminDashboard = () => {
             } else if (item.type === 'course') {
                 await deleteCourse(path.universityId, path.collegeId ?? '', path.majorId ?? '', path.courseId ?? '');
             }
-            toastSuccess('تم حذف العنصر بنجاح');
+            toastSuccess(t('admin.deleteSuccess'));
         } catch (error: any) {
             console.error('Error deleting item:', error);
-            toastError(error?.message || 'حدث خطأ أثناء الحذف');
+            toastError(error?.message || t('admin.deleteError'));
         } finally {
             setIsDeleting(false);
         }
@@ -362,12 +366,12 @@ const AdminDashboard = () => {
             } else if (editingItem.type === 'course') {
                 await updateCourseName(path.universityId, path.collegeId ?? '', path.majorId ?? '', path.courseId ?? '', editName.trim());
             }
-            toastSuccess('تم تحديث الاسم بنجاح');
+            toastSuccess(t('admin.updateSuccess'));
             setEditingItem(null);
             setEditName('');
         } catch (error: any) {
             console.error('Error updating item:', error);
-            toastError(error?.message || 'حدث خطأ أثناء التحديث');
+            toastError(error?.message || t('admin.updateError'));
         } finally {
             setIsEditingName(false);
         }
@@ -417,10 +421,10 @@ const AdminDashboard = () => {
             setSelectedMajorId('');
             setSelectedUniversity(null);
             setActiveModal(null);
-            toastSuccess(`تم إضافة ${newItemName} بنجاح`);
+            toastSuccess(t('admin.addSuccess', { name: newItemName }));
         } catch (error: any) {
             console.error('Error adding item:', error);
-            toastError(error?.message || 'حدث خطأ أثناء الإضافة');
+            toastError(error?.message || t('admin.addError'));
         } finally {
             setIsAddingItem(false);
         }
@@ -429,20 +433,20 @@ const AdminDashboard = () => {
     // User operations
     const handlePromoteToAdmin = async (user: { id: string; email: string }) => {
         if (isProtectedUser(user)) {
-            toastError('لا يمكن ترقية هذا المستخدم');
-            return;
-        }
-        if (!confirm('هل أنت متأكد من ترقية هذا المستخدم إلى مدير؟')) return;
+        toastError(t('admin.cannotPromote'));
+        return;
+    }
+    if (!confirm(t('admin.confirmPromote'))) return;
         setIsRoleChanging(true);
         try {
             await updateUserRole(user.id, 'admin');
             setRegisteredUsers(prev => prev.map(u =>
                 u.id === user.id ? { ...u, role: 'admin' } : u
             ));
-            toastSuccess('تمت الترقية إلى مدير بنجاح');
+            toastSuccess(t('admin.promotedSuccess'));
         } catch (error: any) {
             console.error('Error promoting user:', error);
-            toastError(error?.message || 'حدث خطأ أثناء الترقية');
+            toastError(error?.message || t('admin.roleChangedError'));
         } finally {
             setIsRoleChanging(false);
         }
@@ -450,20 +454,20 @@ const AdminDashboard = () => {
 
     const handleDemoteToStudent = async (user: { id: string; email: string }) => {
         if (isProtectedUser(user)) {
-            toastError('لا يمكن تنزيل هذا المستخدم');
+            toastError(t('admin.cannotDemote'));
             return;
         }
-        if (!confirm('هل أنت متأكد من تنزيل هذا المدير إلى طالب؟')) return;
+        if (!confirm(t('admin.confirmDemote'))) return;
         setIsRoleChanging(true);
         try {
             await updateUserRole(user.id, 'student');
             setRegisteredUsers(prev => prev.map(u =>
                 u.id === user.id ? { ...u, role: 'student' } : u
             ));
-            toastSuccess('تم التنزيل إلى طالب بنجاح');
+            toastSuccess(t('admin.demotedSuccess'));
         } catch (error: any) {
             console.error('Error demoting user:', error);
-            toastError(error?.message || 'حدث خطأ أثناء التنزيل');
+            toastError(error?.message || t('admin.roleChangedError'));
         } finally {
             setIsRoleChanging(false);
         }
@@ -471,7 +475,7 @@ const AdminDashboard = () => {
 
     const handleBanUser = (user: { id: string; email: string }) => {
         if (isProtectedUser(user)) {
-            toastError('لا يمكن حظر هذا المستخدم');
+            toastError(t('admin.cannotBan'));
             return;
         }
         setBanningUserId(user.id);
@@ -480,20 +484,20 @@ const AdminDashboard = () => {
 
     const confirmBanUser = async (user: { id: string; email: string }) => {
         if (isProtectedUser(user)) {
-            toastError('لا يمكن حظر هذا المستخدم');
+            toastError(t('admin.cannotBan'));
             setBanningUserId(null);
             return;
         }
         const days = parseInt(banDurationInput, 10);
         if (isNaN(days) || days < 0) {
-            toastError('يرجى إدخال عدد أيام صحيح');
+            toastError(t('admin.enterValidDays'));
             return;
         }
         const banDurationMs = days === 0 ? 0 : days * 24 * 60 * 60 * 1000;
         const banExpiresAt = days === 0 ? 0 : Date.now() + banDurationMs;
         const confirmMsg = days === 0
-            ? 'هل أنت متأكد من حظر هذا المستخدم بشكل دائم؟'
-            : `هل أنت متأكد من حظر هذا المستخدم لمدة ${days} يوم؟`;
+            ? t('admin.confirmBanPermanent')
+            : t('admin.confirmBanDays', { days });
         if (!confirm(confirmMsg)) {
             setBanningUserId(null);
             return;
@@ -504,10 +508,10 @@ const AdminDashboard = () => {
             setRegisteredUsers(prev => prev.map(u =>
                 u.id === user.id ? { ...u, role: 'student', isBanned: true } : u
             ));
-            toastSuccess(days === 0 ? 'تم الحظر بشكل دائم' : `تم الحظر لمدة ${days} يوم`);
+            toastSuccess(days === 0 ? t('admin.banPermanently') : t('admin.bannedForDays', { days }));
         } catch (error: any) {
             console.error('Error banning user:', error);
-            toastError(error?.message || 'حدث خطأ أثناء الحظر');
+            toastError(error?.message || t('admin.banError'));
         } finally {
             setIsBanning(false);
             setBanningUserId(null);
@@ -515,17 +519,17 @@ const AdminDashboard = () => {
     };
 
     const handleUnbanUser = async (user: { id: string; email: string }) => {
-        if (!confirm('هل أنت متأكد من إلغاء حظر هذا المستخدم؟')) return;
+        if (!confirm(t('admin.confirmUnban'))) return;
         setIsBanning(true);
         try {
             await unbanUser(user.id);
             setRegisteredUsers(prev => prev.map(u =>
                 u.id === user.id ? { ...u, isBanned: false } : u
             ));
-            toastSuccess('تم إلغاء الحظر بنجاح');
+            toastSuccess(t('admin.unbannedSuccess'));
         } catch (error: any) {
             console.error('Error unbanning user:', error);
-            toastError(error?.message || 'حدث خطأ أثناء إلغاء الحظر');
+            toastError(error?.message || t('admin.unbanError'));
         } finally {
             setIsBanning(false);
         }
@@ -549,7 +553,7 @@ const AdminDashboard = () => {
 
     return (
         <ErrorBoundary>
-            <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6">
+            <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
                 {/* Page Header */}
                 <div className="relative bg-gradient-to-l from-primary-700 via-primary-600 to-secondary-600 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg shadow-primary-500/20 overflow-hidden">
                     <div className="absolute inset-0 opacity-10">
@@ -558,10 +562,10 @@ const AdminDashboard = () => {
                     </div>
                     <div className="relative z-10">
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                            لوحة التحكم الإدارية
+                            {t('admin.dashboardTitle')}
                         </h1>
                         <p className="text-primary-100 mt-2 text-sm sm:text-base font-medium">
-                            مرحبًا بك في لوحة تحكم الإدارة — إعدادات النظام والأنشطة
+                            {t('admin.welcomeMessage', { name: currentUser?.name || '' })}
                         </p>
                     </div>
                 </div>
@@ -587,7 +591,7 @@ const AdminDashboard = () => {
                             setActivitiesCount(prev => prev + 10);
                         }}
                         onClearActivities={async () => {
-                            if (!confirm('هل أنت متأكد من مسح جميع الأنشطة؟')) return;
+                            if (!confirm(t('admin.confirmClearActivities'))) return;
                             try {
                                 setIsLoadingMore(true);
                                 await deleteRecentActivities();
@@ -650,9 +654,9 @@ const AdminDashboard = () => {
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 pb-3 border-b border-neutral-200">
                             <h3 className="text-lg font-bold text-neutral-800 flex items-center">
                                 <span className="inline-block w-1 h-6 bg-gradient-to-b from-primary-600 to-secondary-600 rounded-full ml-2"></span>
-                                إدارة المستخدمين
+                                {t('admin.manageUsers')}
                             </h3>
-                            <button onClick={closeModal} className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors" title="إغلاق">
+                            <button onClick={closeModal} className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors" title={t('common.close')}>
                                 <X className="h-5 w-5 sm:h-6 sm:w-6" />
                             </button>
                         </div>
@@ -686,14 +690,14 @@ const AdminDashboard = () => {
                         {hasMoreUsers && (
                             <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-100">
                                 <span className="text-xs text-neutral-500">
-                                    عرض {paginatedUsers.length} من {filteredUsers.length} مستخدم
+                                    {t('admin.showingUsers', { count: paginatedUsers.length, total: filteredUsers.length })}
                                 </span>
                                 <button
                                     onClick={() => setUserPage(prev => prev + 1)}
                                     disabled={isUsersLoading}
                                     className="px-4 py-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    تحميل المزيد
+                                    {t('admin.loadMore')}
                                 </button>
                             </div>
                         )}

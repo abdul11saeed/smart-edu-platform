@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface QuickActionsProps {
     onAddUniversity: () => void;
@@ -16,19 +17,20 @@ const QuickActions: React.FC<QuickActionsProps> = ({
     onAddCourse,
     onAddUser,
 }) => {
+    const { t } = useTranslation();
     const actions = [
-        { label: 'إضافة جامعة', icon: <Plus className="h-6 w-6 text-primary-500 mx-auto mb-2" />, onClick: onAddUniversity, gradient: 'from-primary-500 to-primary-700', hoverGradient: 'hover:from-primary-600 hover:to-primary-800', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
-        { label: 'إضافة كلية', icon: <Plus className="h-6 w-6 text-secondary-500 mx-auto mb-2" />, onClick: onAddCollege, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
-        { label: 'إضافة تخصص', icon: <Plus className="h-6 w-6 text-accent-500 mx-auto mb-2" />, onClick: onAddMajor, gradient: 'from-accent-500 to-accent-700', hoverGradient: 'hover:from-accent-600 hover:to-accent-800', iconBg: 'bg-accent-100 text-accent-700', shadowColor: 'shadow-accent-500/20' },
-        { label: 'إضافة مسار', icon: <Plus className="h-6 w-6 text-secondary-500 mx-auto mb-2" />, onClick: onAddCourse, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
-        { label: 'إدارة المستخدمين', icon: <User className="h-6 w-6 text-primary-600 mx-auto mb-2" />, onClick: onAddUser, gradient: 'from-primary-600 to-primary-800', hoverGradient: 'hover:from-primary-700 hover:to-primary-900', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
+        { label: t('admin.addUniversity'), icon: <Plus className="h-6 w-6 text-primary-500 mx-auto mb-2" />, onClick: onAddUniversity, gradient: 'from-primary-500 to-primary-700', hoverGradient: 'hover:from-primary-600 hover:to-primary-800', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
+        { label: t('admin.addCollege'), icon: <Plus className="h-6 w-6 text-secondary-500 mx-auto mb-2" />, onClick: onAddCollege, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
+        { label: t('admin.addMajor'), icon: <Plus className="h-6 w-6 text-accent-500 mx-auto mb-2" />, onClick: onAddMajor, gradient: 'from-accent-500 to-accent-700', hoverGradient: 'hover:from-accent-600 hover:to-accent-800', iconBg: 'bg-accent-100 text-accent-700', shadowColor: 'shadow-accent-500/20' },
+        { label: t('admin.addCourse'), icon: <Plus className="h-6 w-6 text-secondary-500 mx-auto mb-2" />, onClick: onAddCourse, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
+        { label: t('admin.manageUsers'), icon: <User className="h-6 w-6 text-primary-600 mx-auto mb-2" />, onClick: onAddUser, gradient: 'from-primary-600 to-primary-800', hoverGradient: 'hover:from-primary-700 hover:to-primary-900', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
     ];
 
     return (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-neutral-200/60 shadow-lg shadow-neutral-200/50 p-4 sm:p-6 lg:p-8 hover:shadow-xl hover:shadow-neutral-300/50 transition-all duration-300">
             <h2 className="text-lg sm:text-xl font-bold text-neutral-800 flex items-center mb-4 sm:mb-6">
                 <span className="inline-block w-1 h-6 sm:h-8 bg-gradient-to-b from-accent-500 to-secondary-600 rounded-full ml-3"></span>
-                الإجراءات السريعة
+                {t('admin.quickActions')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                 {actions.map((action) => (

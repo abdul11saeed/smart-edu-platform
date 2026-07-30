@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, UserPlus, UserMinus, Trash2, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { UserRole } from '../../types';
 import { ROLE_CONFIG } from './constants';
 
@@ -60,6 +61,7 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
     onDemoteToStudent,
     onUnbanUser,
 }) => {
+    const { t } = useTranslation();
     const isProtectedUser = (user: User) =>
         user.id === currentUser?.id ||
         user.email?.toLowerCase() === 'admin@university.edu.sa';
@@ -80,8 +82,8 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center">
                     <Users className="h-8 w-8 text-neutral-400" />
                 </div>
-                <p className="text-neutral-600 font-medium">لا يوجد مستخدمون مسجلون</p>
-                <p className="text-sm text-neutral-400 mt-1">سيظهر المستخدمون المسجلون هنا</p>
+                <p className="text-neutral-600 font-medium">{t('admin.noRegisteredUsers')}</p>
+                <p className="text-sm text-neutral-400 mt-1">{t('admin.usersAppearHere')}</p>
             </div>
         );
     }
@@ -95,15 +97,15 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        placeholder="بحث بالاسم أو البريد الإلكتروني..."
+                        placeholder={t('admin.searchByNameOrEmail')}
                         className="w-full p-2.5 pl-10 pr-4 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 bg-white/80 transition-all"
                     />
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
                 <div className="flex gap-2">
-                    <FilterButton label={`الكل (${totalUsers})`} isActive={userFilter === 'all'} onClick={() => onFilterChange('all')} variant="dark" />
-                    <FilterButton label={`نشط (${activeCount})`} isActive={userFilter === 'active'} onClick={() => onFilterChange('active')} variant="secondary" />
-                    <FilterButton label={`محظور (${bannedCount})`} isActive={userFilter === 'banned'} onClick={() => onFilterChange('banned')} variant="danger" />
+                    <FilterButton label={t('admin.allUsers', { count: totalUsers })} isActive={userFilter === 'all'} onClick={() => onFilterChange('all')} variant="dark" />
+                    <FilterButton label={t('admin.activeUsersFilter', { count: activeCount })} isActive={userFilter === 'active'} onClick={() => onFilterChange('active')} variant="secondary" />
+                    <FilterButton label={t('admin.bannedUsersFilter', { count: bannedCount })} isActive={userFilter === 'banned'} onClick={() => onFilterChange('banned')} variant="danger" />
                 </div>
             </div>
 
@@ -112,8 +114,8 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center">
                         <Users className="h-8 w-8 text-neutral-400" />
                     </div>
-                    <p className="text-neutral-600 font-medium">لا يوجد مستخدمون مطابقون للبحث</p>
-                    <p className="text-sm text-neutral-400 mt-1">جرب تعديل معايير البحث أو الفلترة</p>
+                    <p className="text-neutral-600 font-medium">{t('admin.noMatchingUsers')}</p>
+                    <p className="text-sm text-neutral-400 mt-1">{t('admin.tryDifferentFilters')}</p>
                 </div>
             ) : (
                 <div className="max-h-[70vh] sm:max-h-[75vh] overflow-y-auto pr-1 custom-scrollbar">
@@ -121,10 +123,10 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                         <table className="min-w-[320px] w-full divide-y divide-neutral-100">
                             <thead>
                                 <tr className="bg-gradient-to-l from-neutral-50 to-neutral-100/50">
-                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">الاسم</th>
-                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">البريد</th>
-                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">الدور</th>
-                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">الإجراءات</th>
+                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">{t('admin.nameColumn')}</th>
+                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">{t('admin.emailColumn')}</th>
+                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">{t('admin.roleColumn')}</th>
+                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-bold text-neutral-600 uppercase tracking-wider">{t('admin.actionsColumn')}</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-neutral-100">
@@ -142,42 +144,42 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                                                     {user.name}
                                                 </div>
                                                 {user.isBanned && (
-                                                    <span className="mr-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">محظور</span>
+                                                    <span className="mr-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">{t('admin.banned')}</span>
                                                 )}
                                             </td>
                                             <td className="px-3 sm:px-4 py-3 text-sm text-neutral-500">{user.email}</td>
                                             <td className="px-3 sm:px-4 py-3">
                                                 <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${ROLE_CONFIG[user.role]?.badgeClass || 'bg-blue-100 text-blue-800'}`}>
-                                                    {ROLE_CONFIG[user.role]?.label || 'غير معروف'}
+                                                    {t(ROLE_CONFIG[user.role]?.label) || t('userManagement.unknownRole')}
                                                 </span>
                                             </td>
                                             <td className="px-3 sm:px-4 py-3">
                                                 {isBanningThisUser ? (
                                                     <div className="flex items-center gap-2">
                                                         <input
-                                                            type="number"
-                                                            value={banDurationInput}
-                                                            onChange={(e) => onBanDurationChange(e.target.value)}
-                                                            placeholder="أيام (0=دائم)"
-                                                            min="0"
-                                                            className="w-24 p-1.5 border border-primary-200 rounded-lg text-xs focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400"
-                                                            autoFocus
-                                                        />
-                                                        <button
-                                                            onClick={() => onConfirmBanUser(user)}
-                                                            disabled={isBanning}
-                                                            className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                                                            title="تأكيد الحظر"
-                                                        >
-                                                            <Check className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={onCancelBan}
-                                                            className="p-1.5 text-neutral-600 bg-neutral-50 hover:bg-neutral-100 rounded-lg transition-colors"
-                                                            title="إلغاء"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                                        </button>
+                                                                type="number"
+                                                                value={banDurationInput}
+                                                                onChange={(e) => onBanDurationChange(e.target.value)}
+                                                                placeholder={t('admin.banDurationDays')}
+                                                                min="0"
+                                                                className="w-24 p-1.5 border border-primary-200 rounded-lg text-xs focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400"
+                                                                autoFocus
+                                                            />
+                                                            <button
+                                                                onClick={() => onConfirmBanUser(user)}
+                                                                disabled={isBanning}
+                                                                className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                                                title={t('admin.confirmBan')}
+                                                            >
+                                                                <Check className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={onCancelBan}
+                                                                className="p-1.5 text-neutral-600 bg-neutral-50 hover:bg-neutral-100 rounded-lg transition-colors"
+                                                                title={t('admin.cancelBan')}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                            </button>
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-center gap-1">
@@ -186,20 +188,20 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                                                                 onClick={() => onPromoteToAdmin(user)}
                                                                 disabled={isRoleChanging || protectedCheck}
                                                                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50"
-                                                                title={protectedCheck ? 'لا يمكن ترقية هذا المستخدم' : 'ترقية إلى مدير'}
+                                                                title={protectedCheck ? t('admin.cannotPromote') : t('admin.promoteToAdmin')}
                                                             >
                                                                 <UserPlus className="h-3.5 w-3.5" />
-                                                                ترقية
+                                                                {t('admin.promoteToAdmin')}
                                                             </button>
                                                         ) : !protectedCheck ? (
                                                             <button
                                                                 onClick={() => onDemoteToStudent(user)}
                                                                 disabled={isRoleChanging}
                                                                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
-                                                                title="تنزيل إلى طالب"
+                                                                title={t('admin.demoteToStudent')}
                                                             >
                                                                 <UserMinus className="h-3.5 w-3.5" />
-                                                                تنزيل
+                                                                {t('admin.demoteToStudent')}
                                                             </button>
                                                         ) : null}
                                                         {!protectedCheck && !user.isBanned && (
@@ -207,10 +209,10 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                                                                 onClick={() => onBanUser(user)}
                                                                 disabled={isBanning}
                                                                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
-                                                                title="حظر مؤقت"
+                                                                title={t('admin.banUser')}
                                                             >
                                                                 <Trash2 className="h-3.5 w-3.5" />
-                                                                حظر
+                                                                {t('admin.banUser')}
                                                             </button>
                                                         )}
                                                         {user.isBanned && !protectedCheck && (
@@ -218,10 +220,10 @@ const UserManagementPanel: React.FC<UserManagementPanelProps> = ({
                                                                 onClick={() => onUnbanUser(user)}
                                                                 disabled={isBanning}
                                                                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50"
-                                                                title="إلغاء الحظر"
+                                                                title={t('admin.unbanUser')}
                                                             >
                                                                 <Check className="h-3.5 w-3.5" />
-                                                                إلغاء
+                                                                {t('admin.unbanUser')}
                                                             </button>
                                                         )}
                                                     </div>

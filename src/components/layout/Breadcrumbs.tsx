@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 import { useCatalogStore } from '../../stores/catalogStore';
 
 const Breadcrumbs = () => {
+    const { t } = useTranslation();
     const {
         selectedUniversity,
         selectedCollege,
@@ -39,28 +41,28 @@ const Breadcrumbs = () => {
 
     if (selectedUniversity) {
         breadcrumbs.push({
-            label: getName(selectedUniversity, 'university') || 'جامعة',
+            label: getName(selectedUniversity, 'university') || t('hierarchicalSelector.university'),
             path: '/',
             type: 'university'
         });
     }
     if (selectedCollege) {
         breadcrumbs.push({
-            label: getName(selectedCollege, 'college') || 'كلية',
+            label: getName(selectedCollege, 'college') || t('hierarchicalSelector.college'),
             path: '/',
             type: 'college'
         });
     }
     if (selectedMajor) {
         breadcrumbs.push({
-            label: getName(selectedMajor, 'major') || 'تخصص',
+            label: getName(selectedMajor, 'major') || t('hierarchicalSelector.major'),
             path: '/',
             type: 'major'
         });
     }
     if (selectedCourse) {
         breadcrumbs.push({
-            label: getName(selectedCourse, 'course') || 'مادة',
+            label: getName(selectedCourse, 'course') || t('hierarchicalSelector.course'),
             path: `/course/${selectedCourse}`,
             type: 'course'
         });

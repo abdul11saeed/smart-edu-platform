@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import RecommendationCard from './RecommendationCard';
 import { ContentCategory, RecommendationContent, RecommendationItemWithStatus } from '../../types';
 import { recommendationService } from '../../services/recommendationService';
@@ -35,6 +36,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
+    const { t, i18n } = useTranslation();
 
     // Page size used for both the initial load and "Load more" (capped at 50).
     const PAGE_SIZE = Math.max(1, Math.min(limit || 20, 50));
@@ -57,8 +59,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
         }
         try {
             let data: RecommendationContent[] = [];
-            // FIX: For public users, fetch the actual category content instead of hardcoded 'recommended'
-            // This ensures "تقنية المعلومات" shows tech content, not generic recommendations
             const fetchCategory = isPublic ? category : category;
             data = await recommendationService.getRecommendations(
                 {
@@ -182,14 +182,14 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                     <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-red-500" />
                         <span className="text-sm text-red-700 dark:text-red-300">
-                            تعذر تحميل المحتوى. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.
+                            {t('recommendations.section.errorLoading')}
                         </span>
                     </div>
                     <button
                         onClick={() => setReloadKey(k => k + 1)}
                         className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors whitespace-nowrap"
                     >
-                        إعادة المحاولة
+                        {t('recommendations.section.retry')}
                     </button>
                 </div>
             </div>
@@ -220,7 +220,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     }
 
     return (
-        <div className="mb-8">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="mb-8">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     {IconComponent && <IconComponent className="h-5 w-5 text-primary-600 dark:text-primary-400" />}
@@ -231,8 +231,8 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                         onClick={() => onViewAll(category)}
                         className="text-sm font-semibold text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 flex items-center gap-1.5 transition-all duration-200 bg-primary-50 dark:bg-primary-900/20 px-4 py-2 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:shadow-md hover:scale-[1.03] active:scale-[0.97]"
                     >
-                        عرض الكل
-                        <ChevronRight className="h-4 w-4" />
+                        {t('recommendations.section.viewAll')}
+                        {i18n.language === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </button>
                 )}
             </div>
@@ -260,7 +260,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                         disabled={loadingMore}
                         className="btn-modern-primary px-8 py-3.5 rounded-xl text-base font-bold shadow-lg hover:shadow-xl hover:shadow-primary-500/25"
                     >
-                        {loadingMore ? '⏳ جاري التحميل...' : '🔽 عرض المزيد'}
+                        {loadingMore ? t('recommendations.carousel.loading') : t('recommendations.carousel.showMore')}
                     </button>
                 </div>
             )}

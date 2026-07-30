@@ -95,16 +95,18 @@ function determineTaskType(task) {
   }
 }
 
-function getSystemPromptForTask(taskType) {
+function getSystemPromptForTask(taskType, language) {
+  const isArabic = language === 'ar';
+  const lang = isArabic ? 'Arabic' : 'English';
   const prompts = {
-    chat: `You are a helpful AI assistant for educational purposes. Respond in Arabic unless specified otherwise. Be concise and accurate.`,
-    summarize: `You are an educational AI assistant specialized in summarizing academic content. Summarize clearly and concisely in Arabic. Extract key points for students.`,
-    explain: `You are an educational AI assistant specialized in explaining concepts. Explain clearly in Arabic with examples from daily life. Structure your response with definition, detailed explanation, and practical examples.`,
-    questions: `You are an educational AI assistant specialized in creating test questions. Generate diverse questions (true/false and multiple choice) with correct answers in Arabic. Maintain academic accuracy.`,
-    translate: `You are an educational AI translator. Translate text accurately while preserving academic terminology. Maintain formatting and structure.`,
-    analysis: `You are an advanced AI assistant for deep analysis. Provide thorough, well-structured responses in Arabic with examples and references. Prioritize accuracy and depth.`,
-    vision: `You are a vision AI assistant. Analyze images and describe them accurately. When analyzing educational content in images, describe what you see and interpret educational value.`,
-    ocr: `You are an OCR specialist AI. Extract text from images accurately and then analyze the extracted text.`
+    chat: `You are a helpful AI assistant for educational purposes. Respond in ${lang}. Be concise and accurate.`,
+    summarize: `You are an educational AI assistant specialized in summarizing academic content. Summarize clearly and concisely in ${lang}. Extract key points for students.`,
+    explain: `You are an educational AI assistant specialized in explaining concepts. Explain clearly in ${lang} with examples from daily life. Structure your response with definition, detailed explanation, and practical examples.`,
+    questions: `You are an educational AI assistant specialized in creating test questions. Generate diverse questions (true/false and multiple choice) with correct answers in ${lang}. Maintain academic accuracy.`,
+    translate: `You are an educational AI translator. Translate text accurately while preserving academic terminology. Maintain formatting and structure. The target language is ${lang}.`,
+    analysis: `You are an advanced AI assistant for deep analysis. Provide thorough, well-structured responses in ${lang} with examples and references. Prioritize accuracy and depth.`,
+    vision: `You are a vision AI assistant. Analyze images and describe them accurately. When analyzing educational content in images, describe what you see and interpret educational value in ${lang}.`,
+    ocr: `You are an OCR specialist AI. Extract text from images accurately and then analyze the extracted text in ${lang}.`
   };
   return prompts[taskType] || prompts.chat;
 }
@@ -399,8 +401,9 @@ module.exports = async (req, res) => {
     const maxTokens = options?.max_tokens ?? getMaxTokensForTask(task);
 
     // Process attachments: include file content in the prompt context
+    const language = req.body.language || 'ar';
     let augmentedPrompt = prompt;
-    let augmentedSystemPrompt = systemPrompt || getSystemPromptForTask(task);
+    let augmentedSystemPrompt = systemPrompt || getSystemPromptForTask(task, language);
     const imageUrls = [];
 
     if (Array.isArray(attachments) && attachments.length > 0) {

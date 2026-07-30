@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/navigation/Sidebar';
 import UnifiedHeader from '../components/navigation/UnifiedHeader';
 import Footer from '../components/layout/Footer';
@@ -14,6 +14,7 @@ function AppShell() {
     const location = useLocation();
     const navigate = useNavigate();
     const { isDarkMode, isUploadModalOpen, setIsUploadModalOpen, currentUser, sidebarOpen, setSidebarOpen, toggleSidebar } = useAppStore();
+    const { t, i18n } = useTranslation();
 
     const handleMenuClick = () => toggleSidebar();
     const handleUploadClick = () => setIsUploadModalOpen(true);
@@ -28,7 +29,7 @@ function AppShell() {
         const organization = {
             '@context': 'https://schema.org',
             '@type': 'Organization',
-            name: 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية',
+            name: t('app.title'),
             url: 'https://eduai.yemen/',
             sameAs: [],
         };
@@ -41,7 +42,7 @@ function AppShell() {
         const webSite = {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
-            name: 'منصة البرامج الاكاديميه للجامعات اليمنيه التعليمية',
+            name: t('app.title'),
             url: 'https://eduai.yemen/',
             potentialAction: {
                 '@type': 'SearchAction',
