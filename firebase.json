@@ -11,7 +11,7 @@
     "rules": "src/firebase/realtime-rules.json"
   },
   "hosting": {
-    "public": "yemen_U_A",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
