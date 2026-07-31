@@ -3,9 +3,8 @@
  * Ported from server/recommendationRouter.js
  */
 
-import type { Request as ExpressRequest } from 'express';
-import { getAuth } from './initialization.js';
-import { adminDb, FieldValue } from './initialization.js';
+import type {Request as ExpressRequest} from "express";
+import {getAuth, adminDb, FieldValue} from "./initialization.js";
 import {
   BADGE_PRIORITY,
   FALLBACK_CATEGORIES,
@@ -15,7 +14,7 @@ import {
   NON_STORED_CATEGORIES,
   CONTENT_TYPE_MAP,
   VALID_CATEGORIES,
-} from './constants.js';
+} from "./constants.js";
 
 // ── Short-TTL server-side cache for generated recommendation lists ──
 const recommendationCache = new Map<string, { ts: number; data: any }>();
@@ -36,20 +35,20 @@ export function setAggregationRunning(value: boolean): void {
  * ID token. We never fall back to a client-supplied userId.
  */
 export async function getUidFromRequest(req: ExpressRequest): Promise<string | null> {
-  const authHeader = req.headers?.['authorization'] || req.headers?.['Authorization'];
-  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+  const authHeader = req.headers?.["authorization"] || req.headers?.["Authorization"];
+  if (authHeader && typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
     try {
       const auth = getAuth();
       const decoded = await auth.verifyIdToken(authHeader.slice(7));
       if (decoded && decoded.uid) return decoded.uid;
     } catch (e: any) {
-      console.warn('[recommendations] Token verification failed:', e?.message || String(e));
+      console.warn("[recommendations] Token verification failed:", e?.message || String(e));
     }
   } else {
     if (authHeader) {
-      console.warn('[recommendations] Authorization header present but not Bearer');
+      console.warn("[recommendations] Authorization header present but not Bearer");
     } else {
-      console.warn('[recommendations] Missing Authorization header');
+      console.warn("[recommendations] Missing Authorization header");
     }
   }
   return null;
@@ -72,13 +71,13 @@ export function recCacheKey(
   preferredLanguage: string
 ): string {
   return [
-    userId || 'public',
-    category || 'recommended',
-    (searchQuery || '').toLowerCase().trim(),
+    userId || "public",
+    category || "recommended",
+    (searchQuery || "").toLowerCase().trim(),
     page || 1,
     pageSize || 20,
-    preferredLanguage || 'ar',
-  ].join('|');
+    preferredLanguage || "ar",
+  ].join("|");
 }
 
 export function getCachedRecommendations(key: string): any | null {
@@ -96,7 +95,7 @@ export function setCachedRecommendations(key: string, data: any): void {
     const oldest = recommendationCache.keys().next().value;
     if (oldest) recommendationCache.delete(oldest);
   }
-  recommendationCache.set(key, { ts: Date.now(), data });
+  recommendationCache.set(key, {ts: Date.now(), data});
 }
 
 export function invalidateUserRecommendations(userId: string | null): void {
@@ -117,8 +116,8 @@ export function langFirstComparator(
   secondaryFn?: (a: any, b: any) => number
 ) {
   return (a: any, b: any): number => {
-    const aLang = (a.language || '').toLowerCase();
-    const bLang = (b.language || '').toLowerCase();
+    const aLang = (a.language || "").toLowerCase();
+    const bLang = (b.language || "").toLowerCase();
     const aPref = aLang === preferredLanguage ? 1 : 0;
     const bPref = bLang === preferredLanguage ? 1 : 0;
     if (aPref !== bPref) return bPref - aPref;
@@ -149,33 +148,33 @@ export async function guaranteeMinimumItems(
   if (contents.length >= requiredCount) return contents;
 
   const existingIds = new Set(contents.map((c) => c.id));
-  const fallbacks = FALLBACK_CATEGORIES[category] || ['recommended'];
+  const fallbacks = FALLBACK_CATEGORIES[category] || ["recommended"];
 
   for (const fallbackCat of fallbacks) {
     if (contents.length >= requiredCount) break;
 
     let query = adminDb
-      .collection('recommendation_contents')
-      .where('isActive', '==', true);
+      .collection("recommendation_contents")
+      .where("isActive", "==", true);
     if (!NON_STORED_CATEGORIES.includes(fallbackCat)) {
-      query = query.where('category', '==', fallbackCat);
+      query = query.where("category", "==", fallbackCat);
     }
-    query = query.orderBy('createdAt', 'desc').limit(MAX_RECOMMENDATION_SCAN);
+    query = query.orderBy("createdAt", "desc").limit(MAX_RECOMMENDATION_SCAN);
 
     let snapshot;
     try {
       snapshot = await query.get();
     } catch (e) {
       let fallbackQuery = adminDb
-        .collection('recommendation_contents')
-        .where('isActive', '==', true);
+        .collection("recommendation_contents")
+        .where("isActive", "==", true);
       if (!NON_STORED_CATEGORIES.includes(fallbackCat)) {
-        fallbackQuery = fallbackQuery.where('category', '==', fallbackCat);
+        fallbackQuery = fallbackQuery.where("category", "==", fallbackCat);
       }
       snapshot = await fallbackQuery.limit(MAX_RECOMMENDATION_SCAN).get();
     }
 
-    let fallbackContents = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    let fallbackContents = snapshot.docs.map((doc: any) => ({id: doc.id, ...doc.data()}));
     fallbackContents = fallbackContents.filter((c: any) => !hiddenIds.includes(c.id));
     fallbackContents = fallbackContents.filter((c: any) => !c.expiresAt || c.expiresAt > nowMs);
 
@@ -185,7 +184,7 @@ export async function guaranteeMinimumItems(
         const fields = [
           c.title, c.summary, c.description, c.category,
           ...(c.keywords || []), ...(c.tags || []), c.source,
-        ].filter(Boolean).join(' ').toLowerCase();
+        ].filter(Boolean).join(" ").toLowerCase();
         return fields.includes(q);
       });
     }
@@ -215,20 +214,20 @@ export function calculateBadge(content: any): string | null {
   const engagement = content.likesCount || 0;
   const deadline = content.registrationDeadline || content.expiresAt;
 
-  if (content.isUrgent) return 'urgent';
-  if (deadline && deadline - now < 7 * 24 * 60 * 60 * 1000) return 'ending_soon';
-  if (ageHours < 48) return 'new';
-  if (views > 1000 && engagement > 50) return 'popular';
-  if (content.isRecommended) return 'recommended';
-  if (content.isFree || content.contentType === 'course') return 'free_course';
-  if (views > 500 && engagement > 20) return 'trending';
+  if (content.isUrgent) return "urgent";
+  if (deadline && deadline - now < 7 * 24 * 60 * 60 * 1000) return "ending_soon";
+  if (ageHours < 48) return "new";
+  if (views > 1000 && engagement > 50) return "popular";
+  if (content.isRecommended) return "recommended";
+  if (content.isFree || content.contentType === "course") return "free_course";
+  if (views > 500 && engagement > 20) return "trending";
   return null;
 }
 
 export function sortByBadgePriority(items: any[]): any[] {
   return items.sort((a, b) => {
-    const badgeA = BADGE_PRIORITY.indexOf(a.badge || '');
-    const badgeB = BADGE_PRIORITY.indexOf(b.badge || '');
+    const badgeA = BADGE_PRIORITY.indexOf(a.badge || "");
+    const badgeB = BADGE_PRIORITY.indexOf(b.badge || "");
     const indexA = badgeA === -1 ? BADGE_PRIORITY.length : badgeA;
     const indexB = badgeB === -1 ? BADGE_PRIORITY.length : badgeB;
     return indexA - indexB;
@@ -240,10 +239,10 @@ export function sortByBadgePriority(items: any[]): any[] {
 export async function getStudentInterests(userId: string): Promise<any | null> {
   if (!userId || !adminDb) return null;
   try {
-    const doc = await adminDb.collection('student_interests').doc(userId).get();
+    const doc = await adminDb.collection("student_interests").doc(userId).get();
     return doc.exists ? doc.data() : null;
   } catch (error: any) {
-    console.error('Get interests error:', error);
+    console.error("Get interests error:", error);
     return null;
   }
 }
@@ -252,12 +251,12 @@ export async function getStudentHiddenIds(userId: string): Promise<string[]> {
   if (!userId || !adminDb) return [];
   try {
     const snapshot = await adminDb
-      .collection('hidden_recommendations')
-      .where('userId', '==', userId)
+      .collection("hidden_recommendations")
+      .where("userId", "==", userId)
       .get();
     return snapshot.docs.map((d: any) => d.data().contentId);
   } catch (error: any) {
-    console.error('Get hidden error:', error);
+    console.error("Get hidden error:", error);
     return [];
   }
 }
@@ -266,12 +265,12 @@ export async function getStudentLikedIds(userId: string): Promise<string[]> {
   if (!userId || !adminDb) return [];
   try {
     const snapshot = await adminDb
-      .collection('liked_recommendations')
-      .where('userId', '==', userId)
+      .collection("liked_recommendations")
+      .where("userId", "==", userId)
       .get();
     return snapshot.docs.map((d: any) => d.data().contentId);
   } catch (error: any) {
-    console.error('Get liked error:', error);
+    console.error("Get liked error:", error);
     return [];
   }
 }
@@ -280,12 +279,12 @@ export async function getStudentSavedIds(userId: string): Promise<string[]> {
   if (!userId || !adminDb) return [];
   try {
     const snapshot = await adminDb
-      .collection('saved_recommendations')
-      .where('userId', '==', userId)
+      .collection("saved_recommendations")
+      .where("userId", "==", userId)
       .get();
     return snapshot.docs.map((d: any) => d.data().contentId);
   } catch (error: any) {
-    console.error('Get saved error:', error);
+    console.error("Get saved error:", error);
     return [];
   }
 }
@@ -299,7 +298,7 @@ export async function trackActivity(
 ): Promise<void> {
   if (!userId || !adminDb) return;
   try {
-    const activityRef = adminDb.collection('student_activity').doc();
+    const activityRef = adminDb.collection("student_activity").doc();
     await activityRef.set({
       id: activityRef.id,
       userId,
@@ -310,9 +309,9 @@ export async function trackActivity(
       createdAt: Date.now(),
     });
     await updateUserInterests(userId, activityType, metadata);
-    if (activityType === 'open_file' && metadata?.contentId) {
+    if (activityType === "open_file" && metadata?.contentId) {
       try {
-        await adminDb.collection('recommendation_contents').doc(metadata.contentId).update({
+        await adminDb.collection("recommendation_contents").doc(metadata.contentId).update({
           viewsCount: FieldValue.increment(1),
         });
       } catch {
@@ -320,7 +319,7 @@ export async function trackActivity(
       }
     }
   } catch (error: any) {
-    console.error('Activity tracking error:', error);
+    console.error("Activity tracking error:", error);
   }
 }
 
@@ -331,11 +330,11 @@ export async function updateUserInterests(
 ): Promise<void> {
   if (!userId || !adminDb) return;
   try {
-    const interestsRef = adminDb.collection('student_interests').doc(userId);
+    const interestsRef = adminDb.collection("student_interests").doc(userId);
     const doc = await interestsRef.get();
-    const baseData = doc.exists
-      ? doc.data()
-      : { userId, interests: {}, totalPoints: 0, lastUpdated: Date.now() };
+    const baseData = doc.exists ?
+      doc.data() :
+      {userId, interests: {}, totalPoints: 0, lastUpdated: Date.now()};
 
     baseData.totalPoints = (baseData.totalPoints || 0) + (ACTIVITY_POINTS[activityType] || 0);
     baseData.lastUpdated = Date.now();
@@ -348,29 +347,29 @@ export async function updateUserInterests(
         baseData.interests[keyword] = (baseData.interests[keyword] || 0) + 0.5;
       });
     }
-    await interestsRef.set(baseData, { merge: true });
+    await interestsRef.set(baseData, {merge: true});
   } catch (error: any) {
-    console.error('Update interests error:', error);
+    console.error("Update interests error:", error);
   }
 }
 
 // ── RSS parsing helpers ─────────────────────────────────────────────
 
 export function unwrapCdata(text: string | null | undefined): string {
-  if (text == null) return '';
-  return String(text).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+  if (text == null) return "";
+  return String(text).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
 }
 
 export function stripHtmlForRss(html: string): string {
   return unwrapCdata(html)
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, "\"")
     .replace(/'/g, "'")
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -388,14 +387,14 @@ export function extractLink(blockXml: string): string {
   const guidMatch = blockXml.match(/<guid[^>]*>([\s\S]*?)<\/guid>/i);
   if (guidMatch && guidMatch[1] && guidMatch[1].trim()) {
     const guid = stripHtmlForRss(guidMatch[1].trim());
-    if (guid.startsWith('http://') || guid.startsWith('https://')) return guid;
+    if (guid.startsWith("http://") || guid.startsWith("https://")) return guid;
   }
   const commentsMatch = blockXml.match(/<comments[^>]*>([\s\S]*?)<\/comments>/i);
   if (commentsMatch && commentsMatch[1] && commentsMatch[1].trim()) {
     const comments = stripHtmlForRss(commentsMatch[1].trim());
-    if (comments.startsWith('http://') || comments.startsWith('https://')) return comments;
+    if (comments.startsWith("http://") || comments.startsWith("https://")) return comments;
   }
-  return '';
+  return "";
 }
 
 export interface ParsedFeedItem {
@@ -421,7 +420,7 @@ export function parseFeedBlock(blockXml: string): ParsedFeedItem | null {
   const mediaMatch =
     blockXml.match(/<media:content[^>]*url=["']([^"']+)["']/i) ||
     blockXml.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i);
-  const imageUrl = encMatch?.[1] || mediaMatch?.[1] || '';
+  const imageUrl = encMatch?.[1] || mediaMatch?.[1] || "";
 
   if (!titleMatch) return null;
   const title = stripHtmlForRss(titleMatch[1].trim());
@@ -436,7 +435,7 @@ export function parseFeedBlock(blockXml: string): ParsedFeedItem | null {
   return {
     title,
     link,
-    description: descMatch ? stripHtmlForRss(descMatch[1].trim()).slice(0, 500) : '',
+    description: descMatch ? stripHtmlForRss(descMatch[1].trim()).slice(0, 500) : "",
     imageUrl,
     pubDate,
   };
@@ -474,41 +473,41 @@ export function generateContentHash(title: string, link: string): string {
 export function normalizeTitle(title: string): string {
   return String(title)
     .toLowerCase()
-    .replace(/[\sـ_.,!?;:'"()[\]{}|/\\]/g, '')
+    .replace(/[\sـ_.,!?;:'"()[\]{}|/\\]/g, "")
     .trim();
 }
 
 export function normalizeGeminiCategory(raw: string | null): string | null {
   if (!raw) return null;
   let c = String(raw).toLowerCase().trim();
-  if (c === 'education') c = 'free_courses';
-  if (c === 'general') return null;
+  if (c === "education") c = "free_courses";
+  if (c === "general") return null;
   return VALID_CATEGORIES.includes(c) ? c : null;
 }
 
 export function determineContentType(title: string, description: string): string {
   const lowerTitle = title.toLowerCase();
   const lowerDesc = description.toLowerCase();
-  if (lowerTitle.includes('دورة') || lowerTitle.includes('course') || lowerDesc.includes('دورة')) return 'course';
-  if (lowerTitle.includes('بحث') || lowerTitle.includes('research') || lowerTitle.includes('paper')) return 'research';
-  if (lowerTitle.includes('فيديو') || lowerTitle.includes('video')) return 'video';
-  if (lowerTitle.includes('ورشة') || lowerTitle.includes('workshop')) return 'workshop';
-  if (lowerTitle.includes('مؤتمر') || lowerTitle.includes('conference')) return 'conference';
-  if (lowerTitle.includes('منحة') || lowerTitle.includes('scholarship')) return 'scholarship';
-  if (lowerTitle.includes('مسابقة') || lowerTitle.includes('competition')) return 'competition';
-  if (lowerTitle.includes('تدريب') || lowerTitle.includes('training') || lowerTitle.includes('وظيفة') || lowerTitle.includes('job')) return 'training';
-  if (lowerTitle.includes('PDF') || lowerTitle.includes('pdf') || lowerDesc.includes('pdf')) return 'pdf';
-  if (lowerTitle.includes('خبر') || lowerTitle.includes('news')) return 'news';
-  return 'article';
+  if (lowerTitle.includes("دورة") || lowerTitle.includes("course") || lowerDesc.includes("دورة")) return "course";
+  if (lowerTitle.includes("بحث") || lowerTitle.includes("research") || lowerTitle.includes("paper")) return "research";
+  if (lowerTitle.includes("فيديو") || lowerTitle.includes("video")) return "video";
+  if (lowerTitle.includes("ورشة") || lowerTitle.includes("workshop")) return "workshop";
+  if (lowerTitle.includes("مؤتمر") || lowerTitle.includes("conference")) return "conference";
+  if (lowerTitle.includes("منحة") || lowerTitle.includes("scholarship")) return "scholarship";
+  if (lowerTitle.includes("مسابقة") || lowerTitle.includes("competition")) return "competition";
+  if (lowerTitle.includes("تدريب") || lowerTitle.includes("training") || lowerTitle.includes("وظيفة") || lowerTitle.includes("job")) return "training";
+  if (lowerTitle.includes("PDF") || lowerTitle.includes("pdf") || lowerDesc.includes("pdf")) return "pdf";
+  if (lowerTitle.includes("خبر") || lowerTitle.includes("news")) return "news";
+  return "article";
 }
 
-export function detectLanguage(text: string | null | undefined): 'ar' | 'en' {
-  if (!text || typeof text !== 'string') return 'en';
+export function detectLanguage(text: string | null | undefined): "ar" | "en" {
+  if (!text || typeof text !== "string") return "en";
   const arabicChars = (text.match(/[\u0600-\u06FF]/g) || []).length;
-  const totalChars = text.replace(/\s/g, '').length;
-  if (totalChars === 0) return 'en';
+  const totalChars = text.replace(/\s/g, "").length;
+  if (totalChars === 0) return "en";
   const arabicRatio = arabicChars / totalChars;
-  return arabicRatio > 0.15 ? 'ar' : 'en';
+  return arabicRatio > 0.15 ? "ar" : "en";
 }
 
 export function contentTypeMap(category: string): string | null {

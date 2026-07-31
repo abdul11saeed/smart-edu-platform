@@ -4,14 +4,14 @@
  * Ported from server/recommendationRouter.js
  */
 
-import { adminDb } from './initialization.js';
-import { extractKeywordsWithGemini, classifyContentWithGemini } from './gemini.js';
+import {adminDb} from "./initialization.js";
+import {extractKeywordsWithGemini, classifyContentWithGemini} from "./gemini.js";
 import {
   MAX_RECOMMENDATION_SCAN,
   PROTECTED_SOURCE_CATEGORIES,
   RSS_SOURCES,
-} from './constants.js';
-import { generateContentHash, normalizeTitle, normalizeGeminiCategory, determineContentType, detectLanguage, parseRss, ParsedFeedItem, aggregationRunning, setAggregationRunning } from './helpers.js';
+} from "./constants.js";
+import {generateContentHash, normalizeTitle, normalizeGeminiCategory, determineContentType, detectLanguage, parseRss, ParsedFeedItem, aggregationRunning, setAggregationRunning} from "./helpers.js";
 
 // Content TTL: 60 days
 const CONTENT_TTL_MS = 60 * 24 * 60 * 60 * 1000;
@@ -36,11 +36,11 @@ export async function fetchRssFeed(url: string): Promise<ParsedFeedItem[]> {
     try {
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-          'Accept-Language': 'ar,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive',
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "ar,en;q=0.9",
+          "Accept-Encoding": "gzip, deflate, br",
+          "Connection": "keep-alive",
         },
       });
       if (!response.ok) {
@@ -86,7 +86,7 @@ export async function storeOneItem(
 
   // Skip items without a usable link
   if (!item.link || !item.link.trim()) {
-    console.warn(`[aggregation] Skipped item with empty link: ${item.title?.slice(0, 60) || 'untitled'} (source: ${item.source || 'unknown'})`);
+    console.warn(`[aggregation] Skipped item with empty link: ${item.title?.slice(0, 60) || "untitled"} (source: ${item.source || "unknown"})`);
     return false;
   }
 
@@ -101,10 +101,10 @@ export async function storeOneItem(
   let detectedCategory = item.category; // valid RSS-derived category
   const [kwRes, catRes] = await Promise.allSettled([
     extractKeywordsWithGemini(`${item.title} ${item.description}`),
-    classifyContentWithGemini(item.title, item.description || ''),
+    classifyContentWithGemini(item.title, item.description || ""),
   ]);
-  if (kwRes.status === 'fulfilled') keywords = kwRes.value || [];
-  const normCat = normalizeGeminiCategory(catRes.status === 'fulfilled' ? catRes.value : null);
+  if (kwRes.status === "fulfilled") keywords = kwRes.value || [];
+  const normCat = normalizeGeminiCategory(catRes.status === "fulfilled" ? catRes.value : null);
   // Preserve source-specific categories (news/research/scholarships/training/
   // competitions/programming/cybersecurity). Gemini only classifies into broad
   // domains (tech/ai/medical/engineering/education), so letting it override
@@ -113,18 +113,18 @@ export async function storeOneItem(
     detectedCategory = normCat;
   }
 
-  const contentType = determineContentType(item.title, item.description || '');
+  const contentType = determineContentType(item.title, item.description || "");
   const contentId = contentHash;
   const now = Date.now();
-  const detectedLanguage = detectLanguage(`${item.title} ${item.description || ''}`);
+  const detectedLanguage = detectLanguage(`${item.title} ${item.description || ""}`);
 
   try {
-    await adminDb.collection('recommendation_contents').doc(contentId).set({
+    await adminDb.collection("recommendation_contents").doc(contentId).set({
       id: contentId,
       title: item.title,
-      summary: (item.description || '').slice(0, 200) || item.title,
+      summary: (item.description || "").slice(0, 200) || item.title,
       description: item.description,
-      imageUrl: item.imageUrl || '',
+      imageUrl: item.imageUrl || "",
       sourceUrl: item.link,
       contentType,
       category: detectedCategory,
@@ -147,7 +147,7 @@ export async function storeOneItem(
     if (normalizedTitle) seenTitles.add(normalizedTitle);
     return true;
   } catch (error: any) {
-    console.error('[aggregation] Error storing item:', error.message);
+    console.error("[aggregation] Error storing item:", error.message);
     return false;
   }
 }
@@ -160,28 +160,28 @@ export async function storeOneItem(
  */
 export async function runContentAggregation(): Promise<AggregationResult> {
   if (!adminDb) {
-    console.warn('[aggregation] Skipped: adminDb not initialized');
-    return { fetched: 0, stored: 0 };
+    console.warn("[aggregation] Skipped: adminDb not initialized");
+    return {fetched: 0, stored: 0};
   }
 
   // Build flat list of all sources with their category
   const sourceList: Array<{ name: string; url: string; category: string }> = [];
   for (const [cat, sources] of Object.entries(RSS_SOURCES)) {
     for (const s of sources) {
-      sourceList.push({ ...s, category: cat });
+      sourceList.push({...s, category: cat});
     }
   }
 
-  let rawItems: AggregationItem[] = [];
+  const rawItems: AggregationItem[] = [];
   const batchSize = 5;
 
   for (let i = 0; i < sourceList.length; i += batchSize) {
     const batch = sourceList.slice(i, i + batchSize);
     const results = await Promise.allSettled(batch.map((s) => fetchRssFeed(s.url)));
     results.forEach((r, idx) => {
-      if (r.status === 'fulfilled') {
+      if (r.status === "fulfilled") {
         r.value.forEach((item) =>
-          rawItems.push({ ...item, source: batch[idx].name, category: batch[idx].category })
+          rawItems.push({...item, source: batch[idx].name, category: batch[idx].category})
         );
       }
     });
@@ -195,8 +195,8 @@ export async function runContentAggregation(): Promise<AggregationResult> {
   const seenTitles = new Set<string>();
   try {
     const existing = await adminDb
-      .collection('recommendation_contents')
-      .orderBy('createdAt', 'desc')
+      .collection("recommendation_contents")
+      .orderBy("createdAt", "desc")
       .limit(MAX_RECOMMENDATION_SCAN)
       .get();
     existing.forEach((doc: any) => {
@@ -205,7 +205,7 @@ export async function runContentAggregation(): Promise<AggregationResult> {
       if (data.normalizedTitle) seenTitles.add(data.normalizedTitle);
     });
   } catch (error: any) {
-    console.warn('[aggregation] Could not fetch existing content for dedup:', error.message);
+    console.warn("[aggregation] Could not fetch existing content for dedup:", error.message);
   }
 
   // 1) Pre-filter duplicates against existing content
@@ -231,7 +231,7 @@ export async function runContentAggregation(): Promise<AggregationResult> {
 
   const skippedCount = rawItems.length - newItems.length;
   console.log(`[aggregation] Fetched ${rawItems.length} items, pre-filtered ${skippedCount} (duplicates), stored ${storedCount} new.`);
-  return { fetched: rawItems.length, stored: storedCount };
+  return {fetched: rawItems.length, stored: storedCount};
 }
 
 // ── Scheduled aggregation wrapper ────────────────────────────────────
@@ -245,9 +245,9 @@ export async function scheduledAggregation(): Promise<void> {
   setAggregationRunning(true);
   try {
     const result = await runContentAggregation();
-    console.log('[aggregation] Run complete:', result);
+    console.log("[aggregation] Run complete:", result);
   } catch (e: any) {
-    console.error('[aggregation] Run failed:', e.message);
+    console.error("[aggregation] Run failed:", e.message);
   } finally {
     setAggregationRunning(false);
   }

@@ -7,28 +7,28 @@
  * Ported from server/index.js → Express Router for Firebase Cloud Functions.
  */
 
-import { Router } from 'express';
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import {Router} from "express";
+import type {Request as ExpressRequest, Response as ExpressResponse} from "express";
 
-import { generativeModel } from './recommendation/initialization.js';
-import { getRateLimitStoreSize } from './rateLimiter.js';
+import {generativeModel} from "./recommendation/initialization.js";
+import {getRateLimitStoreSize} from "./rateLimiter.js";
 
 const router = Router();
 
 router.get(
-  '/health',
+  "/health",
   (_req: ExpressRequest, res: ExpressResponse) => {
     const uptime = process.uptime();
     const memoryUsage = process.memoryUsage();
 
     res.json({
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       uptime: Math.floor(uptime),
       aiConfigured: true,
       availableKeys: null,
-      currentModel: 'handled-by-aiRouter',
-      database: 'firebase',
+      currentModel: "handled-by-aiRouter",
+      database: "firebase",
       system: {
         memory: {
           rss: Math.round(memoryUsage.rss / 1024 / 1024),
@@ -36,7 +36,7 @@ router.get(
           heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
         },
         rateLimiting: {
-          mode: 'in-memory',
+          mode: "in-memory",
           trackedIps: getRateLimitStoreSize(),
         },
         environment: {
@@ -45,11 +45,11 @@ router.get(
         },
       },
       services: {
-        fileDownloadProxy: 'active',
-        aiRouter: 'active',
-        recommendationRouter: 'active',
-        rateLimiting: 'active',
-        vertexAi: generativeModel ? 'active' : 'unavailable',
+        fileDownloadProxy: "active",
+        aiRouter: "active",
+        recommendationRouter: "active",
+        rateLimiting: "active",
+        vertexAi: generativeModel ? "active" : "unavailable",
       },
     });
   }

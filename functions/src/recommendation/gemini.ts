@@ -4,7 +4,7 @@
  * Ported from server/recommendationRouter.js
  */
 
-import { generativeModel, geminiAvailable } from './initialization.js';
+import {generativeModel, geminiAvailable} from "./initialization.js";
 
 export async function callGemini(prompt: string, systemPrompt: string | null = null): Promise<string | null> {
   if (!generativeModel) {
@@ -13,11 +13,11 @@ export async function callGemini(prompt: string, systemPrompt: string | null = n
 
   try {
     const request: any = {
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{role: "user", parts: [{text: prompt}]}],
     };
 
     if (systemPrompt) {
-      request.systemInstruction = { parts: [{ text: systemPrompt }] };
+      request.systemInstruction = {parts: [{text: systemPrompt}]};
     }
 
     const response = await generativeModel.generateContent(request);
@@ -25,7 +25,7 @@ export async function callGemini(prompt: string, systemPrompt: string | null = n
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text || null;
     return text;
   } catch (error: any) {
-    console.error('Gemini call error:', error);
+    console.error("Gemini call error:", error);
     return null;
   }
 }
@@ -37,7 +37,7 @@ export async function extractKeywordsWithGemini(text: string): Promise<string[]>
 
 الكلمات المفتاحية:`;
 
-  const result = await callGemini(prompt, 'أنت مساعد متخصص في استخراج الكلمات المفتاحية الأكاديمية.');
+  const result = await callGemini(prompt, "أنت مساعد متخصص في استخراج الكلمات المفتاحية الأكاديمية.");
   if (result) {
     return result.split(/[,\n]/).map((k) => k.trim()).filter((k) => k.length > 1).slice(0, 10);
   }
@@ -58,32 +58,32 @@ export async function classifyContentWithGemini(title: string, description?: str
 - عام
 
 العنوان: "${title}"
-الوصف: "${description?.slice(0, 500) || ''}"
+الوصف: "${description?.slice(0, 500) || ""}"
 
 الفئة:`;
 
-  const result = await callGemini(prompt, 'أنت مساعد متخصص في تصنيف المحتوى الأكاديمي.');
+  const result = await callGemini(prompt, "أنت مساعد متخصص في تصنيف المحتوى الأكاديمي.");
   if (result) {
     const lower = result.toLowerCase();
-    if (lower.includes('ذكاء') || lower.includes('ai') || lower.includes('machine learning')) return 'ai';
-    if (lower.includes('أمن') || lower.includes('cyber') || lower.includes('سيبراني') || lower.includes('حماية') || lower.includes('أمن معلومات')) return 'cybersecurity';
-    if (lower.includes('برمجة') || lower.includes('programming') || lower.includes('كود') || lower.includes('تطوير ويب') || lower.includes('تطوير')) return 'programming';
-    if (lower.includes('طب') || lower.includes('صحة') || lower.includes('طبى')) return 'medical';
-    if (lower.includes('هندسة') || lower.includes('engineering')) return 'engineering';
-    if (lower.includes('تقنية') || lower.includes('كمبيوتر') || lower.includes('حاسوب') || lower.includes('تكنولوجيا')) return 'tech';
-    if (lower.includes('تعليم') || lower.includes('دورة') || lower.includes('course')) return 'free_courses';
+    if (lower.includes("ذكاء") || lower.includes("ai") || lower.includes("machine learning")) return "ai";
+    if (lower.includes("أمن") || lower.includes("cyber") || lower.includes("سيبراني") || lower.includes("حماية") || lower.includes("أمن معلومات")) return "cybersecurity";
+    if (lower.includes("برمجة") || lower.includes("programming") || lower.includes("كود") || lower.includes("تطوير ويب") || lower.includes("تطوير")) return "programming";
+    if (lower.includes("طب") || lower.includes("صحة") || lower.includes("طبى")) return "medical";
+    if (lower.includes("هندسة") || lower.includes("engineering")) return "engineering";
+    if (lower.includes("تقنية") || lower.includes("كمبيوتر") || lower.includes("حاسوب") || lower.includes("تكنولوجيا")) return "tech";
+    if (lower.includes("تعليم") || lower.includes("دورة") || lower.includes("course")) return "free_courses";
   }
-  return 'general';
+  return "general";
 }
 
-export async function generateSummaryWithGemini(text: string, maxLength: number = 150): Promise<string> {
+export async function generateSummaryWithGemini(text: string, maxLength = 150): Promise<string> {
   const prompt = `لخص النص التالي في جملة واحدة قصيرة (أقل من ${maxLength} حرف) باللغة العربية:
 
 "${text.slice(0, 3000)}"
 
 الملخص:`;
 
-  const result = await callGemini(prompt, 'أنت مساعد متخصص في التلخيص الأكاديمي.');
+  const result = await callGemini(prompt, "أنت مساعد متخصص في التلخيص الأكاديمي.");
   if (result && result.length <= maxLength + 50) {
     return result.trim();
   }
@@ -92,7 +92,7 @@ export async function generateSummaryWithGemini(text: string, maxLength: number 
   if (sentences.length > 0) {
     return sentences[0].trim().slice(0, maxLength);
   }
-  return text.slice(0, maxLength) + '...';
+  return text.slice(0, maxLength) + "...";
 }
 
 export async function determineDomainWithGemini(text: string): Promise<string> {
@@ -102,8 +102,8 @@ export async function determineDomainWithGemini(text: string): Promise<string> {
 
 المجال:`;
 
-  const result = await callGemini(prompt, 'أنت مساعد متخصص في تحديد المجال الأكاديمي.');
-  return result?.trim() || 'general';
+  const result = await callGemini(prompt, "أنت مساعد متخصص في تحديد المجال الأكاديمي.");
+  return result?.trim() || "general";
 }
 
-export { geminiAvailable };
+export {geminiAvailable};

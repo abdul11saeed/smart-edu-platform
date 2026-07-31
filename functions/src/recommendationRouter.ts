@@ -5,12 +5,12 @@
  * Delegates helper logic to the recommendation/ subdirectory to avoid code duplication.
  */
 
-import { Router } from 'express';
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import {Router} from "express";
+import type {Request as ExpressRequest, Response as ExpressResponse} from "express";
 
-import { adminDb, FieldValue, generativeModel, projectId, location } from './recommendation/initialization.js';
-import { extractKeywordsWithGemini, classifyContentWithGemini } from './recommendation/gemini.js';
-import { runContentAggregation } from './recommendation/aggregation.js';
+import {adminDb, FieldValue, generativeModel, projectId, location} from "./recommendation/initialization.js";
+import {extractKeywordsWithGemini, classifyContentWithGemini} from "./recommendation/gemini.js";
+import {runContentAggregation} from "./recommendation/aggregation.js";
 import {
   setAggregationRunning,
   aggregationRunning,
@@ -28,29 +28,29 @@ import {
   getStudentLikedIds,
   getStudentSavedIds,
   trackActivity,
-} from './recommendation/helpers';
+} from "./recommendation/helpers";
 
-import { MAX_RECOMMENDATION_SCAN, ACTIVITY_POINTS, NON_STORED_CATEGORIES } from './recommendation/constants.js';
+import {MAX_RECOMMENDATION_SCAN, ACTIVITY_POINTS, NON_STORED_CATEGORIES} from "./recommendation/constants.js";
 
 const router = Router();
 
 // ── Recommendation generation ───────────────────────────────────────
 
-router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/generate", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
 
     if (!adminDb) {
-      console.error('[recommendations] adminDb not initialized. Check service-account / env.');
+      console.error("[recommendations] adminDb not initialized. Check service-account / env.");
       return void res.status(503).json({
-        error: { message: 'Recommendations backend is not ready (database not initialized).' },
+        error: {message: "Recommendations backend is not ready (database not initialized)."},
       });
     }
 
     const {
-      category = 'recommended',
+      category = "recommended",
       limit = 20,
-      searchQuery = '',
+      searchQuery = "",
       page = 1,
       preferredLanguage,
       requiredCount,
@@ -64,7 +64,7 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
     };
 
     const pageSize = Math.min(parseInt(limit as any) || 20, 50);
-    const effectivePreferredLanguage = preferredLanguage === 'ar' ? 'ar' : 'en';
+    const effectivePreferredLanguage = preferredLanguage === "ar" ? "ar" : "en";
     const minRequired = parseInt(requiredCount as any) || pageSize;
 
     const recKey = recCacheKey(category, userId, searchQuery, page, pageSize, effectivePreferredLanguage);
@@ -73,34 +73,34 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
       return void res.json(cachedRecs);
     }
 
-    const interests = await getStudentInterests(userId || '');
-    const hiddenIds = await getStudentHiddenIds(userId || '');
-    const savedIds = await getStudentSavedIds(userId || '');
+    const interests = await getStudentInterests(userId || "");
+    const hiddenIds = await getStudentHiddenIds(userId || "");
+    const savedIds = await getStudentSavedIds(userId || "");
     const likedIds = userId ? await getStudentLikedIds(userId) : [];
 
     let query = adminDb
-      .collection('recommendation_contents')
-      .where('isActive', '==', true);
+      .collection("recommendation_contents")
+      .where("isActive", "==", true);
     if (!NON_STORED_CATEGORIES.includes(category)) {
-      query = query.where('category', '==', category);
+      query = query.where("category", "==", category);
     }
-    query = query.orderBy('createdAt', 'desc').limit(MAX_RECOMMENDATION_SCAN);
+    query = query.orderBy("createdAt", "desc").limit(MAX_RECOMMENDATION_SCAN);
 
     let snapshot;
     try {
       snapshot = await query.get();
     } catch (e) {
-      console.warn('Ordered query failed, trying fallback:', (e as any).message);
+      console.warn("Ordered query failed, trying fallback:", (e as any).message);
       let fallbackQuery = adminDb
-        .collection('recommendation_contents')
-        .where('isActive', '==', true);
+        .collection("recommendation_contents")
+        .where("isActive", "==", true);
       if (!NON_STORED_CATEGORIES.includes(category)) {
-        fallbackQuery = fallbackQuery.where('category', '==', category);
+        fallbackQuery = fallbackQuery.where("category", "==", category);
       }
       snapshot = await fallbackQuery.limit(MAX_RECOMMENDATION_SCAN).get();
     }
 
-    let contents: any[] = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    let contents: any[] = snapshot.docs.map((doc: any) => ({id: doc.id, ...doc.data()}));
     contents = contents.filter((c) => !hiddenIds.includes(c.id));
 
     const nowMs = Date.now();
@@ -112,7 +112,7 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
         const searchFields = [
           c.title, c.summary, c.description, c.category,
           ...(c.keywords || []), ...(c.tags || []), c.source,
-        ].filter(Boolean).join(' ').toLowerCase();
+        ].filter(Boolean).join(" ").toLowerCase();
         return searchFields.includes(queryLower);
       });
     }
@@ -120,12 +120,12 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
     contents = contents.filter((c: any) => c.title && c.sourceUrl && c.title.trim() && c.sourceUrl.trim());
     const scannedPool = contents;
 
-    if (category === 'recommended') {
+    if (category === "recommended") {
       const userCategories: string[] = [];
       const userKeywords: string[] = [];
       const VALID_RECOMMEND_CATS = [
-        'tech', 'ai', 'programming', 'cybersecurity', 'medical', 'engineering', 'free_courses',
-        'news', 'research', 'scholarships', 'training', 'competitions',
+        "tech", "ai", "programming", "cybersecurity", "medical", "engineering", "free_courses",
+        "news", "research", "scholarships", "training", "competitions",
       ];
 
       if (interests?.interests) {
@@ -144,19 +144,19 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
       if (userCategories.length === 0 && userKeywords.length === 0) {
         const DEFAULT_PUBLIC_LIMIT = 30;
         const categoryOrder = [
-          'free_courses', 'news', 'research', 'tech', 'ai', 'scholarships',
-          'medical', 'engineering', 'competitions', 'training', 'programming', 'cybersecurity',
+          "free_courses", "news", "research", "tech", "ai", "scholarships",
+          "medical", "engineering", "competitions", "training", "programming", "cybersecurity",
         ];
         const byCat = new Map<string, any[]>();
         contents.forEach((c) => {
-          const key = c.category || 'general';
+          const key = c.category || "general";
           if (!byCat.has(key)) byCat.set(key, []);
           byCat.get(key)!.push(c);
         });
 
         const langSortKey = (a: any, b: any): number => {
-          const aLang = (a.language || '').toLowerCase();
-          const bLang = (b.language || '').toLowerCase();
+          const aLang = (a.language || "").toLowerCase();
+          const bLang = (b.language || "").toLowerCase();
           const aIsPreferred = aLang === effectivePreferredLanguage ? 1 : 0;
           const bIsPreferred = bLang === effectivePreferredLanguage ? 1 : 0;
           if (aIsPreferred !== bIsPreferred) return bIsPreferred - aIsPreferred;
@@ -174,14 +174,18 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
             if (arr && arr[round]) {
               const sortedArr = [...arr].sort(langSortKey);
               const item = sortedArr[round];
-              if (item) { diversified.push(item); added = true; }
+              if (item) {
+                diversified.push(item); added = true;
+              }
             }
           }
-          const others = byCat.get('general');
+          const others = byCat.get("general");
           if (others && others[round]) {
             const sortedOthers = [...others].sort(langSortKey);
             const item = sortedOthers[round];
-            if (item) { diversified.push(item); added = true; }
+            if (item) {
+              diversified.push(item); added = true;
+            }
           }
         }
 
@@ -199,20 +203,20 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
       } else {
         contents = contents.map((content) => {
           let score = 0;
-          const contentCategory = content.category || '';
+          const contentCategory = content.category || "";
           const contentKeywords = content.keywords || [];
           const contentTags = content.tags || [];
-          const contentSource = (content.source || '').toLowerCase();
-          const contentTitle = (content.title || '').toLowerCase();
+          const contentSource = (content.source || "").toLowerCase();
+          const contentTitle = (content.title || "").toLowerCase();
 
           userCategories.forEach((cat) => {
             if (contentCategory === cat) score += 10;
-            if (cat === 'tech' && ['tech', 'ai', 'programming', 'cybersecurity'].includes(contentCategory)) score += 8;
-            if (cat === 'ai' && contentCategory === 'ai') score += 12;
-            if (cat === 'programming' && contentCategory === 'programming') score += 12;
-            if (cat === 'cybersecurity' && contentCategory === 'cybersecurity') score += 12;
-            if (cat === 'medical' && contentCategory === 'medical') score += 12;
-            if (cat === 'engineering' && contentCategory === 'engineering') score += 12;
+            if (cat === "tech" && ["tech", "ai", "programming", "cybersecurity"].includes(contentCategory)) score += 8;
+            if (cat === "ai" && contentCategory === "ai") score += 12;
+            if (cat === "programming" && contentCategory === "programming") score += 12;
+            if (cat === "cybersecurity" && contentCategory === "cybersecurity") score += 12;
+            if (cat === "medical" && contentCategory === "medical") score += 12;
+            if (cat === "engineering" && contentCategory === "engineering") score += 12;
           });
 
           userKeywords.forEach((keyword) => {
@@ -225,9 +229,9 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
 
           if (savedIds.includes(content.id)) score += 15;
 
-          const contentLang = (content.language || '').toLowerCase();
+          const contentLang = (content.language || "").toLowerCase();
           if (contentLang === effectivePreferredLanguage) {
-            score += effectivePreferredLanguage === 'ar' ? 8 : 3;
+            score += effectivePreferredLanguage === "ar" ? 8 : 3;
           }
 
           score += Math.min((content.viewsCount || 0) / 100, 10);
@@ -237,7 +241,7 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
           if (ageHours < 24) score += 3;
           else if (ageHours < 72) score += 1;
 
-          return { ...content, recommendationScore: score };
+          return {...content, recommendationScore: score};
         });
 
         contents.sort(
@@ -246,11 +250,11 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
           )
         );
       }
-    } else if (category === 'saved') {
+    } else if (category === "saved") {
       try {
         const savedSnapshot = await adminDb
-          .collection('saved_recommendations')
-          .where('userId', '==', userId)
+          .collection("saved_recommendations")
+          .where("userId", "==", userId)
           .get();
         const savedMap = new Map<string, number>();
         savedSnapshot.forEach((d: any) => {
@@ -262,18 +266,18 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
         } else {
           const docs = await Promise.all(
             [...savedMap.keys()].map((id) =>
-              adminDb.collection('recommendation_contents').doc(id).get()
+              adminDb.collection("recommendation_contents").doc(id).get()
             )
           );
           contents = docs
             .filter((d: any) => d.exists)
-            .map((d: any) => ({ id: d.id, ...d.data() }));
+            .map((d: any) => ({id: d.id, ...d.data()}));
           contents = contents.filter((c) => !hiddenIds.includes(c.id));
           contents = contents.filter((c: any) => !c.expiresAt || c.expiresAt > nowMs);
           if (searchQuery && searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
             contents = contents.filter((c: any) => {
-              const fields = [c.title, c.summary, c.description, c.category, ...(c.keywords || []), ...(c.tags || []), c.source].filter(Boolean).join(' ').toLowerCase();
+              const fields = [c.title, c.summary, c.description, c.category, ...(c.keywords || []), ...(c.tags || []), c.source].filter(Boolean).join(" ").toLowerCase();
               return fields.includes(q);
             });
           }
@@ -284,10 +288,10 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
           );
         }
       } catch (e) {
-        console.warn('Saved items fetch failed, falling back to scan:', (e as any).message);
+        console.warn("Saved items fetch failed, falling back to scan:", (e as any).message);
         contents = contents.filter((c) => savedIds.includes(c.id));
       }
-    } else if (category === 'popular') {
+    } else if (category === "popular") {
       contents.sort(
         langFirstComparator(effectivePreferredLanguage, (a, b) =>
           ((b.viewsCount || 0) + (b.likesCount || 0) * 10) -
@@ -296,11 +300,11 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
       );
     } else {
       const typeMap: Record<string, string> = {
-        news: 'news',
-        research: 'research',
-        scholarships: 'scholarship',
-        competitions: 'competition',
-        training: 'training',
+        news: "news",
+        research: "research",
+        scholarships: "scholarship",
+        competitions: "competition",
+        training: "training",
       };
       if (typeMap[category]) {
         contents = contents.filter((c: any) => c.category === category || c.contentType === typeMap[category]);
@@ -330,7 +334,7 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
     }
 
     // Blend popular items for 'recommended' when sparse
-    if (category === 'recommended' && contents.length < pageSize) {
+    if (category === "recommended" && contents.length < pageSize) {
       const popularSorted = [...scannedPool].sort(
         langFirstComparator(effectivePreferredLanguage, (a, b) =>
           ((b.viewsCount || 0) + (b.likesCount || 0) * 10) -
@@ -368,21 +372,21 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
 
     const sortedContents = sortByBadgePriority(contentsWithBadges);
     sortedContents.sort(
-      langFirstComparator('ar', (a, b) =>
+      langFirstComparator("ar", (a, b) =>
         ((b.viewsCount || 0) + (b.likesCount || 0) * 10) -
         ((a.viewsCount || 0) + (a.likesCount || 0) * 10)
       )
     );
 
     // Self-healing: trigger aggregation if collection is critically low
-    const isCriticallyLow = category === 'recommended' && totalItems < 5;
+    const isCriticallyLow = category === "recommended" && totalItems < 5;
     if ((totalItems === 0 || isCriticallyLow) && adminDb && !aggregationRunning) {
       console.warn(`[recommendations] Self-healing triggered: category=${category}, items=${totalItems}. Starting background aggregation...`);
       setAggregationRunning(true);
       Promise.resolve()
         .then(() => runContentAggregation())
-        .then((result) => console.log('[aggregation] Self-healing run complete:', result))
-        .catch((e: any) => console.error('[aggregation] Self-healing run failed:', e.message))
+        .then((result) => console.log("[aggregation] Self-healing run complete:", result))
+        .catch((e: any) => console.error("[aggregation] Self-healing run failed:", e.message))
         .finally(() => setAggregationRunning(false));
     }
 
@@ -402,23 +406,23 @@ router.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
 
     res.json(responsePayload);
   } catch (error: any) {
-    console.error('Generate recommendations error:', error);
-    res.status(500).json({ error: { message: 'Failed to generate recommendations' } });
+    console.error("Generate recommendations error:", error);
+    res.status(500).json({error: {message: "Failed to generate recommendations"}});
   }
 });
 
 // ── Save / Unsave ───────────────────────────────────────────────────
 
-router.post('/save', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/save", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
-    if (!userId) return void res.status(401).json({ error: { message: 'Unauthorized' } });
+    if (!userId) return void res.status(401).json({error: {message: "Unauthorized"}});
 
-    const { contentId } = req.body as { contentId?: string };
-    if (!contentId) return void res.status(400).json({ error: { message: 'contentId is required' } });
-    if (!adminDb) return void res.status(500).json({ error: { message: 'Database not initialized' } });
+    const {contentId} = req.body as { contentId?: string };
+    if (!contentId) return void res.status(400).json({error: {message: "contentId is required"}});
+    if (!adminDb) return void res.status(500).json({error: {message: "Database not initialized"}});
 
-    const saveRef = adminDb.collection('saved_recommendations').doc(`${userId}_${contentId}`);
+    const saveRef = adminDb.collection("saved_recommendations").doc(`${userId}_${contentId}`);
     await saveRef.set({
       id: `${userId}_${contentId}`,
       userId,
@@ -427,50 +431,50 @@ router.post('/save', async (req: ExpressRequest, res: ExpressResponse) => {
       createdAt: Date.now(),
     });
 
-    await trackActivity(userId, 'save', { contentType: 'recommendation', contentId });
+    await trackActivity(userId, "save", {contentType: "recommendation", contentId});
     invalidateUserRecommendations(userId);
 
-    res.json({ success: true, message: 'Saved successfully' });
+    res.json({success: true, message: "Saved successfully"});
   } catch (error: any) {
-    console.error('Save recommendation error:', error);
-    res.status(500).json({ error: { message: 'Failed to save recommendation' } });
+    console.error("Save recommendation error:", error);
+    res.status(500).json({error: {message: "Failed to save recommendation"}});
   }
 });
 
-router.delete('/save', async (req: ExpressRequest, res: ExpressResponse) => {
+router.delete("/save", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
-    if (!userId) return void res.status(401).json({ error: { message: 'Unauthorized' } });
+    if (!userId) return void res.status(401).json({error: {message: "Unauthorized"}});
 
-    const { contentId } = req.body as { contentId?: string };
-    if (!contentId) return void res.status(400).json({ error: { message: 'contentId is required' } });
-    if (!adminDb) return void res.status(500).json({ error: { message: 'Database not initialized' } });
+    const {contentId} = req.body as { contentId?: string };
+    if (!contentId) return void res.status(400).json({error: {message: "contentId is required"}});
+    if (!adminDb) return void res.status(500).json({error: {message: "Database not initialized"}});
 
-    await adminDb.collection('saved_recommendations').doc(`${userId}_${contentId}`).delete();
-    res.json({ success: true, message: 'Removed from saved' });
+    await adminDb.collection("saved_recommendations").doc(`${userId}_${contentId}`).delete();
+    res.json({success: true, message: "Removed from saved"});
   } catch (error: any) {
-    console.error('Unsave recommendation error:', error);
-    res.status(500).json({ error: { message: 'Failed to unsave recommendation' } });
+    console.error("Unsave recommendation error:", error);
+    res.status(500).json({error: {message: "Failed to unsave recommendation"}});
   }
 });
 
 // ── Like ────────────────────────────────────────────────────────────
 
-router.post('/like', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/like", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
-    if (!userId) return void res.status(401).json({ error: { message: 'Unauthorized' } });
+    if (!userId) return void res.status(401).json({error: {message: "Unauthorized"}});
 
-    const { contentId } = req.body as { contentId?: string };
-    if (!contentId) return void res.status(400).json({ error: { message: 'contentId is required' } });
-    if (!adminDb) return void res.status(500).json({ error: { message: 'Database not initialized' } });
+    const {contentId} = req.body as { contentId?: string };
+    if (!contentId) return void res.status(400).json({error: {message: "contentId is required"}});
+    if (!adminDb) return void res.status(500).json({error: {message: "Database not initialized"}});
 
-    const likeRef = adminDb.collection('liked_recommendations').doc(`${userId}_${contentId}`);
+    const likeRef = adminDb.collection("liked_recommendations").doc(`${userId}_${contentId}`);
     const doc = await likeRef.get();
 
     if (doc.exists) {
       await likeRef.delete();
-      await adminDb.collection('recommendation_contents').doc(contentId).update({
+      await adminDb.collection("recommendation_contents").doc(contentId).update({
         likesCount: FieldValue.increment(-1),
       });
     } else {
@@ -481,32 +485,32 @@ router.post('/like', async (req: ExpressRequest, res: ExpressResponse) => {
         likedAt: Date.now(),
         createdAt: Date.now(),
       });
-      await adminDb.collection('recommendation_contents').doc(contentId).update({
+      await adminDb.collection("recommendation_contents").doc(contentId).update({
         likesCount: FieldValue.increment(1),
       });
-      await trackActivity(userId, 'like', { contentType: 'recommendation', contentId });
+      await trackActivity(userId, "like", {contentType: "recommendation", contentId});
     }
 
     invalidateUserRecommendations(userId);
-    res.json({ success: true, liked: !doc.exists });
+    res.json({success: true, liked: !doc.exists});
   } catch (error: any) {
-    console.error('Like recommendation error:', error);
-    res.status(500).json({ error: { message: 'Failed to like recommendation' } });
+    console.error("Like recommendation error:", error);
+    res.status(500).json({error: {message: "Failed to like recommendation"}});
   }
 });
 
 // ── Hide ────────────────────────────────────────────────────────────
 
-router.post('/hide', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/hide", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
-    if (!userId) return void res.status(401).json({ error: { message: 'Unauthorized' } });
+    if (!userId) return void res.status(401).json({error: {message: "Unauthorized"}});
 
-    const { contentId, reason = 'user_hidden' } = req.body as { contentId?: string; reason?: string };
-    if (!contentId) return void res.status(400).json({ error: { message: 'contentId is required' } });
-    if (!adminDb) return void res.status(500).json({ error: { message: 'Database not initialized' } });
+    const {contentId, reason = "user_hidden"} = req.body as { contentId?: string; reason?: string };
+    if (!contentId) return void res.status(400).json({error: {message: "contentId is required"}});
+    if (!adminDb) return void res.status(500).json({error: {message: "Database not initialized"}});
 
-    const hideRef = adminDb.collection('hidden_recommendations').doc(`${userId}_${contentId}`);
+    const hideRef = adminDb.collection("hidden_recommendations").doc(`${userId}_${contentId}`);
     await hideRef.set({
       id: `${userId}_${contentId}`,
       userId,
@@ -517,41 +521,41 @@ router.post('/hide', async (req: ExpressRequest, res: ExpressResponse) => {
     });
 
     invalidateUserRecommendations(userId);
-    res.json({ success: true, message: 'Hidden successfully' });
+    res.json({success: true, message: "Hidden successfully"});
   } catch (error: any) {
-    console.error('Hide recommendation error:', error);
-    res.status(500).json({ error: { message: 'Failed to hide recommendation' } });
+    console.error("Hide recommendation error:", error);
+    res.status(500).json({error: {message: "Failed to hide recommendation"}});
   }
 });
 
 // ── Activity tracking ───────────────────────────────────────────────
 
-router.post('/activity', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/activity", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
-    if (!userId) return void res.status(401).json({ error: { message: 'Unauthorized' } });
+    if (!userId) return void res.status(401).json({error: {message: "Unauthorized"}});
 
-    const { activityType, metadata = {} } = req.body as {
+    const {activityType, metadata = {}} = req.body as {
       activityType?: string;
       metadata?: Record<string, any>;
     };
 
-    await trackActivity(userId, activityType || '', metadata);
-    res.json({ success: true, points: ACTIVITY_POINTS[activityType || ''] || 0 });
+    await trackActivity(userId, activityType || "", metadata);
+    res.json({success: true, points: ACTIVITY_POINTS[activityType || ""] || 0});
   } catch (error: any) {
-    console.error('Track activity error:', error);
-    res.status(500).json({ error: { message: 'Failed to track activity' } });
+    console.error("Track activity error:", error);
+    res.status(500).json({error: {message: "Failed to track activity"}});
   }
 });
 
 // ── Stats ───────────────────────────────────────────────────────────
 
-router.get('/stats', async (req: ExpressRequest, res: ExpressResponse) => {
+router.get("/stats", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const userId = await getUidFromRequest(req);
     if (!userId) {
-      console.warn('[recommendations] /stats unauthorized: missing/invalid Authorization bearer token.');
-      return void res.status(401).json({ error: { message: 'Unauthorized' } });
+      console.warn("[recommendations] /stats unauthorized: missing/invalid Authorization bearer token.");
+      return void res.status(401).json({error: {message: "Unauthorized"}});
     }
 
     const interests = await getStudentInterests(userId);
@@ -562,72 +566,72 @@ router.get('/stats', async (req: ExpressRequest, res: ExpressResponse) => {
       data: {
         totalPoints: interests?.totalPoints || 0,
         savedCount: savedIds.length,
-        topInterests: interests?.interests
-          ? Object.entries(interests.interests)
-              .sort((a, b) => (b[1] as number) - (a[1] as number))
-              .slice(0, 10)
-              .map(([name, count]) => ({ name, count }))
-          : [],
+        topInterests: interests?.interests ?
+          Object.entries(interests.interests)
+            .sort((a, b) => (b[1] as number) - (a[1] as number))
+            .slice(0, 10)
+            .map(([name, count]) => ({name, count})) :
+          [],
       },
     });
   } catch (error: any) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ error: { message: 'Failed to get stats' } });
+    console.error("Get stats error:", error);
+    res.status(500).json({error: {message: "Failed to get stats"}});
   }
 });
 
 // ── Enhance content ─────────────────────────────────────────────────
 
-router.post('/enhance', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/enhance", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     if (!(await getUidFromRequest(req))) {
-      return void res.status(401).json({ error: { message: 'Unauthorized' } });
+      return void res.status(401).json({error: {message: "Unauthorized"}});
     }
 
-    const { title, description } = req.body as { title?: string; description?: string };
-    if (!title) return void res.status(400).json({ error: { message: 'Title is required' } });
+    const {title, description} = req.body as { title?: string; description?: string };
+    if (!title) return void res.status(400).json({error: {message: "Title is required"}});
 
-    const text = `${title} ${description || ''}`;
+    const text = `${title} ${description || ""}`;
     const [keywordsResult, categoryResult] = await Promise.allSettled([
       extractKeywordsWithGemini(text),
-      classifyContentWithGemini(title, description || ''),
+      classifyContentWithGemini(title, description || ""),
     ]);
 
-    const keywords = keywordsResult.status === 'fulfilled' ? keywordsResult.value : [];
-    const category = categoryResult.status === 'fulfilled' ? categoryResult.value : null;
+    const keywords = keywordsResult.status === "fulfilled" ? keywordsResult.value : [];
+    const category = categoryResult.status === "fulfilled" ? categoryResult.value : null;
     const summary = description ? description.slice(0, 200) : title;
 
     res.json({
       success: true,
-      data: { keywords, summary, category, domain: category },
+      data: {keywords, summary, category, domain: category},
     });
   } catch (error: any) {
-    console.error('Enhance content error:', error);
-    res.status(500).json({ error: { message: 'Failed to enhance content' } });
+    console.error("Enhance content error:", error);
+    res.status(500).json({error: {message: "Failed to enhance content"}});
   }
 });
 
 // ── Aggregation trigger ─────────────────────────────────────────────
 
-router.post('/aggregate', async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/aggregate", async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const expectedKey = process.env.RECOMMENDATION_AGGREGATION_KEY;
-    if (expectedKey && req.headers?.['x-aggregation-key'] !== expectedKey) {
-      return void res.status(401).json({ error: { message: 'Unauthorized' } });
+    if (expectedKey && req.headers?.["x-aggregation-key"] !== expectedKey) {
+      return void res.status(401).json({error: {message: "Unauthorized"}});
     }
     const result = await runContentAggregation();
-    res.json({ success: true, data: result });
+    res.json({success: true, data: result});
   } catch (error: any) {
-    console.error('Aggregation error:', error);
-    res.status(500).json({ error: { message: 'Aggregation failed' } });
+    console.error("Aggregation error:", error);
+    res.status(500).json({error: {message: "Aggregation failed"}});
   }
 });
 
 // ── Health ──────────────────────────────────────────────────────────
 
-router.get('/health', (_req: ExpressRequest, res: ExpressResponse) => {
+router.get("/health", (_req: ExpressRequest, res: ExpressResponse) => {
   res.json({
-    status: 'ok',
+    status: "ok",
     geminiAvailable: !!generativeModel,
     projectId,
     location,
