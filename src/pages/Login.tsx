@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore';
 import { loginWithEmail, loginWithGoogle, EMAIL_REGEX } from '../services/authService';
 import { useToast } from '../components/ui/Toast';
-import { Eye, EyeOff, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Consistent style helper used by auth form inputs - warm brown theme
 const authInputClasses =
@@ -92,8 +92,8 @@ const Login: React.FC = () => {
     <div className="flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-br from-[#7B4D2A] to-[#3B2314] dark:from-[#7B4D2A] dark:to-[#1A1512] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[#7B4D2A]/25">
-            <GraduationCap className="h-10 w-10 text-white" />
+          <div className="-mt-4 mx-auto h-28 w-28 bg-gradient-to-br from-[#D4A77A] to-[#B8865E] dark:from-[#B8865E] dark:to-[#D4A77A] rounded-full flex items-center justify-center mb-1 shadow-lg shadow-[#B8865E]/25">
+            <img src="/Icons2.png" alt="EduAI" className="h-28 w-28 rounded-full object-contain" />
           </div>
           <h2 className="text-3xl font-bold bg-gradient-to-l from-[#7B4D2A] to-[#3B2314] dark:from-[#D4A77A] dark:to-[#B8865E] bg-clip-text text-transparent">
             {t('auth.login')}

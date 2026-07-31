@@ -1,8 +1,9 @@
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bot, MessageSquare, MessageCircle } from 'lucide-react';
 import i18n from './i18n';
+import { isChatPage } from './utils/chatPage';
 const StudentHome = lazy(() => import('./pages/StudentHome'));
 const CourseWorkspace = lazy(() => import('./pages/CourseWorkspace'));
 const CourseFilesPage = lazy(() => import('./pages/CourseFilesPage'));
@@ -68,14 +69,14 @@ const UploadRedirect = () => {
 // Full-page AI Chat wrapper — opens in a new browser tab/window
 // when the user clicks "مساعد الذكاء الاصطناعي" from the sidebar.
 const AIChatFullPage = () => {
-    const navigate = useNavigate();
-    return (
-        <AIChat
-            isOpen={true}
-            onClose={() => navigate(-1)}
-            currentUser={useAppStore.getState().currentUser}
-        />
-    );
+  const navigate = useNavigate();
+  return (
+    <AIChat
+      isOpen={true}
+      onClose={() => navigate(-1)}
+      currentUser={useAppStore.getState().currentUser}
+    />
+  );
 };
 
 // Course redirect component - redirects /course/:id to /workspace/:courseId
@@ -105,7 +106,9 @@ const CourseRedirect = () => {
 function App() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setCurrentUser, currentUser, currentCourseFiles, allUserFiles, reset, isAIChatOpen, setIsAIChatOpen, isDarkMode, setIsDarkMode, aiChatInitialFile, setAiChatInitialFile, setIsOffline } = useAppStore();
+
   const { subscribeToUniversities } = useCatalogStore();
 
   // Initialize dark mode from localStorage on mount
@@ -237,16 +240,16 @@ function App() {
             {/* Recommendations - Publicly accessible but with limited features for guests */}
             <Route path="/recommendations" element={<Suspense fallback={<PageLoader />}><RecommendationsPage /></Suspense>} />
 
-             {/* AI Chat Full Page — opens in new tab from sidebar */}
-             <Route path="/ai-chat" element={<Suspense fallback={<PageLoader />}><AIChatFullPage /></Suspense>} />
+            {/* AI Chat Full Page — opens in new tab from sidebar */}
+            <Route path="/ai-chat" element={<Suspense fallback={<PageLoader />}><AIChatFullPage /></Suspense>} />
 
-             {/* Protected Chat Routes - Require Authentication */}
-             <Route element={<ProtectedRoute />}>
-               <Route path="/chat" element={<Suspense fallback={<PageLoader />}><ChatPage /></Suspense>} />
-               <Route path="/chat/private" element={<Suspense fallback={<PageLoader />}><PrivateChatPage /></Suspense>} />
-               <Route path="/notifications" element={<Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense>} />
-               <Route path="/profile" element={<Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>} />
-             </Route>
+            {/* Protected Chat Routes - Require Authentication */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/chat" element={<Suspense fallback={<PageLoader />}><ChatPage /></Suspense>} />
+              <Route path="/chat/private" element={<Suspense fallback={<PageLoader />}><PrivateChatPage /></Suspense>} />
+              <Route path="/notifications" element={<Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense>} />
+              <Route path="/profile" element={<Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>} />
+            </Route>
 
             {/* Error Pages */}
             <Route path="/403" element={<ForbiddenPage />} />
@@ -273,61 +276,63 @@ function App() {
           onClose={() => { setIsAIChatOpen(false); setAiChatInitialFile(null); }}
           currentUser={currentUser}
           initialSelectedFile={aiChatInitialFile}
-           courseFiles={currentCourseFiles.map(f => {
-              const textPreview = f.localTextPreview;
-              return {
-                 id: f.id,
-                 name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
-                 content: textPreview || f.downloadURL || f.url || undefined,
-                 readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
-              };
-            })}
-            allFiles={allUserFiles.map(f => {
-              const textPreview = f.localTextPreview;
-              return {
-                 id: f.id,
-                 name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
-                 content: textPreview || f.downloadURL || f.url || undefined,
-                 readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
-              };
-            })}
+          courseFiles={currentCourseFiles.map(f => {
+            const textPreview = f.localTextPreview;
+            return {
+              id: f.id,
+              name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
+              content: textPreview || f.downloadURL || f.url || undefined,
+              readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
+            };
+          })}
+          allFiles={allUserFiles.map(f => {
+            const textPreview = f.localTextPreview;
+            return {
+              id: f.id,
+              name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
+              content: textPreview || f.downloadURL || f.url || undefined,
+              readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
+            };
+          })}
         />
 
-        {/* Floating Action Buttons */}
-        <div className={`fixed bottom-4 left-6 flex flex-col space-y-3 z-40 md:bottom-6 transition-all duration-300 ease-out ${isAIChatOpen ? 'opacity-0 pointer-events-none scale-95 translate-y-2' : 'opacity-100 pointer-events-auto scale-100 translate-y-0'
-          }`}>
-          <button
-            onClick={() => navigate('/chat')}
-            className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white p-4 rounded-full shadow-lg shadow-secondary-500/30 hover:shadow-xl hover:shadow-secondary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
-            title={t('chat.publicChat')}
-          >
-            <MessageCircle className="h-6 w-6" />
-          </button>
-          <button
-            onClick={() => navigate('/discussions')}
-            className="bg-gradient-to-r from-primary-700 to-primary-800 text-white p-4 rounded-full shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
-            title={t('nav.discussions')}
-          >
-            <MessageSquare className="h-6 w-6" />
-          </button>
-          <button
-            onClick={() => {
-              if (!currentUser) {
-                // Guests must not open the AI assistant — that would let
-                // anonymous visitors drain the shared (paid) API quota.
-                // Redirect them to the login screen, which surfaces the
-                // "please register" notice. The chat itself never opens.
-                navigate('/login', { state: { aiLoginRequired: true } });
-                return;
-              }
-              setIsAIChatOpen(true);
-            }}
-            className="bg-gradient-to-r from-primary-700 via-secondary-600 to-primary-500 text-white p-4 rounded-full shadow-lg shadow-primary-600/30 hover:shadow-xl transition-all duration-300 ease-spring hover:scale-105 active:scale-95 animate-glow-wave"
-            title={t('nav.aiAssistant')}
-          >
-            <Bot className="h-6 w-6" />
-          </button>
-        </div>
+        {/* Floating Action Buttons — hidden on chat pages so they don't overlap chat content */}
+        {!isChatPage(location.pathname) && (
+          <div className={`fixed bottom-4 left-6 flex flex-col space-y-3 z-40 md:bottom-6 transition-all duration-300 ease-out ${isAIChatOpen ? 'opacity-0 pointer-events-none scale-95 translate-y-2' : 'opacity-100 pointer-events-auto scale-100 translate-y-0'
+            }`}>
+            <button
+              onClick={() => navigate('/chat')}
+              className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white p-4 rounded-full shadow-lg shadow-secondary-500/30 hover:shadow-xl hover:shadow-secondary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
+              title={t('chat.publicChat')}
+            >
+              <MessageCircle className="h-6 w-6" />
+            </button>
+            <button
+              onClick={() => navigate('/discussions')}
+              className="bg-gradient-to-r from-primary-700 to-primary-800 text-white p-4 rounded-full shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
+              title={t('nav.discussions')}
+            >
+              <MessageSquare className="h-6 w-6" />
+            </button>
+            <button
+              onClick={() => {
+                if (!currentUser) {
+                  // Guests must not open the AI assistant — that would let
+                  // anonymous visitors drain the shared (paid) API quota.
+                  // Redirect them to the login screen, which surfaces the
+                  // "please register" notice. The chat itself never opens.
+                  navigate('/login', { state: { aiLoginRequired: true } });
+                  return;
+                }
+                setIsAIChatOpen(true);
+              }}
+              className="bg-gradient-to-r from-primary-700 via-secondary-600 to-primary-500 text-white p-4 rounded-full shadow-lg shadow-primary-600/30 hover:shadow-xl transition-all duration-300 ease-spring hover:scale-105 active:scale-95 animate-glow-wave"
+              title={t('nav.aiAssistant')}
+            >
+              <Bot className="h-6 w-6" />
+            </button>
+          </div>
+        )}
       </div>
     </ToastProvider>
   );

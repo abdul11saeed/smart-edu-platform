@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/navigation/Sidebar';
 import UnifiedHeader from '../components/navigation/UnifiedHeader';
@@ -9,6 +9,7 @@ import PageTransition from '../components/ui/PageTransition';
 import ScrollToTop from '../components/navigation/ScrollToTop';
 import FileUploadModal from '../components/ui/FileUploadModal';
 import { useAppStore } from '../stores/appStore';
+import { isChatPage } from '../utils/chatPage';
 
 function AppShell() {
     const location = useLocation();
@@ -115,8 +116,8 @@ function AppShell() {
                     </PageTransition>
                 </main>
 
-                {/* Footer */}
-                <Footer />
+                {/* Footer — hidden on chat pages so the chat uses its own full-screen layout */}
+                {!isChatPage(location.pathname) && <Footer />}
             </div>
 
             <FileUploadModal

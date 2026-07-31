@@ -112,9 +112,12 @@ const ChatPage = () => {
     const [userList, setUserList] = useState<Array<{ id: string; name: string; photoURL?: string; bio?: string }>>([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
 
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    // Scroll page to top when the chat opens
+     const messagesEndRef = useRef<HTMLDivElement>(null);
+ 
+     // Track whether user has scrolled up (for scroll-to-bottom button)
+     const [scrolledUp, setScrolledUp] = useState(false);
+ 
+     // Scroll page to top when the chat opens
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
@@ -664,10 +667,17 @@ const ChatPage = () => {
                 </div>
             )}
 
-            {/* Messages Container - elegant navy blue */}
-            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/5 border border-primary-100/50 dark:border-primary-700/30 h-[400px] sm:h-[500px] md:h-[600px] flex flex-col">
-                <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-primary-50/30 to-white dark:from-slate-800/80 dark:to-slate-800/90"
-                    onScroll={handleScroll}>
+             {/* Messages Container - responsive height using viewport units for mobile compatibility */}
+             <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/5 border border-primary-100/50 dark:border-primary-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] flex flex-col">
+                 <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-primary-50/30 to-white dark:from-slate-800/80 dark:to-slate-800/90"
+                     onScroll={() => {
+                         handleScroll();
+                         const el = containerRef.current;
+                         if (el) {
+                             const { scrollTop, scrollHeight, clientHeight } = el;
+                             setScrolledUp(scrollHeight - scrollTop - clientHeight > 100);
+                         }
+                     }}>
                     {messages.length > 0 && (
                         <div className="flex justify-center pb-2">
                             <button
@@ -702,10 +712,25 @@ const ChatPage = () => {
                             renderMessageGroup(date, dateMessages)
                         )
                     )}
-                    <div ref={messagesEndRef} />
-                </div>
+                     <div ref={messagesEndRef} />
+                 </div>
 
-                {replyTo && (
+                 {/* Scroll-to-bottom button — appears when user has scrolled up */}
+                 {scrolledUp && (
+                     <button
+                         onClick={() => {
+                             containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
+                             setScrolledUp(false);
+                         }}
+                         className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-full shadow-lg text-xs font-medium flex items-center gap-1 transition-all z-10 animate-fade-in"
+                         aria-label={t('chat.scrollToBottom')}
+                     >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                         {t('chat.scrollToBottom')}
+                     </button>
+                 )}
+
+                 {replyTo && (
                     <div className="px-3 sm:px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
                             <Reply className="h-4 w-4 text-gray-500 dark:text-gray-400" />

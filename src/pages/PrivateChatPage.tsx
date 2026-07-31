@@ -120,9 +120,12 @@ const PrivateChatPage = () => {
         }
     });
 
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const handleCopyMessage = async (text: string) => {
+     // Track whether user has scrolled up (for scroll-to-bottom button)
+     const [scrolledUp, setScrolledUp] = useState(false);
+
+     const handleCopyMessage = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
             setToastMessage(t('chat.messageCopied'));
@@ -493,7 +496,8 @@ const PrivateChatPage = () => {
                 );
             })}
         </div>
-    };
+    );
+}
 
     return (
         <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -642,13 +646,20 @@ const PrivateChatPage = () => {
                 </div>
             )}
 
-            {/* Messages Container */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 h-[400px] sm:h-[500px] flex flex-col">
-                <div
-                    ref={containerRef}
-                    className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800"
-                    onScroll={handleScroll}
-                >
+             {/* Messages Container - responsive height using viewport units for mobile compatibility */}
+             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] flex flex-col">
+                 <div
+                     ref={containerRef}
+                     className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800"
+                     onScroll={() => {
+                         handleScroll();
+                         const el = containerRef.current;
+                         if (el) {
+                             const { scrollTop, scrollHeight, clientHeight } = el;
+                             setScrolledUp(scrollHeight - scrollTop - clientHeight > 100);
+                         }
+                     }}
+                 >
                     {messages.length > 0 && (
                         <div className="flex justify-center pb-2">
                             <button
@@ -678,10 +689,25 @@ const PrivateChatPage = () => {
                             renderMessageGroup(date, dateMessages)
                         )
                     )}
-                    <div ref={messagesEndRef} />
-                </div>
+                     <div ref={messagesEndRef} />
+                 </div>
 
-                {/* Reply indicator */}
+                 {/* Scroll-to-bottom button — appears when user has scrolled up */}
+                 {scrolledUp && (
+                     <button
+                         onClick={() => {
+                             containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
+                             setScrolledUp(false);
+                         }}
+                         className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-full shadow-lg text-xs font-medium flex items-center gap-1 transition-all z-10 animate-fade-in"
+                         aria-label={t('chat.scrollToBottom')}
+                     >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                         {t('chat.scrollToBottom')}
+                     </button>
+                 )}
+
+                 {/* Reply indicator */}
                 {replyTo && (
                     <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">

@@ -1,30 +1,105 @@
 /**
- * Import function triggers from their respective submodules:
+ * Firebase Cloud Functions entry point.
  *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
+ * Replaces server/index.js with a unified Express app exported as the `api`
+ * function via `onRequest`. All sub-routers (aiRouter, recommendationRouter,
+ * fileDownloadProxy, health) are mounted under /api/.
  *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ * A scheduled function (scheduledAggregation) replaces the setInterval-based
+ * scheduler from server/index.js.
  */
 
-import {setGlobalOptions} from "firebase-functions";
+import { setGlobalOptions } from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import express from 'express';
+import cors from 'cors';
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+import aiRouter from './aiRouter.js';
+import recommendationRouter from './recommendationRouter.js';
+import fileDownloadProxyRouter from './fileDownloadProxy.js';
+import healthRouter from './health.js';
+import { generalRateLimiter, aiRateLimiter } from './rateLimiter.js';
+import { runContentAggregation } from './recommendation/aggregation.js';
+import { setAggregationRunning, aggregationRunning } from './recommendation/helpers.js';
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({maxInstances: 10});
+setGlobalOptions({ maxInstances: 10 });
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// ── CORS: allow Firebase Hosting origins + local dev ──────────────────
+
+const projectId = process.env.GCLOUD_PROJECT || 'eduaiplatform-39fe9';
+const allowedOrigins: string[] = [
+  `https://${projectId}.web.app`,
+  `https://${projectId}.firebaseapp.com`,
+  process.env.CORS_ORIGIN || 'http://localhost:5173',
+];
+
+// ── Express app factory ────────────────────────────────────────────────
+
+function createApp(): express.Express {
+  const app = express();
+
+  // CORS — allow Firebase Hosting origin dynamically
+  app.use(
+    cors({
+      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+    })
+  );
+  app.use(express.json({ limit: '10mb' }));
+
+  // ── AI routes (single catch-all handler for /api/ai/*) ─────────────
+  app.use('/api/ai', aiRateLimiter, aiRouter as express.RequestHandler);
+
+  // ── Recommendation routes (Express Router for /api/recommendations/*) ─
+  app.use('/api/recommendations', aiRateLimiter, recommendationRouter);
+
+  // ── General rate limiting for all remaining endpoints ───────────────
+  app.use(generalRateLimiter);
+
+  // ── File download proxy (/api/files/download) ──────────────────────
+  app.use('/api/files', fileDownloadProxyRouter);
+
+  // ── Health check (/api/health) ───────────────────────────────────────
+  app.use('/api', healthRouter);
+
+  // ── Catch-all for unknown API routes ───────────────────────────────
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: { message: 'API endpoint not found' } });
+  });
+
+  return app;
+}
+
+const app = createApp();
+
+// Export the Express app as a Firebase Cloud Function (v2 onRequest)
+export const api = onRequest(app);
+
+// ── Scheduled function: recommendation content aggregation ─────────────
+// Replaces the setInterval-based scheduler in server/index.js.
+// Runs every 6 hours to populate the recommendation_contents collection.
+export const scheduledAggregation = onSchedule(
+  { schedule: 'every 6 hours', maxInstances: 1 },
+  async () => {
+    if (aggregationRunning) {
+      console.log('[scheduler] Aggregation already running, skipping.');
+      return;
+    }
+    setAggregationRunning(true);
+    try {
+      const result = await runContentAggregation();
+      console.log('[scheduler] Aggregation completed:', JSON.stringify(result).slice(0, 200));
+    } catch (e: any) {
+      console.error('[scheduler] Aggregation failed:', e?.message || e);
+    } finally {
+      setAggregationRunning(false);
+    }
+  }
+);
