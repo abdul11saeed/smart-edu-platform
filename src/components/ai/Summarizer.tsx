@@ -19,7 +19,7 @@ const createLocalSummary = (text: string, t: (key: string) => string) => {
     return `${t('ai.summarizer.summaryTitle')}: ${intro || t('ai.summarizer.selectFile')}.${closing}`;
 };
 
-const createLocalKeyPoints = (text: string, t: (key: string) => string) => {
+const createLocalKeyPoints = (text: string) => {
     const sentences = text.split(/[.!?。\n]+/).map(s => s.trim()).filter(Boolean);
     return sentences.slice(0, 4).map(sentence => sentence.length > 140 ? `${sentence.slice(0, 140)}...` : sentence);
 };
@@ -62,10 +62,10 @@ const Summarizer = ({ fileName, fileContent, file, onClose }: SummarizerProps) =
         } catch (error) {
             console.error('Error generating summary:', error);
             // Fallback to mock data if API fails
-            setSummaryData({
-                summary: `${t('ai.summarizer.notExtracted')}\n\n${createLocalSummary(contentToProcess, t)}`,
-                keyPoints: createLocalKeyPoints(contentToProcess, t)
-            });
+                    setSummaryData({
+                        summary: `${t('ai.summarizer.notExtracted')}\n\n${createLocalSummary(contentToProcess, t)}`,
+                        keyPoints: createLocalKeyPoints(contentToProcess)
+                    });
         } finally {
             setIsSummarizing(false);
         }

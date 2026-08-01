@@ -762,7 +762,8 @@ const StudentHome: React.FC = () => {
                                                 className="btn-modern-ai px-2.5 py-1.5 text-xs"
                                                 onClick={() => {
                                                     const { setIsAIChatOpen, setAiChatInitialFile, setAiChatOpenMode } = useAppStore.getState();
-                                                    const hasValidPreview = file.localTextPreview && !['[ملف', '[File'].some(prefix => file.localTextPreview.startsWith(prefix));
+                                                    const localPreview = file.localTextPreview;
+                                                    const hasValidPreview = localPreview && !['[ملف', '[File'].some(prefix => localPreview.startsWith(prefix));
                                                     setAiChatInitialFile({
                                                         id: file.id,
                                                         name: file.name,

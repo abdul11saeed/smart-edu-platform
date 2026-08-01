@@ -4,7 +4,7 @@ import RecommendationCard from './RecommendationCard';
 import { ContentCategory, RecommendationContent, RecommendationItemWithStatus } from '../../types';
 import { recommendationService } from '../../services/recommendationService';
 import { useRecommendationActions } from '../../hooks/useRecommendationActions';
-import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CategorySectionProps {
     userId?: string;
