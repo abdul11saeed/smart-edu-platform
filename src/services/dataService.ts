@@ -16,6 +16,7 @@ import {
     writeBatch,
 } from 'firebase/firestore';
 import { University, College, Major, Course, Exam } from '../types';
+import { normalizeArabic } from '../utils/searchNormalizer';
 
 // Firestore collections
 const UNIVERSITIES_COLLECTION = 'universities';
@@ -98,7 +99,7 @@ export const subscribeToUniversities = (
 };
 
 export const addUniversity = async (name: string): Promise<University> => {
-    const universityId = `${Date.now()}`;
+    const universityId = `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const newUniversity: University = {
         id: universityId,
         name,
@@ -106,6 +107,19 @@ export const addUniversity = async (name: string): Promise<University> => {
     };
 
     try {
+        // Check for duplicate university name before adding
+        const universitiesRef = collection(db, UNIVERSITIES_COLLECTION);
+        const snapshot = await getDocs(universitiesRef);
+        const normalizedInput = name.toLowerCase().trim();
+        const duplicate = snapshot.docs.find(docSnap => {
+            const data = docSnap.data() as University;
+            return (data.name || '').toLowerCase().trim() === normalizedInput;
+        });
+
+        if (duplicate) {
+            throw new Error('الجامعة موجودة مسبقاً، يرجى اختيارها من القائمة');
+        }
+
         const uniDocRef = doc(db, UNIVERSITIES_COLLECTION, universityId);
         await setDoc(uniDocRef, newUniversity);
         return newUniversity;
@@ -336,6 +350,18 @@ export const deleteCourse = async (
 
 export const updateUniversityName = async (universityId: string, name: string): Promise<void> => {
     try {
+        const universitiesRef = collection(db, UNIVERSITIES_COLLECTION);
+        const snapshot = await getDocs(universitiesRef);
+        const normalizedInput = name.toLowerCase().trim();
+        const duplicate = snapshot.docs.find(docSnap => {
+            const data = docSnap.data() as University;
+            return docSnap.id !== universityId && (data.name || '').toLowerCase().trim() === normalizedInput;
+        });
+
+        if (duplicate) {
+            throw new Error('الجامعة موجودة مسبقاً، يرجى استخدام اسم آخر');
+        }
+
         const uniDocRef = doc(db, UNIVERSITIES_COLLECTION, universityId);
         await updateDoc(uniDocRef, { name });
     } catch (error: any) {
@@ -357,6 +383,13 @@ export const updateCollegeName = async (
         const colleges = [...(uniData.colleges || [])];
         const collegeIndex = colleges.findIndex((c) => c.id === collegeId);
         if (collegeIndex >= 0) {
+            const normalizedInput = name.toLowerCase().trim();
+            const duplicate = colleges.find(
+                (c) => c.id !== collegeId && (c.name || '').toLowerCase().trim() === normalizedInput
+            );
+            if (duplicate) {
+                throw new Error('الكلية موجودة مسبقاً في هذه الجامعة، يرجى استخدام اسم آخر');
+            }
             colleges[collegeIndex] = { ...colleges[collegeIndex], name };
             await updateDoc(uniDocRef, { colleges });
         }
@@ -383,6 +416,13 @@ export const updateMajorName = async (
             const majors = [...(colleges[collegeIndex].majors || [])];
             const majorIndex = majors.findIndex((m) => m.id === majorId);
             if (majorIndex >= 0) {
+                const normalizedInput = name.toLowerCase().trim();
+                const duplicate = majors.find(
+                    (m) => m.id !== majorId && (m.name || '').toLowerCase().trim() === normalizedInput
+                );
+                if (duplicate) {
+                    throw new Error('التخصص موجود مسبقاً في هذه الكلية، يرجى استخدام اسم آخر');
+                }
                 majors[majorIndex] = { ...majors[majorIndex], name };
                 colleges[collegeIndex] = { ...colleges[collegeIndex], majors };
                 await updateDoc(uniDocRef, { colleges });
@@ -658,7 +698,7 @@ export const searchCourses = async (queryText: string): Promise<Array<{ id: stri
         const universities = await getUniversities();
         const results: Array<{ id: string; name: string; universityName?: string; collegeName?: string; majorName?: string }> = [];
 
-        const searchLower = queryText.toLowerCase().trim();
+        const searchLower = normalizeArabic(queryText.toLowerCase().trim());
         if (!searchLower) return [];
 
         universities.forEach(uni => {
@@ -668,7 +708,7 @@ export const searchCourses = async (queryText: string): Promise<Array<{ id: stri
                 majors.forEach(maj => {
                     const courses = Array.isArray(maj.courses) ? maj.courses : [];
                     courses.forEach(course => {
-                        if (course.name.toLowerCase().includes(searchLower)) {
+                        if (normalizeArabic(course.name.toLowerCase()).includes(searchLower)) {
                             results.push({
                                 id: course.id,
                                 name: course.name,

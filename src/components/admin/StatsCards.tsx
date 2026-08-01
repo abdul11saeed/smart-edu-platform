@@ -66,16 +66,12 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, label, value, gradientFrom, gradientTo, iconBg }) => (
-    <div className={`bg-gradient-to-l ${gradientFrom} ${gradientTo} rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 p-4 sm:p-6 hover:shadow-xl hover:shadow-primary-500/20 hover:-translate-y-0.5 transition-all duration-300 ease-smooth`}>
-        <div className="flex items-center">
-            <div className={`flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${iconBg} shadow-sm mr-3 sm:mr-4 shrink-0`}>
-                {icon}
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white/80 truncate">{label}</p>
-                <p className="text-xl sm:text-2xl font-bold text-white truncate">{value}</p>
-            </div>
+    <div className={`bg-gradient-to-l ${gradientFrom} ${gradientTo} rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 p-5 sm:p-6 flex flex-col items-center justify-center text-center min-h-[120px] hover:shadow-xl hover:shadow-primary-500/20 hover:-translate-y-0.5 transition-all duration-300 ease-smooth`}>
+        <div className={`flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${iconBg} shadow-sm mb-3 shrink-0`}>
+            {icon}
         </div>
+        <p className="text-sm font-medium text-white/80 truncate w-full">{label}</p>
+        <p className="text-xl sm:text-2xl font-bold text-white truncate w-full">{value}</p>
     </div>
 );
 

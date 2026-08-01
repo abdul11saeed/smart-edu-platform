@@ -26,6 +26,7 @@ import {
   formatDate,
 } from '../services/discussionService';
 import { recommendationService } from '../services/recommendationService';
+import { normalizeArabic } from '../utils/searchNormalizer';
 
 interface Course {
   id: string;
@@ -286,10 +287,11 @@ const DiscussionsPage = () => {
 
   // Filter discussions based on search and course filter — memoized to avoid recalculation every render
   const filteredDiscussions = useMemo(() => discussions.filter(discussion => {
+    const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
     const matchesSearch = searchQuery === '' ||
-      (typeof discussion.title === 'string' && discussion.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (typeof discussion.content === 'string' && discussion.content.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (typeof discussion.authorName === 'string' && discussion.authorName.toLowerCase().includes(searchQuery.toLowerCase()));
+      (typeof discussion.title === 'string' && normalizeArabic(discussion.title.toLowerCase()).includes(normalizedQuery)) ||
+      (typeof discussion.content === 'string' && normalizeArabic(discussion.content.toLowerCase()).includes(normalizedQuery)) ||
+      (typeof discussion.authorName === 'string' && normalizeArabic(discussion.authorName.toLowerCase()).includes(normalizedQuery));
 
     const matchesCourse = selectedCourseFilter === '' || discussion.courseId === selectedCourseFilter;
 

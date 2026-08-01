@@ -20,6 +20,7 @@ import { logAuditEvent } from './auditService';
 import { extractTextPreview } from './localFileStorage';
 import { recommendationService } from './recommendationService';
 import { getCurrentUser } from './authService';
+import { normalizeArabic } from '../utils/searchNormalizer';
 
 // Resolve the acting user's uid for recommendation-interest tracking.
 // Falls back gracefully (returns undefined) for guests / unauthenticated.
@@ -368,11 +369,12 @@ export const listenToCourseFiles = (filters: FileFilters = {}, callback: (files:
         const filtered = search ? files.filter((file) => {
             const haystack = [
                 file.name, file.originalFileName, file.displayName, file.courseName,
+                file.universityName, file.collegeName, file.majorName,
                 file.universityId, file.collegeId, file.majorId, file.courseId,
                 file.description, file.tags?.join(' '), file.owner?.name, file.owner?.email,
-                file.professorName
+                file.uploadedByName, file.professorName
             ].filter(Boolean).join(' ').toLowerCase();
-            return haystack.includes(search);
+            return haystack.includes(normalizeArabic(search));
         }) : files;
 
         callback(filtered);
@@ -422,11 +424,12 @@ export const getFilesByFilters = async (filters: FileFilters): Promise<AppFile[]
             files = files.filter((file) => {
                 const haystack = [
                     file.name, file.originalFileName, file.displayName, file.courseName,
+                    file.universityName, file.collegeName, file.majorName,
                     file.universityId, file.collegeId, file.majorId, file.courseId,
                     file.description, file.tags?.join(' '), file.owner?.name, file.owner?.email,
-                    file.professorName
+                    file.uploadedByName, file.professorName
                 ].filter(Boolean).join(' ').toLowerCase();
-                return haystack.includes(search);
+                return haystack.includes(normalizeArabic(search));
             });
         }
 
@@ -644,11 +647,13 @@ export const listenToPublicCourseFiles = (filters: FileFilters = {}, callback: (
         const search = filters.search?.trim().toLowerCase();
         const filtered = search ? files.filter((file) => {
             const haystack = [
-                file.name, file.courseName, file.universityId, file.collegeId,
-                file.majorId, file.courseId, file.description, file.uploadedByName,
-                file.professorName, file.tags?.join(' ')
+                file.name, file.originalFileName, file.displayName, file.courseName,
+                file.universityName, file.collegeName, file.majorName,
+                file.universityId, file.collegeId, file.majorId, file.courseId,
+                file.description, file.tags?.join(' '), file.uploadedByName,
+                file.professorName
             ].filter(Boolean).join(' ').toLowerCase();
-            return haystack.includes(search);
+            return haystack.includes(normalizeArabic(search));
         }) : files;
 
         callback(filtered);
@@ -676,11 +681,13 @@ export const getPublicCourseFiles = async (filters: FileFilters = {}): Promise<A
             const search = filters.search.trim().toLowerCase();
             files = files.filter((file) => {
                 const haystack = [
-                    file.name, file.courseName, file.universityId, file.collegeId,
-                    file.majorId, file.courseId, file.description, file.uploadedByName,
-                    file.professorName, file.tags?.join(' ')
+                    file.name, file.originalFileName, file.displayName, file.courseName,
+                    file.universityName, file.collegeName, file.majorName,
+                    file.universityId, file.collegeId, file.majorId, file.courseId,
+                    file.description, file.tags?.join(' '), file.uploadedByName,
+                    file.professorName
                 ].filter(Boolean).join(' ').toLowerCase();
-                return haystack.includes(search);
+                return haystack.includes(normalizeArabic(search));
             });
         }
 

@@ -36,7 +36,7 @@ const ContactPage = () => {
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('contact.phone')}</p>
-                            <p className="text-lg font-medium text-slate-900 dark:text-slate-100" dir="ltr">+967 736 856 463</p>
+                            <p className="text-lg font-medium text-slate-900 dark:text-slate-100" dir="ltr">+977777777777</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-4">
@@ -47,7 +47,7 @@ const ContactPage = () => {
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('contact.email')}</p>
-                            <p className="text-lg font-medium text-slate-900 dark:text-slate-100" dir="ltr">alhmyrybdalhfyz39@gmail.com</p>
+                            <p className="text-lg font-medium text-slate-900 dark:text-slate-100" dir="ltr">eduaiplatform55@gmail.com</p>
                         </div>
                     </div>
                 </div>

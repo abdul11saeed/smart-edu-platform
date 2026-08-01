@@ -388,30 +388,39 @@ const AdminDashboard = () => {
                     await addUniversity(newItemName);
                     break;
                 case 'college':
-                    if (selectedUniversityForCollege) {
-                        await addCollege(selectedUniversityForCollege, newItemName);
+                    if (!selectedUniversityForCollege) {
+                        throw new Error(t('admin.selectParentUniversity'));
                     }
+                    await addCollege(selectedUniversityForCollege, newItemName);
                     break;
                 case 'major':
-                    if (selectedCollegeId) {
-                        const college = findCollegeById(selectedCollegeId);
-                        const university = college ? universities?.find(u => u.colleges?.includes(college)) : undefined;
-                        if (university) {
-                            await addMajor(university.id, selectedCollegeId, newItemName);
-                        }
+                    if (!selectedCollegeId) {
+                        throw new Error(t('admin.selectParentCollege'));
                     }
+                    const collegeForMajor = findCollegeById(selectedCollegeId);
+                    const universityForMajor = collegeForMajor ? universities?.find(u => u.colleges?.includes(collegeForMajor)) : undefined;
+                    if (!universityForMajor) {
+                        throw new Error(t('admin.selectParentUniversity'));
+                    }
+                    await addMajor(universityForMajor.id, selectedCollegeId, newItemName);
                     break;
                 case 'course':
-                    if (selectedCollegeId && selectedMajorId) {
-                        const college = findCollegeById(selectedCollegeId);
-                        const university = college ? universities?.find(u => u.colleges?.includes(college)) : undefined;
-                        if (university && college) {
-                            const major = college.majors?.find(m => m.id === selectedMajorId);
-                            if (major) {
-                                await addCourse(university.id, college.id, selectedMajorId, newItemName);
-                            }
-                        }
+                    if (!selectedCollegeId) {
+                        throw new Error(t('admin.selectParentCollege'));
                     }
+                    if (!selectedMajorId) {
+                        throw new Error(t('admin.selectParentMajor'));
+                    }
+                    const collegeForCourse = findCollegeById(selectedCollegeId);
+                    const universityForCourse = collegeForCourse ? universities?.find(u => u.colleges?.includes(collegeForCourse)) : undefined;
+                    if (!universityForCourse || !collegeForCourse) {
+                        throw new Error(t('admin.selectParentUniversity'));
+                    }
+                    const majorForCourse = collegeForCourse.majors?.find(m => m.id === selectedMajorId);
+                    if (!majorForCourse) {
+                        throw new Error(t('admin.selectParentMajor'));
+                    }
+                    await addCourse(universityForCourse.id, collegeForCourse.id, selectedMajorId, newItemName);
                     break;
             }
 

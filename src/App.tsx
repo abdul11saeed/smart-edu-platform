@@ -296,7 +296,7 @@ function App() {
           })}
         />
 
-        {/* Floating Action Buttons — hidden on chat pages so they don't overlap chat content */}
+        {/* Floating Action Buttons — hidden on chat and discussions pages so they don't overlap content */}
         {!isChatPage(location.pathname) && (
           <div className={`fixed bottom-4 left-6 flex flex-col space-y-3 z-40 md:bottom-6 transition-all duration-300 ease-out ${isAIChatOpen ? 'opacity-0 pointer-events-none scale-95 translate-y-2' : 'opacity-100 pointer-events-auto scale-100 translate-y-0'
             }`}>

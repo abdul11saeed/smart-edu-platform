@@ -85,7 +85,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                 "group relative bg-white dark:bg-brown-900/80 rounded-2xl border border-brown-200/60 dark:border-brown-700/50 shadow-sm hover:shadow-xl hover:shadow-primary-500/10 dark:hover:shadow-primary-900/20 transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden hover:-translate-y-1 hover:border-primary-200/50 dark:hover:border-primary-700/40 animate-card-appear " + (compact ? "w-full" : "")
             }
         >
-            <div className="relative w-full h-44 sm:h-52 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/20 overflow-hidden">
+            <div className="relative w-full h-24 sm:h-32 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/20 overflow-hidden">
                 {content.imageUrl ? (
                     <img
                         src={content.imageUrl}
@@ -107,7 +107,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                     {contentTypeLabel}
                 </span>
             </div>
-            <div className="flex-1 p-4 flex flex-col">
+            <div className="flex-1 p-3 flex flex-col">
                 <h3 className="text-base font-semibold text-brown-900 dark:text-neutral-100 line-clamp-2 mb-2 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors leading-relaxed">
                     {content.title}
                 </h3>

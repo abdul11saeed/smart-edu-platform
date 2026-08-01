@@ -19,11 +19,11 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 }) => {
     const { t } = useTranslation();
     const actions = [
-        { label: t('admin.addUniversity'), icon: <Plus className="h-6 w-6 text-primary-500 mx-auto mb-2" />, onClick: onAddUniversity, gradient: 'from-primary-500 to-primary-700', hoverGradient: 'hover:from-primary-600 hover:to-primary-800', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
-        { label: t('admin.addCollege'), icon: <Plus className="h-6 w-6 text-secondary-500 mx-auto mb-2" />, onClick: onAddCollege, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
-        { label: t('admin.addMajor'), icon: <Plus className="h-6 w-6 text-accent-500 mx-auto mb-2" />, onClick: onAddMajor, gradient: 'from-accent-500 to-accent-700', hoverGradient: 'hover:from-accent-600 hover:to-accent-800', iconBg: 'bg-accent-100 text-accent-700', shadowColor: 'shadow-accent-500/20' },
-        { label: t('admin.addCourse'), icon: <Plus className="h-6 w-6 text-secondary-500 mx-auto mb-2" />, onClick: onAddCourse, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
-        { label: t('admin.manageUsers'), icon: <User className="h-6 w-6 text-primary-600 mx-auto mb-2" />, onClick: onAddUser, gradient: 'from-primary-600 to-primary-800', hoverGradient: 'hover:from-primary-700 hover:to-primary-900', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
+        { label: t('admin.addUniversity'), icon: <Plus className="h-6 w-6 text-primary-500" />, onClick: onAddUniversity, gradient: 'from-primary-500 to-primary-700', hoverGradient: 'hover:from-primary-600 hover:to-primary-800', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
+        { label: t('admin.addCollege'), icon: <Plus className="h-6 w-6 text-secondary-500" />, onClick: onAddCollege, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
+        { label: t('admin.addMajor'), icon: <Plus className="h-6 w-6 text-accent-500" />, onClick: onAddMajor, gradient: 'from-accent-500 to-accent-700', hoverGradient: 'hover:from-accent-600 hover:to-accent-800', iconBg: 'bg-accent-100 text-accent-700', shadowColor: 'shadow-accent-500/20' },
+        { label: t('admin.addCourse'), icon: <Plus className="h-6 w-6 text-secondary-500" />, onClick: onAddCourse, gradient: 'from-secondary-500 to-secondary-700', hoverGradient: 'hover:from-secondary-600 hover:to-secondary-800', iconBg: 'bg-secondary-100 text-secondary-700', shadowColor: 'shadow-secondary-500/20' },
+        { label: t('admin.manageUsers'), icon: <User className="h-6 w-6 text-primary-600" />, onClick: onAddUser, gradient: 'from-primary-600 to-primary-800', hoverGradient: 'hover:from-primary-700 hover:to-primary-900', iconBg: 'bg-primary-100 text-primary-700', shadowColor: 'shadow-primary-500/20' },
     ];
 
     return (
@@ -42,8 +42,8 @@ const QuickActions: React.FC<QuickActionsProps> = ({
                     >
                         {/* Shimmer overlay */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                        <div className="relative z-10 text-center">
-                            <div className={`flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${action.iconBg} shadow-sm mb-2 transition-transform group-hover:scale-110`}>
+                        <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                            <div className={`flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${action.iconBg} shadow-sm mb-3 transition-transform group-hover:scale-110`}>
                                 {action.icon}
                             </div>
                             <p className="text-sm font-semibold">{action.label}</p>

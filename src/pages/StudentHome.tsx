@@ -16,6 +16,7 @@ import { useAppStore } from '../stores/appStore';
 import FilePreview from '../components/ui/FilePreview';
 import Modal from '../components/ui/Modal';
 import { downloadFile, formatFileSize } from '../utils/downloadUtils';
+import { normalizeArabic } from '../utils/searchNormalizer';
 import { Bot, Lock, Search, RotateCcw, Upload, FileText, Eye, Pencil, Trash2, GraduationCap, Download } from 'lucide-react';
 import RecommendationsCarousel from '../components/recommendations/RecommendationsCarousel';
 
@@ -251,11 +252,14 @@ const StudentHome: React.FC = () => {
             const matchesCourse = !selectedCourse || file.courseId === selectedCourse;
             const matchesDeleted = !file.isDeleted;
             const haystack = [
-                file.name, file.courseName, file.universityId, file.collegeId,
-                file.majorId, file.courseId, file.description, file.owner?.name,
+                file.name, file.originalFileName, file.displayName, file.courseName,
+                file.universityName, file.collegeName, file.majorName,
+                file.universityId, file.collegeId, file.majorId, file.courseId,
+                file.description, file.owner?.name, file.uploadedByName,
                 file.professorName, file.tags?.join(' ')
             ].filter(Boolean).join(' ').toLowerCase();
-            const matchesSearch = !search || haystack.includes(search.toLowerCase());
+            const normalizedSearch = normalizeArabic(search.toLowerCase());
+            const matchesSearch = !search || haystack.includes(normalizedSearch);
             return matchesTab && matchesUniversity && matchesCollege && matchesMajor && matchesCourse && matchesDeleted && matchesSearch;
         });
     }, [files, currentUser, activeTab, selectedUniversity, selectedCollege, selectedMajor, selectedCourse, search]);
@@ -413,18 +417,18 @@ const StudentHome: React.FC = () => {
                             <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 text-white backdrop-blur-md border border-white/30 shadow-xl shadow-primary-900/30 animate-float-icon">
                                 <GraduationCap className="h-7 w-7" />
                             </span>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg animate-fade-in-up tracking-tight">{t('home.welcomeTitle')}</h1>
+                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg animate-fade-in-up tracking-tight">{t('studentHome.welcomeTitle')}</h1>
                         </div>
                         <div className="text-lg sm:text-xl font-semibold text-white/90 mt-4 animate-fade-in-up animate-delay-100">
                             {currentUser.role === 'admin' ? (
                                 <span className="inline-flex items-center gap-2">
                                     <span className="animate-wave inline-block text-yellow-300"><GraduationCap className="h-5 w-5" /></span>
-                                    <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-white font-bold shadow-lg">{t('home.welcomeAdmin', { name: currentUser?.name || currentUser?.email || t('common.welcome') })}</span>
+                                    <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-white font-bold shadow-lg">{t('studentHome.welcomeAdmin', { name: currentUser?.name || currentUser?.email || t('common.welcome') })}</span>
                                 </span>
                             ) : (
                                 <span className="inline-flex items-center gap-2">
                                     <span className="animate-wave inline-block text-yellow-300"><GraduationCap className="h-5 w-5" /></span>
-                                    <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-white font-bold shadow-lg">{t('home.welcomeStudent', { name: currentUser?.name || currentUser?.email || t('common.welcome') })}</span>
+                                    <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-white font-bold shadow-lg">{t('studentHome.welcomeStudent', { name: currentUser?.name || currentUser?.email || t('common.welcome') })}</span>
                                 </span>
                             )}
                         </div>
@@ -486,14 +490,14 @@ const StudentHome: React.FC = () => {
                         className={`rounded-full px-5 py-2 font-medium transition-all duration-300 ${activeTab === 'all' ? 'bg-gradient-to-r from-primary-600 to-secondary-500 text-white shadow-lg shadow-primary-500/25 hover:from-primary-700 hover:to-secondary-600 hover:shadow-xl hover:shadow-primary-500/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-300'}`}
                         onClick={() => setActiveTab('all')}
                     >
-                        {t('home.allFiles')}
+                        {t('studentHome.allFiles')}
                     </button>
                     {currentUser && (
                         <button
                             className={`rounded-full px-5 py-2 font-medium transition-all duration-300 ${activeTab === 'mine' ? 'bg-gradient-to-r from-primary-600 to-secondary-500 text-white shadow-lg shadow-primary-500/25 hover:from-primary-700 hover:to-secondary-600 hover:shadow-xl hover:shadow-primary-500/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-300'}`}
                             onClick={() => setActiveTab('mine')}
                         >
-                            {t('home.myFiles')}
+                            {t('studentHome.myFiles')}
                         </button>
                     )}
                 </div>
@@ -643,7 +647,7 @@ const StudentHome: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-gradient-to-b from-primary-700 to-secondary-500 rounded-full"></div>
                         <h2 className="text-lg font-semibold text-brown-900 dark:text-neutral-100">
-                            {activeTab === 'all' ? t('home.allFiles') : t('home.myFiles')}
+                            {activeTab === 'all' ? t('studentHome.allFiles') : t('studentHome.myFiles')}
                             <span className="text-sm text-brown-500 dark:text-neutral-400 mr-2">({filteredFiles.length})</span>
                         </h2>
                     </div>

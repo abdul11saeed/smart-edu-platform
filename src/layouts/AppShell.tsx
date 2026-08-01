@@ -116,7 +116,7 @@ function AppShell() {
                     </PageTransition>
                 </main>
 
-                {/* Footer — hidden on chat pages so the chat uses its own full-screen layout */}
+                {/* Footer — hidden on chat and discussions pages so they use their own full-screen layout */}
                 {!isChatPage(location.pathname) && <Footer />}
             </div>
 

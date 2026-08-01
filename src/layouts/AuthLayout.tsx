@@ -1,11 +1,8 @@
 import { Outlet } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { useAppStore } from '../stores/appStore';
-import Footer from '../components/layout/Footer';
 
 function AuthLayout() {
-    const { t } = useTranslation();
     const { isDarkMode } = useAppStore();
 
     return (
@@ -17,13 +14,6 @@ function AuthLayout() {
                 </div>
             </main>
 
-            {/* Footer */}
-            <footer className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                <p>© {new Date().getFullYear()} {t('auth.copyright')}</p>
-            </footer>
-
-            {/* Full Footer Component */}
-            <Footer />
         </div>
     );
 }
