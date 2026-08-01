@@ -150,7 +150,7 @@ class RecommendationService {
                     limit: userId ? (filters.limit || 20) : Math.min(filters.limit || 20, 30), // BOOST: Increase public limit
                     searchQuery: filters.searchQuery || '',
                     page: filters.page || 1,
-                    preferredLanguage: 'ar', // UI is Arabic; prioritize Arabic content when available
+                    preferredLanguage: filters.preferredLanguage || 'ar', // Use caller-specified language (defaults to 'ar' for backward compatibility)
                     requiredCount: filters.requiredCount || filters.limit || 20,
                     fallbackOnEmpty: true, // Always allow fallback to related categories
                 };
@@ -231,7 +231,7 @@ class RecommendationService {
         throw lastError || new Error('Failed to fetch recommendations after all retries');
     }
 
-    async getPublicRecommendations(limit: number = 10): Promise<RecommendationContent[]> {
+    async getPublicRecommendations(limit: number = 10, preferredLanguage?: string): Promise<RecommendationContent[]> {
         // Reuse getRecommendations (no userId => public, cached under 'public') to
         // avoid duplicating the fetch/cache logic.
         return this.getRecommendations({
@@ -241,6 +241,7 @@ class RecommendationService {
             page: 1,
             requiredCount: limit,
             fallbackOnEmpty: true,
+            preferredLanguage,
         });
     }
 

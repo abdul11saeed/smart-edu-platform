@@ -128,7 +128,7 @@ const RecommendationsPage = () => {
         setIsSearching(true);
         try {
             const results = await recommendationService.getRecommendations(
-                { category: activeCategory, limit: 20, requiredCount: 20, fallbackOnEmpty: true, searchQuery: searchQuery.trim() },
+                { category: activeCategory, limit: 20, requiredCount: 20, fallbackOnEmpty: true, searchQuery: searchQuery.trim(), preferredLanguage: i18n.language },
                 userId || undefined
             );
             setSearchResults(results);

@@ -67,6 +67,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                     page: pageNum,
                     requiredCount: requiredCount || limit || PAGE_SIZE,
                     fallbackOnEmpty: true,
+                    preferredLanguage: i18n.language,
                 },
                 isPublic ? undefined : userId
             );
@@ -102,7 +103,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
             if (append) setLoadingMore(false);
             else setLoading(false);
         }
-    }, [userId, category, limit, isPublic, PAGE_SIZE, excludeIds]);
+    }, [userId, category, limit, isPublic, PAGE_SIZE, excludeIds, i18n.language]);
 
     useEffect(() => {
         if (isPublic || userId) {

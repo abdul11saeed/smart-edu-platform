@@ -401,7 +401,7 @@ const StudentHome: React.FC = () => {
     }
 
     return (
-         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+         <div className="p-4 sm:p-6 space-y-2 sm:space-y-3" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             {/* Header Modern - Elegant Navy Blue Gradient */}
             {currentUser ? (
                 <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#291A0A] via-[#3B2314] to-[#7B4D2A] p-6 sm:p-8 shadow-2xl shadow-[#7B4D2A]/20 border border-white/10 animate-card-appear`}>
@@ -506,7 +506,7 @@ const StudentHome: React.FC = () => {
                 <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     <select
                         aria-label={t('studentHome.university')}
-                        className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
+                        className="rounded-xl border border-brown-200 dark:border-brown-600 p-2 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                         value={selectedUniversity}
                         onChange={(e) => { setSelectedUniversity(e.target.value); setSelectedCollege(''); setSelectedMajor(''); setSelectedCourse(''); setCourseSearch(''); }}
                     >
@@ -515,7 +515,7 @@ const StudentHome: React.FC = () => {
                     </select>
                     <select
                         aria-label={t('studentHome.college')}
-                        className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
+                        className="rounded-xl border border-brown-200 dark:border-brown-600 p-2 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                         value={selectedCollege}
                         onChange={(e) => { setSelectedCollege(e.target.value); setSelectedMajor(''); setSelectedCourse(''); setCourseSearch(''); }}
                         disabled={!selectedUniversity || !selectedUniversityData?.colleges?.length}
@@ -528,7 +528,7 @@ const StudentHome: React.FC = () => {
                     </select>
                     <select
                         aria-label={t('studentHome.major')}
-                        className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
+                        className="rounded-xl border border-brown-200 dark:border-brown-600 p-2 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                         value={selectedMajor}
                         onChange={(e) => { setSelectedMajor(e.target.value); setSelectedCourse(''); setCourseSearch(''); }}
                         disabled={!selectedCollege || !selectedCollegeData?.majors?.length}
@@ -546,7 +546,7 @@ const StudentHome: React.FC = () => {
                             <input
                                 type="text"
                                 aria-label={t('studentHome.course')}
-                                className="rounded-xl border border-brown-200 dark:border-brown-600 p-2.5 w-full bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
+                                className="rounded-xl border border-brown-200 dark:border-brown-600 p-2 w-full bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                                 placeholder={t('studentHome.searchPlaceholder')}
                                 value={courseSearch}
                                 onChange={(e) => {
@@ -586,12 +586,12 @@ const StudentHome: React.FC = () => {
                 </div>
 
                 {/* Search & Actions */}
-                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-                    <div className="relative flex-1 min-w-[200px]">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative min-w-[180px] max-w-sm flex-1">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-400" />
                         <input
                             aria-label={t('studentHome.search')}
-                            className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-brown-200 dark:border-brown-600 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
+                            className="w-full pr-10 pl-4 py-2 rounded-xl border border-brown-200 dark:border-brown-600 bg-white dark:bg-brown-800 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all hover:border-primary-300 dark:hover:border-primary-600"
                             placeholder={t('studentHome.searchPlaceholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -603,7 +603,7 @@ const StudentHome: React.FC = () => {
                         />
                     </div>
                     <button
-                        className="btn-modern-primary w-full sm:w-auto"
+                        className="btn-modern-primary shrink-0"
                         onClick={() => {
                             // Search is handled by the input's onChange - this button
                             // triggers a re-filter by focusing the search input
@@ -614,6 +614,8 @@ const StudentHome: React.FC = () => {
                         <Search className="h-4 w-4" />
                         {t('studentHome.search')}
                     </button>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
                     <button
                         className="btn-modern-ghost w-full sm:w-auto"
                         onClick={() => {

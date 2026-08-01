@@ -52,6 +52,13 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
         }
     });
 
+    // Reset carousel state when the UI language changes so the user starts
+    // from the first slide with a fresh set of language-appropriate items.
+    useEffect(() => {
+        setCurrentIndex(0);
+        reloadAttemptsRef.current = 0;
+    }, [i18n.language]);
+
     // Auto-reload when too few items are available so freshly aggregated
     // content is picked up. Retry with increasing delay until we have enough
     // cards or exhaust all attempts.
@@ -73,10 +80,10 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
             try {
                 let data: RecommendationContent[] = [];
                 if (isPublic) {
-                    data = await recommendationService.getPublicRecommendations(safeLimit);
+                    data = await recommendationService.getPublicRecommendations(safeLimit, i18n.language);
                 } else if (userId) {
                     data = await recommendationService.getRecommendations(
-                        { category: 'recommended', limit: safeLimit, requiredCount: safeLimit, fallbackOnEmpty: true },
+                        { category: 'recommended', limit: safeLimit, requiredCount: safeLimit, fallbackOnEmpty: true, preferredLanguage: i18n.language },
                         userId,
                     );
                 }
@@ -103,7 +110,7 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
         } else {
             setLoading(false);
         }
-    }, [userId, limit, isPublic, reloadKey]);
+    }, [userId, limit, isPublic, reloadKey, i18n.language]);
 
     // Keep currentIndex within bounds when items shrink (e.g., after hiding an item)
     // without this, the carousel could point to a blank slide.
@@ -284,8 +291,8 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
     }
 
     return (
-        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="bg-gradient-to-l from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 sm:p-6 shadow-sm border border-blue-100/50 dark:border-blue-800/30">
-            <div className="flex items-center justify-between mb-4">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="bg-gradient-to-l from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-3 sm:p-4 shadow-sm border border-blue-100/50 dark:border-blue-800/30">
+            <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary-500" />
                     {isPublic ? t('recommendations.carousel.publicContent') : t('recommendations.carousel.recommendedForYou')}
@@ -337,9 +344,10 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
                     onMouseLeave={onMouseLeave}
                 >
                     <div
+                        dir="ltr"
                         className="flex transition-transform duration-500 ease-out"
-                            style={{
-                                transform: `translateX(calc(-${currentIndex * 100}% + ${dragOffset}px))`,
+                        style={{
+                            transform: `translateX(calc(-${currentIndex * 100}% + ${dragOffset}px))`,
                             cursor: isDragging ? 'grabbing' : 'grab',
                         }}
                     >
@@ -422,7 +430,7 @@ const RecommendationsCarousel: React.FC<RecommendationsCarouselProps> = ({
 
                 {/* Dots Indicator */}
                 {items.length > 1 && (
-                    <div className="flex items-center justify-center gap-2.5 mt-5">
+                    <div className="flex items-center justify-center gap-2.5 mt-3">
                         {items.map((_, index) => (
                             <button
                                 key={index}
