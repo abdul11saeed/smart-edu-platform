@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - run: npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -18,3 +23,9 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_EDUAIPLATFORM_39FE9 }}
           channelId: live
           projectId: eduaiplatform-39fe9
+      - run: npm install -g firebase-tools
+      - run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_EDUAIPLATFORM_39FE9 }}" > service-account.json
+          firebase deploy --only functions --project eduaiplatform-39fe9
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: service-account.json
