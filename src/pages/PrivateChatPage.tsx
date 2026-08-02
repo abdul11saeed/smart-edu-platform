@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Send,
@@ -121,9 +121,16 @@ const PrivateChatPage = () => {
     });
 
      const messagesEndRef = useRef<HTMLDivElement>(null);
+     const inputRef = useRef<HTMLTextAreaElement>(null);
 
      // Track whether user has scrolled up (for scroll-to-bottom button)
      const [scrolledUp, setScrolledUp] = useState(false);
+
+     const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
+         if (!el) return;
+         el.style.height = 'auto';
+         el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+     }, []);
 
      const handleCopyMessage = async (text: string) => {
         try {
@@ -139,7 +146,7 @@ const PrivateChatPage = () => {
         const newDeletedForMe = new Set(deletedForMe);
         newDeletedForMe.add(messageId);
 
-        localStorage.setItem(`deletedForMe_${roomId}_${currentUser?.id}`, JSON.stringify([...newDeletedForMe]));
+        localStorage.setItem(`deletedForMe_${roomId}_${currentUser?.id}`, JSON.stringify(Array.from(newDeletedForMe)));
         setDeletedForMe(newDeletedForMe);
         setContextMenu(null);
 
@@ -751,15 +758,19 @@ const PrivateChatPage = () => {
                                 </div>
                             )}
 
-                            <input
-                                type="text"
+                            <textarea
+                                ref={inputRef}
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    autoGrow(e.target);
+                                }}
                                 onClick={() => setShowEmojiPicker(false)}
                                 placeholder={t('chat.privateMessagePlaceholder', { name: decodedUserName })}
-                                className="flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
-                                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSendMessage()}
+                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto p-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
+                                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && !isSending && handleSendMessage()}
                                 disabled={isSending}
+                                rows={1}
                             />
                             <button
                                 onClick={handleSendMessage}

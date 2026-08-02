@@ -2,9 +2,11 @@
 import { database } from '../firebase/config';
 import { ref, set, push, get, onValue, update } from 'firebase/database';
 
+export type NotificationType = 'private_message' | 'discussion_reply' | 'like' | 'message_edited' | 'message_deleted' | 'chat_request' | 'chat_request_accepted';
+
 export interface Notification {
     id: string;
-    type: 'private_message' | 'discussion_reply' | 'like' | 'message_edited' | 'message_deleted';
+    type: NotificationType;
     title: string;
     body: string;
     fromUserId: string;

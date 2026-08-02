@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MessageCircle, Send, ThumbsUp, User, Clock, Reply } from 'lucide-react';
@@ -47,6 +47,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
     // State for real-time likes: discussionId -> DiscussionLikes
     const [likesMap, setLikesMap] = useState<Record<string, DiscussionLikes>>({});
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
+    const autoGrowChatInput = useCallback((el: HTMLTextAreaElement | null) => {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }, []);
 
     // Map a public (guest-safe) discussion into the full Discussion shape.
     // Uses the shared helper from discussionService so the workspace forum
@@ -544,13 +551,17 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
 
                     {currentUser ? (
                         <div className="flex gap-2">
-                            <input
-                                type="text"
+                            <textarea
+                                ref={chatInputRef}
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    autoGrowChatInput(e.target);
+                                }}
                                 placeholder={t('discussions.messagePlaceholder')}
-                                className="flex-1 p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
-                                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto p-2.5 border border-brown-200 dark:border-brown-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-brown-800 hover:border-brown-300 transition-colors duration-200 text-brown-900 dark:text-neutral-100 placeholder-brown-400 dark:placeholder-neutral-500"
+                                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                                rows={1}
                             />
                             <button
                                 onClick={handleSendMessage}

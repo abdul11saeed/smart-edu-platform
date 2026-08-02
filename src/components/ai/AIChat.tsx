@@ -203,6 +203,9 @@ const timeAgo = (ts: number): string => {
   // Lock page scroll while the chat is open. We also remember the scroll position
   // so that closing the chat returns the user to exactly where they were on the
   // previous screen (the correct interface) instead of jumping to the footer.
+  // On mobile (narrow), we skip body overflow locking because it interferes with
+  // the browser's viewport resize behavior when the virtual keyboard opens/closes,
+  // which causes the chat to appear stuck or mispositioned.
   useEffect(() => {
     if (!isOpen) return;
     const docEl = document.documentElement;
@@ -234,19 +237,24 @@ const timeAgo = (ts: number): string => {
       paddingLeft: body.style.paddingLeft,
     };
 
-    body.style.overflow = 'hidden';
-    docEl.style.overflow = 'hidden';
-    // Prevent the page from shifting horizontally when the scrollbar disappears
-    if (scrollBarWidth > 0) {
-      if (isRTL) body.style.paddingLeft = `${scrollBarWidth}px`;
-      else body.style.paddingRight = `${scrollBarWidth}px`;
+    // Only lock body scroll on desktop to avoid mobile viewport resize issues
+    if (!isNarrow) {
+      body.style.overflow = 'hidden';
+      docEl.style.overflow = 'hidden';
+      // Prevent the page from shifting horizontally when the scrollbar disappears
+      if (scrollBarWidth > 0) {
+        if (isRTL) body.style.paddingLeft = `${scrollBarWidth}px`;
+        else body.style.paddingRight = `${scrollBarWidth}px`;
+      }
     }
 
     return () => {
-      body.style.overflow = previous.bodyOverflow;
-      docEl.style.overflow = previous.docOverflow;
-      body.style.paddingRight = previous.paddingRight;
-      body.style.paddingLeft = previous.paddingLeft;
+      if (!isNarrow) {
+        body.style.overflow = previous.bodyOverflow;
+        docEl.style.overflow = previous.docOverflow;
+        body.style.paddingRight = previous.paddingRight;
+        body.style.paddingLeft = previous.paddingLeft;
+      }
       // Return the page to where the user was before opening the chat
       try {
         window.scrollTo({ top: scrollY, behavior: 'instant' });
@@ -254,7 +262,7 @@ const timeAgo = (ts: number): string => {
         // ignore scroll errors on cleanup
       }
     };
-  }, [isOpen]);
+  }, [isOpen, isNarrow]);
 
   // Escape to close
   useEffect(() => {
@@ -342,59 +350,73 @@ const timeAgo = (ts: number): string => {
     });
   }, [i18n.language, t]);
 
-  // Keep the chat sized to the visible viewport so the virtual keyboard never hides the input
-  useEffect(() => {
-    if (!isOpen) return;
-    let animationFrameId: number | null = null;
-    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+   // Keep the chat sized to the visible viewport so the virtual keyboard never hides the input
+   useEffect(() => {
+     if (!isOpen) return;
+     let rafId: number | null = null;
+     let lastHeight = viewportH;
+     let lastNarrow = isNarrow;
+     const vv = typeof window !== 'undefined' ? window.visualViewport : null;
 
-    const update = () => {
-      // Debounce resize events to prevent excessive re-renders
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
+     const update = () => {
+       try {
+         const newHeight = vv ? vv.height : (window.innerHeight || 800);
+         const newIsNarrow = (window.innerWidth || 1280) < 768;
 
-      animationFrameId = requestAnimationFrame(() => {
-        try {
-          const newHeight = vv ? vv.height : (window.innerHeight || 800);
-          const newIsNarrow = (window.innerWidth || 1280) < 768;
+         // Only update state if values actually changed to prevent unnecessary re-renders
+         const heightChanged = newHeight !== lastHeight;
+         const narrowChanged = newIsNarrow !== lastNarrow;
 
-          // Only update if values actually changed to prevent unnecessary re-renders
-          if (newHeight !== viewportH) {
-            setViewportH(newHeight);
-          }
-          if (newIsNarrow !== isNarrow) {
-            setIsNarrow(newIsNarrow);
-          }
-        } catch (e) {
-          // Fallback values if window properties are unavailable
-          setViewportH(800);
-          setIsNarrow(false);
-        }
-        animationFrameId = null;
-      });
-    };
+         if (heightChanged) {
+           lastHeight = newHeight;
+           setViewportH(newHeight);
+         }
+         if (narrowChanged) {
+           lastNarrow = newIsNarrow;
+           setIsNarrow(newIsNarrow);
+         }
+       } catch (e) {
+         // Fallback values if window properties are unavailable
+         lastHeight = 800;
+         lastNarrow = false;
+         setViewportH(800);
+         setIsNarrow(false);
+       }
+       rafId = null;
+     };
 
-    // Initial update
-    update();
+     // Schedule update via RAF, but always schedule a new one on each event
+     // This ensures no resize event is dropped even during rapid keyboard toggle
+     const scheduleUpdate = () => {
+       if (rafId === null) {
+         rafId = requestAnimationFrame(update);
+       }
+     };
 
-    if (vv) {
-      vv.addEventListener('resize', update);
-    }
-    window.addEventListener('resize', update);
-    window.addEventListener('focus', update);
+     // Initial update
+     update();
 
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      if (vv) {
-        vv.removeEventListener('resize', update);
-      }
-      window.removeEventListener('resize', update);
-      window.removeEventListener('focus', update);
-    };
-  }, [isOpen, viewportH, isNarrow]);
+     if (vv) {
+       vv.addEventListener('resize', scheduleUpdate);
+     }
+     window.addEventListener('resize', scheduleUpdate);
+     window.addEventListener('focus', scheduleUpdate);
+
+     // Also listen for orientation change which affects viewport on mobile
+     window.addEventListener('orientationchange', scheduleUpdate);
+
+     return () => {
+       if (rafId !== null) {
+         cancelAnimationFrame(rafId);
+       }
+       if (vv) {
+         vv.removeEventListener('resize', scheduleUpdate);
+       }
+       window.removeEventListener('resize', scheduleUpdate);
+       window.removeEventListener('focus', scheduleUpdate);
+       window.removeEventListener('orientationchange', scheduleUpdate);
+     };
+   }, [isOpen]);
 
   const persist = useCallback((msgs: Message[], convId: string) => {
     const convs = loadConversations(storageKey);
@@ -849,8 +871,8 @@ const timeAgo = (ts: number): string => {
     <div
       ref={chatRef}
       onClick={(e) => e.stopPropagation()}
-      className="fixed top-0 left-0 right-0 md:top-auto md:bottom-4 md:mx-auto w-full md:w-[min(920px,92vw)] h-[100svh] md:h-[78vh] md:min-h-[520px] md:max-h-[calc(100dvh-2rem)] bg-white dark:bg-gray-900 rounded-none md:rounded-2xl shadow-2xl border-0 md:border md:border-gray-200 dark:md:border-gray-700 flex flex-col z-[100] overflow-hidden relative transform-gpu"
-      style={isNarrow ? { height: `min(${viewportH}px, 100svh)` } : undefined}
+      className="fixed top-0 left-0 right-0 md:top-auto md:bottom-4 md:mx-auto w-full md:w-[min(920px,92vw)] md:h-[78vh] md:min-h-[520px] md:max-h-[calc(100dvh-2rem)] bg-white dark:bg-gray-900 rounded-none md:rounded-2xl shadow-2xl border-0 md:border md:border-gray-200 dark:md:border-gray-700 flex flex-col z-[100] overflow-hidden relative mobile-chat-viewport"
+      style={isNarrow ? { height: `${viewportH}px` } : undefined}
     >
       {/* ===== Header ===== */}
       <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 text-white px-4 pt-[env(safe-area-inset-top)] py-3 flex items-center justify-between flex-shrink-0 shadow-md">

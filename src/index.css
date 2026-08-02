@@ -1350,11 +1350,37 @@
    }
 
    /* ============================================
-      MOBILE SELECT OVERFLOW FIX
-      Constrain dropdown selects on small screens
-      to prevent them from exceeding viewport bounds
+      VIEWPORT HEIGHT FALLBACKS FOR MOBILE
+      Provides safe fallback for browsers that
+      don't support dvh/svh units or visualViewport API
       ============================================ */
-    @media (max-width: 640px) {
+   @supports not (height: 100dvh) {
+     .mobile-chat-viewport {
+       height: 100vh !important;
+     }
+   }
+
+   /* Ensure the root element never causes horizontal overflow */
+   html {
+     overflow-x: hidden;
+     max-width: 100vw;
+   }
+
+   /* Mobile chat viewport: when JS inline style is not yet applied,
+      ensure the chat fills the visible viewport safely */
+   @media (max-width: 767px) {
+     .mobile-chat-viewport {
+       height: 100dvh;
+       height: calc(var(--mobile-chat-height, 100vh));
+     }
+   }
+
+   /* ============================================
+      MOBILE SELECT OVERFLOW FIX
+       Constrain dropdown selects on small screens
+       to prevent them from exceeding viewport bounds
+       ============================================ */
+     @media (max-width: 640px) {
       /* Constrain all select elements in file upload forms */
       .file-upload-form select,
       .file-upload-modal select,

@@ -2,6 +2,7 @@ import { MessageCircle, Send, Smile, Reply, Copy, X, Edit3, Trash2, Check } from
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../stores/appStore';
 import { useChat } from '../../hooks/useChat';
+import { useCallback, useRef } from 'react';
 
 interface ChatTabProps {
     courseId: string;
@@ -11,6 +12,13 @@ interface ChatTabProps {
 const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
     const { t, i18n } = useTranslation();
     const { currentUser } = useAppStore();
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }, []);
 
     // Use the shared chat hook (single source of truth for chat logic)
     const {
@@ -18,6 +26,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
         newMessage,
         setNewMessage,
         isLoading,
+        isSending,
         replyTo,
         showEmojiPicker,
         setShowEmojiPicker,
@@ -359,15 +368,19 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         </div>
                     )}
 
-                    <input
-                        type="text"
+                    <textarea
+                        ref={inputRef}
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => {
+                            setNewMessage(e.target.value);
+                            autoGrow(e.target);
+                        }}
                         onClick={() => setShowEmojiPicker(false)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                         placeholder={t('chat.typeMessage')}
-                        className="flex-1 min-w-0 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 text-sm"
-                        disabled={!currentUser}
+                        className="flex-1 min-w-0 w-full resize-none overflow-y-auto px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 text-sm"
+                        disabled={!currentUser || isSending}
+                        rows={1}
                     />
                     <button
                         onClick={handleSendMessage}

@@ -21,7 +21,7 @@
   "auth": {
     "login": "تسجيل الدخول",
     "loginError": "فشل تسجيل الدخول",
-    "loginWithGoogle": "Log in with Google",
+    "loginWithGoogle": "تسجيل الدخول بحساب جوجل",
     "noAccount": "ليس لديك حساب؟ سجل الآن",
     "alreadyHaveAccount": "لديك حساب بالفعل؟ تسجيل الدخول",
     "forgotPassword": "نسيت كلمة المرور؟",
@@ -55,7 +55,7 @@
     "privateChatLabel": "محادثة خاصة",
     "noMessageYet": "لا توجد رسائل بعد",
     "beFirst": "كن أول من يرسل رسالة!",
-    "coursePrivateChat": "This chat is private to course {{courseName}}",
+    "coursePrivateChat": "هذه المحادثة خاصة بمادة {{courseName}}",
     "replyTo": "رد على:",
     "cancelReply": "إلغاء الرد",
     "sendMessage": "إرسال الرسالة",
@@ -92,9 +92,39 @@
     "errorSendingMessage": "حدث خطأ أثناء إرسال الرسالة",
     "privateChatNoMessages": "لا توجد رسائل خاصة بعد",
     "privateChatStartNow": "ابدأ المحادثة الآن!",
-    "privateMessagePlaceholder": "Type a private message to {{name}}...",
+    "privateMessagePlaceholder": "اكتب رسالة خاصة إلى {{name}}...",
     "deleteMessageTitle": "تم حذف رسالة",
-    "deleteMessageBody": "تم حذف رسالة من المحادثة"
+    "deleteMessageBody": "تم حذف رسالة من المحادثة",
+    "messageTooLong": "الرسالة تتجاوز الحد الأقصى البالغ {{max}} حرف",
+    "charactersRemaining": "باقي {{count}} حرف",
+    "charactersExceeded": "تتجاوز الحد الأقصى بـ {{count}} حرف",
+    "typingIndicator": "{{name}} يكتب...",
+    "typingMultiple": "عدة أشخاص يكتبون...",
+    "chatRequest": "طلب دردشة جديد",
+    "chatRequestBody": "{{name}} يريد بدء محادثة خاصة معك",
+    "chatRequestSent": "تم إرسال طلب الدردشة",
+    "chatRequestAccepted": "تم قبول طلب الدردشة",
+    "chatRequestAcceptedBody": "{{name}} قبل طلبك للدردشة",
+    "chatRequestRejected": "تم رفض طلب الدردشة",
+    "errorChatRequest": "فشل إرسال طلب الدردشة",
+    "errorAcceptingRequest": "فشل قبول طلب الدردشة",
+    "errorRejectingRequest": "فشل رفض طلب الدردشة",
+    "chatRequests": "طلبات الدردشة",
+    "pendingRequests": "الطلبات المعلقة",
+    "noChatRequests": "لا توجد طلبات دردشة",
+    "accept": "قبول",
+    "reject": "رفض",
+    "blockUser": "حظر المستخدم",
+    "unblockUser": "إلغاء حظر المستخدم",
+    "userBlocked": "تم حظر المستخدم",
+    "userUnblocked": "تم إلغاء حظر المستخدم",
+    "errorBlockingUser": "فشل حظر المستخدم",
+    "errorUnblockingUser": "فشل إلغاء حظر المستخدم",
+    "blockedMessage": "لقد قمت بحظر هذا المستخدم",
+    "blockedYou": "هذا المستخدم قد حظرك",
+    "conversationRequests": "طلبات المحادثات",
+    "messageDeletedForYou": "تم حذف الرسالة لك",
+    "messageSoftDeleted": "تم حذف هذه الرسالة"
   },
   "discussions": {
     "newDiscussion": "مناقشة جديدة",
@@ -907,7 +937,7 @@
     "homeDefaultTitle": "Yemen Universities Academic Programs Platform"
   },
   "privateChat": {
-    "userNotFound": "User"
+    "userNotFound": "المستخدم"
   },
   "activity": {
     "new": "جديد"

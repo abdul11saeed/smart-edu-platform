@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -113,9 +113,16 @@ const ChatPage = () => {
     const [loadingUsers, setLoadingUsers] = useState(false);
 
      const messagesEndRef = useRef<HTMLDivElement>(null);
- 
+     const inputRef = useRef<HTMLTextAreaElement>(null);
+  
      // Track whether user has scrolled up (for scroll-to-bottom button)
      const [scrolledUp, setScrolledUp] = useState(false);
+
+     const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
+         if (!el) return;
+         el.style.height = 'auto';
+         el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+     }, []);
  
      // Scroll page to top when the chat opens
     useEffect(() => {
@@ -773,15 +780,19 @@ const ChatPage = () => {
                                 </div>
                             )}
 
-                            <input
-                                type="text"
+                            <textarea
+                                ref={inputRef}
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    autoGrow(e.target);
+                                }}
                                 onClick={() => setShowEmojiPicker(false)}
                                 placeholder={courseIdFromQuery ? t('chat.typeMessage') + ' ' + t('chat.courseChat', { courseName }) : t('chat.typeMessage')}
-                                className="flex-1 p-2 sm:p-3 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
-                                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSendMessage()}
+                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto p-2 sm:p-3 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
+                                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && !isSending && handleSendMessage()}
                                 disabled={isSending}
+                                rows={1}
                             />
                             <button
                                 onClick={handleSendMessage}

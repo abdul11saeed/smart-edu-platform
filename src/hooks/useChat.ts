@@ -9,6 +9,7 @@ import {
     addReaction,
     removeReaction,
     markMessageAsRead,
+    markAllMessagesAsRead,
     ChatRoomMessage
 } from '../services/chatService';
 import { createNotification } from '../services/notificationService';
@@ -127,11 +128,13 @@ export const useChat = (options: UseChatOptions) => {
 
                 // Mark incoming messages as read by the current user (read receipts)
                 if (currentUser) {
-                    updatedMessages.forEach((msg) => {
-                        if (msg.senderId !== currentUser.id && (!msg.readBy || !msg.readBy[currentUser.id])) {
-                            markMessageAsRead(roomId, msg.id, currentUser.id).catch(() => { /* ignore */ });
-                        }
-                    });
+                    const unreadIds = updatedMessages
+                        .filter(msg => msg.senderId !== currentUser.id && (!msg.readBy || !msg.readBy[currentUser.id]))
+                        .map(msg => msg.id);
+
+                    if (unreadIds.length > 0) {
+                        markAllMessagesAsRead(roomId, currentUser.id, unreadIds).catch(() => { /* ignore */ });
+                    }
                 }
 
                 if (loadingOlderRef.current) {
