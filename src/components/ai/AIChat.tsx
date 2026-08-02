@@ -143,9 +143,9 @@ const timeAgo = (ts: number): string => {
 };
 
  const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser = null, initialSelectedFile }: AIChatProps) => {
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar';
-    const [messages, setMessages] = useState<Message[]>([makeGreeting(t)]);
+   const { t, i18n } = useTranslation();
+   const isRTL = i18n.language === 'ar';
+   const [messages, setMessages] = useState<Message[]>([makeGreeting(t)]);
    const [inputMessage, setInputMessage] = useState('');
    const [isLoading, setIsLoading] = useState(false);
    const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -154,9 +154,18 @@ const timeAgo = (ts: number): string => {
    const [activeId, setActiveId] = useState<string | null>(null);
    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
    const [copiedId, setCopiedId] = useState<string | null>(null);
-   const [viewportH, setViewportH] = useState<number>(typeof window !== 'undefined' ? window.innerHeight : 800);
-   const [isNarrow, setIsNarrow] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+   // Use visualViewport height when available for accurate mobile measurement (accounts for keyboard, address bar)
+   const [viewportH, setViewportH] = useState<number>(() => {
+     if (typeof window === 'undefined') return 800;
+     return window.visualViewport?.height ?? window.innerHeight;
+   });
+   const [isNarrow, setIsNarrow] = useState<boolean>(() => {
+     if (typeof window === 'undefined') return false;
+     return (window.visualViewport?.width ?? window.innerWidth) < 768;
+   });
    const initialMountRef = useRef(true);
+   // Track visualViewport offsetTop to handle scroll events on mobile (keyboard, auto-scroll)
+   const viewportOffsetTopRef = useRef<number>(0);
 
    const { aiChatOpenMode, setAiChatOpenMode } = useAppStore();
 
@@ -354,15 +363,15 @@ const timeAgo = (ts: number): string => {
   // Auto-scroll to latest message
    // Use instant scroll on initial mount for snappy feel, smooth for subsequent messages
    useEffect(() => {
-     if (messagesContainerRef.current) {
-       const behavior = initialMountRef.current ? 'instant' : 'smooth';
-       initialMountRef.current = false;
-       messagesContainerRef.current.scrollTo({
-         top: messagesContainerRef.current.scrollHeight,
-         behavior
-       });
-     }
-   }, [messages, isLoading]);
+      if (messagesContainerRef.current) {
+        const behavior = initialMountRef.current || isNarrow ? 'instant' : 'smooth';
+        initialMountRef.current = false;
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior
+        });
+      }
+    }, [messages, isLoading, isNarrow]);
 
   // Update welcome message when language changes so it always matches the selected language
   useEffect(() => {
@@ -375,6 +384,7 @@ const timeAgo = (ts: number): string => {
   }, [i18n.language, t]);
 
    // Keep the chat sized to the visible viewport so the virtual keyboard never hides the input
+   // Also handle visualViewport scroll events on mobile to prevent fixed positioning shifts
    useEffect(() => {
      if (!isOpen) return;
      let rafId: number | null = null;
@@ -388,8 +398,15 @@ const timeAgo = (ts: number): string => {
          // visualViewport accounts for on-screen keyboards, address bar, and other browser chrome
          const newWidth = vv ? vv.width : (window.innerWidth || 1280);
          const newHeight = vv ? vv.height : (window.innerHeight || 800);
+         const newOffsetTop = vv ? vv.offsetTop : 0;
          // Use a slightly wider threshold to prevent flickering around the breakpoint
          const newIsNarrow = newWidth < 768;
+
+         // Track visualViewport offsetTop to detect scroll events that can shift fixed elements
+         // On iOS Safari / Android Chrome, when keyboard opens/closes or page auto-scrolls,
+         // visualViewport fires scroll events that change offsetTop without changing height.
+         // We store this to adjust positioning if needed.
+         viewportOffsetTopRef.current = newOffsetTop;
 
          // Only update state if values actually changed to prevent unnecessary re-renders
          const heightChanged = newHeight !== lastHeight;
@@ -409,12 +426,13 @@ const timeAgo = (ts: number): string => {
          lastNarrow = false;
          setViewportH(800);
          setIsNarrow(false);
+         viewportOffsetTopRef.current = 0;
        }
        rafId = null;
      };
 
      // Schedule update via RAF, but always schedule a new one on each event
-     // This ensures no resize event is dropped even during rapid keyboard toggle
+     // This ensures no resize/scroll event is dropped even during rapid keyboard toggle
      const scheduleUpdate = () => {
        if (rafId === null) {
          rafId = requestAnimationFrame(update);
@@ -427,6 +445,11 @@ const timeAgo = (ts: number): string => {
      // Listen to visualViewport resize for accurate mobile measurement
      if (vv) {
        vv.addEventListener('resize', scheduleUpdate);
+       // CRITICAL: Also listen to scroll events. On mobile, when keyboard opens/closes
+       // or page auto-scrolls to keep focused input visible, visualViewport fires scroll
+       // events that change offsetTop. Without handling this, position:fixed elements
+       // can shift unexpectedly on iOS Safari and Android Chrome.
+       vv.addEventListener('scroll', scheduleUpdate, { passive: true });
      }
      window.addEventListener('resize', scheduleUpdate);
 
@@ -440,6 +463,7 @@ const timeAgo = (ts: number): string => {
        }
        if (vv) {
          vv.removeEventListener('resize', scheduleUpdate);
+         vv.removeEventListener('scroll', scheduleUpdate);
        }
        window.removeEventListener('resize', scheduleUpdate);
        window.removeEventListener('orientationchange', scheduleUpdate);
@@ -899,8 +923,19 @@ const timeAgo = (ts: number): string => {
      <div
        ref={chatRef}
        onClick={(e) => e.stopPropagation()}
-       className="fixed top-0 left-0 right-0 md:top-auto md:bottom-4 md:mx-auto w-full md:w-[min(920px,92vw)] md:h-[78vh] md:min-h-[520px] md:max-h-[calc(100dvh-2rem)] bg-white dark:bg-gray-900 rounded-none md:rounded-2xl shadow-2xl border-0 md:border md:border-gray-200 dark:md:border-gray-700 flex flex-col z-[200] overflow-hidden relative mobile-chat-viewport"
-       style={isNarrow ? { height: `${viewportH}px`, willChange: 'transform, height', transform: 'translateZ(0)' } : undefined}
+       // On mobile (isNarrow): use inset-0 to anchor to all four edges of the visual viewport.
+       // This prevents the chat from shifting when visualViewport.scroll fires (keyboard, auto-scroll).
+       // On desktop: centered floating panel at bottom.
+       className={[
+         'fixed z-[200] flex flex-col overflow-hidden relative mobile-chat-viewport',
+         // Mobile: fill entire visual viewport
+         isNarrow ? 'inset-0 rounded-none' : '',
+         // Desktop: centered floating panel
+         !isNarrow && 'top-auto bottom-4 mx-auto w-[min(920px,92vw)] h-[78vh] min-h-[520px] max-h-[calc(100dvh-2rem)] rounded-2xl border border-gray-200 dark:border-gray-700',
+       ].filter(Boolean).join(' ')}
+       // On mobile, use inset-0 via CSS (no inline height needed).
+       // On desktop, no inline style.
+       style={undefined}
      >
       {/* ===== Header ===== */}
       <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 text-white px-4 pt-[env(safe-area-inset-top)] py-3 flex items-center justify-between flex-shrink-0 shadow-md">
@@ -962,7 +997,7 @@ const timeAgo = (ts: number): string => {
       </div>
 
       {/* ===== Body ===== */}
-       <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-900/60">
+       <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 overflow-y-auto overflow-x-hidden scroll-auto bg-gray-50 dark:bg-gray-900/60 overscroll-contain">
         {/* Quick Actions - sticky */}
         <div className="sticky top-0 z-10 bg-white/85 dark:bg-gray-800/85 backdrop-blur border-b border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center gap-2 mb-2">

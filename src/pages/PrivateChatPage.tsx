@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Send,
@@ -114,7 +114,8 @@ const PrivateChatPage = () => {
         isTargetBlocked,
         isBlockedByTarget,
         handleBlockUser,
-        handleUnblockUser
+        handleUnblockUser,
+        autoGrow
     } = useChat({
         roomId,
         courseName: decodedUserName,
@@ -136,12 +137,6 @@ const PrivateChatPage = () => {
 
      // Track whether user has scrolled up (for scroll-to-bottom button)
      const [scrolledUp, setScrolledUp] = useState(false);
-
-     const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
-         if (!el) return;
-         el.style.height = 'auto';
-         el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-     }, []);
 
      const handleCopyMessage = async (text: string) => {
         try {
@@ -399,7 +394,7 @@ const PrivateChatPage = () => {
                         )}
                         <div
                             data-bubble
-                            className={`max-w-[85%] sm:max-w-[75%] rounded-2xl relative ${isOwnMessage
+                            className={`min-w-0 max-w-[85%] sm:max-w-[75%] rounded-2xl relative ${isOwnMessage
                                 ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-md'
                                 : 'bg-gradient-to-br from-white to-green-50/30 dark:from-green-800/60 dark:to-green-900/60 border border-green-100/50 dark:border-green-700/30 text-gray-800 dark:text-gray-100 rounded-bl-md shadow-sm'
                                 }`}
@@ -455,7 +450,7 @@ const PrivateChatPage = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-sm leading-relaxed px-3 py-1">
+                                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap px-3 py-1">
                                     {message.isDeleted ? (
                                         <span className="italic opacity-60">{t('chat.messageDeleted')}</span>
                                     ) : (
@@ -862,7 +857,7 @@ const PrivateChatPage = () => {
                                 }}
                                 onClick={() => setShowEmojiPicker(false)}
                                 placeholder={t('chat.privateMessagePlaceholder', { name: decodedUserName })}
-                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto p-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
+                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto max-h-[200px] p-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && !isSending && handleSendMessage()}
                                 disabled={isSending}
                                 rows={1}

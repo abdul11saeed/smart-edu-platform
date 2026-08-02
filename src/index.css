@@ -1368,16 +1368,23 @@
    }
 
    /* Mobile chat viewport: when JS inline style is not yet applied,
-      ensure the chat fills the visible viewport safely */
+      ensure the chat fills the visible viewport safely.
+      Uses inset-0 (all four edges) to anchor to visual viewport and prevent
+      shifting when keyboard opens/closes or page auto-scrolls. */
    @media (max-width: 767px) {
      .mobile-chat-viewport {
+       /* Use inset-0 to anchor to all edges of visual viewport */
+       top: 0;
+       bottom: 0;
+       left: 0;
+       right: 0;
+       /* Height fallbacks for browsers without inset support */
        height: 100dvh;
        height: 100vh;
        height: -webkit-fill-available;
-       /* Optimize rendering performance on mobile */
-       will-change: transform, height;
-       transform: translateZ(0);
-     }
+       /* Prevent scroll chaining to parent elements */
+       overscroll-behavior: contain;
+      }
    }
 
    /* ============================================

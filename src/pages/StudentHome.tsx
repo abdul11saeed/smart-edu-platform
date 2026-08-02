@@ -75,22 +75,31 @@ const StudentHome: React.FC = () => {
     useEffect(() => {
         if (authLoading) return;
 
+        // Build filters object for Firestore-indexed queries
+        const filters = {
+            search: search.trim() || undefined,
+            universityId: selectedUniversity || undefined,
+            collegeId: selectedCollege || undefined,
+            majorId: selectedMajor || undefined,
+            courseId: selectedCourse || undefined,
+        };
+
         if (currentUser) {
             // Logged-in user: read from courseFiles (full access)
-            const unsubscribe = listenToCourseFiles({}, (loaded) => {
+            const unsubscribe = listenToCourseFiles(filters, (loaded) => {
                 setFiles(loaded);
                 setLoadingFiles(false);
             });
             return () => unsubscribe();
         } else {
             // Guest: read from publicCourseFiles (metadata only)
-            const unsubscribe = listenToPublicCourseFiles({}, (loaded) => {
+            const unsubscribe = listenToPublicCourseFiles(filters, (loaded) => {
                 setFiles(loaded);
                 setLoadingFiles(false);
             });
             return () => unsubscribe();
         }
-    }, [currentUser, authLoading]);
+    }, [currentUser, authLoading, search, selectedUniversity, selectedCollege, selectedMajor, selectedCourse]);
 
      // SEO meta tags for public pages - language aware
      useEffect(() => {
@@ -242,27 +251,15 @@ const StudentHome: React.FC = () => {
         return t('studentHome.notSpecified');
     }, [universities]);
 
-    // Filtered files
+    // Filtered files - hierarchy filters and search are now handled at the query level (Firestore indexes + listener callback)
+    // This only filters by tab (mine vs all) for logged-in users
     const filteredFiles = useMemo(() => {
         return files.filter((file) => {
             const matchesTab = activeTab === 'mine' ? file.uploadedBy === currentUser?.id : true;
-            const matchesUniversity = !selectedUniversity || file.universityId === selectedUniversity;
-            const matchesCollege = !selectedCollege || file.collegeId === selectedCollege;
-            const matchesMajor = !selectedMajor || file.majorId === selectedMajor;
-            const matchesCourse = !selectedCourse || file.courseId === selectedCourse;
             const matchesDeleted = !file.isDeleted;
-            const haystack = [
-                file.name, file.originalFileName, file.displayName, file.courseName,
-                file.universityName, file.collegeName, file.majorName,
-                file.universityId, file.collegeId, file.majorId, file.courseId,
-                file.description, file.owner?.name, file.uploadedByName,
-                file.professorName, file.tags?.join(' ')
-            ].filter(Boolean).join(' ').toLowerCase();
-            const normalizedSearch = normalizeArabic(search.toLowerCase());
-            const matchesSearch = !search || haystack.includes(normalizedSearch);
-            return matchesTab && matchesUniversity && matchesCollege && matchesMajor && matchesCourse && matchesDeleted && matchesSearch;
+            return matchesTab && matchesDeleted;
         });
-    }, [files, currentUser, activeTab, selectedUniversity, selectedCollege, selectedMajor, selectedCourse, search]);
+    }, [files, currentUser, activeTab]);
 
     // Handle download
     const [deleting, setDeleting] = useState(false);

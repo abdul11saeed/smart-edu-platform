@@ -2,7 +2,7 @@ import { MessageCircle, Send, Smile, Reply, Copy, X, Edit3, Trash2, Check, Shiel
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../stores/appStore';
 import { useChat } from '../../hooks/useChat';
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface ChatTabProps {
     courseId: string;
@@ -13,12 +13,6 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
     const { t, i18n } = useTranslation();
     const { currentUser } = useAppStore();
     const inputRef = useRef<HTMLTextAreaElement>(null);
-
-    const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
-        if (!el) return;
-        el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-    }, []);
 
     // Use the shared chat hook (single source of truth for chat logic)
     const {
@@ -64,7 +58,8 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
         swipedMessageId,
         setSwipedMessageId,
         rightSwipedMessageId,
-        setRightSwipedMessageId
+        setRightSwipedMessageId,
+        autoGrow
     } = useChat({ roomId: courseId, courseName });
 
     const handleCopyMessage = async (text: string) => {
@@ -253,7 +248,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                 )}
                                 <div
                                     data-bubble
-                                    className={`max-w-[85%] sm:max-w-[70%] rounded-2xl relative ${isCurrentUser
+                                    className={`min-w-0 max-w-[85%] sm:max-w-[70%] rounded-2xl relative ${isCurrentUser
                                         ? 'bg-gradient-to-br from-green-500 to-green-600 text-white rounded-br-md'
                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-md'
                                         }`}
@@ -306,7 +301,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-sm px-2.5 sm:px-3 py-1 sm:py-1.5">
+                                        <p className="text-sm break-words whitespace-pre-wrap px-2.5 sm:px-3 py-1 sm:py-1.5">
                                             {msg.isDeleted ? (
                                                 <span className="italic opacity-60">{t('chat.messageDeleted')}</span>
                                             ) : (
@@ -492,7 +487,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         onClick={() => setShowEmojiPicker(false)}
                         onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                         placeholder={t('chat.typeMessage')}
-                        className="flex-1 min-w-0 w-full resize-none overflow-y-auto px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 text-sm"
+                        className="flex-1 min-w-0 w-full resize-none overflow-y-auto max-h-[200px] px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 text-sm"
                         disabled={!currentUser || isSending}
                         rows={1}
                     />

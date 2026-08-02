@@ -129,6 +129,13 @@ export const useChat = (options: UseChatOptions) => {
         }
     }, []);
 
+    // Auto-grow textarea: grows to fit content, capped by CSS max-h class on the element
+    const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }, []);
+
     // Track whether the user scrolled up to read older messages
     const handleScroll = useCallback(() => {
         if (containerRef.current) {
@@ -571,6 +578,7 @@ export const useChat = (options: UseChatOptions) => {
         cancelReply,
 
         // Utils
+        autoGrow,
         formatTime,
         getReactionSummary,
         MESSAGE_EMOJIS,

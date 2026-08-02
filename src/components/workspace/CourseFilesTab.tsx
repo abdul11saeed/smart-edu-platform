@@ -58,7 +58,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
     const { currentCourseFiles, setCurrentCourseFiles, currentUser } = useAppStore();
     const navigate = useNavigate();
 
-    const [isDownloading, setIsDownloading] = useState<string | null>(null);
+    const [isDownloading, setIsDownloading] = useState<{ filename: string; percent: number; indeterminate: boolean } | null>(null);
     const [activeModal, setActiveModal] = useState<'summarizer' | 'explainer' | 'questions' | 'translator' | null>(null);
     const [selectedFile, setSelectedFile] = useState<string>('');
     const [selectedFileContent, setSelectedFileContent] = useState<string>('');
@@ -230,9 +230,10 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
         if (file.id) {
             downloadCourseFile(file.id).catch(() => { });
         }
-        setIsDownloading(filename);
+        setIsDownloading({ filename, percent: 0, indeterminate: true });
         await downloadFile(file.downloadURL || file.url || '', {
             filename,
+            onProgress: (percent, _loaded, total) => setIsDownloading({ filename, percent, indeterminate: !total }),
             onComplete: () => setIsDownloading(null),
             onError: () => setIsDownloading(null),
         });
@@ -438,14 +439,28 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                                             <Sparkles className="h-3.5 w-3.5" />
                                         </button>
 
-                                        <button
-                                            onClick={() => handleDownload(file, file.name)}
-                                            className="btn-modern-primary p-1.5"
-                                            title={t('courseFiles.download')}
-                                            disabled={isDownloading === file.name}
-                                        >
-                                            <Download className={`h-3.5 w-3.5 ${isDownloading === file.name ? 'animate-spin-slow' : ''}`} />
-                                        </button>
+                                        {isDownloading && isDownloading.filename === file.name ? (
+                                            <div className="flex items-center gap-2 w-32" title={t('filePreview.downloading')}>
+                                                <div className="flex-1 h-1.5 rounded-full bg-brown-200 dark:bg-brown-600 overflow-hidden">
+                                                    <div
+                                                        className={`h-full bg-primary-600 dark:bg-primary-400 transition-all duration-150 ${isDownloading.indeterminate ? 'w-2/5 animate-pulse' : ''}`}
+                                                        style={isDownloading.indeterminate ? undefined : { width: `${isDownloading.percent}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-primary-600 dark:text-primary-400 whitespace-nowrap font-medium">
+                                                    {isDownloading.indeterminate ? '…' : `${isDownloading.percent}%`}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleDownload(file, file.name)}
+                                                className="btn-modern-primary p-1.5"
+                                                title={t('courseFiles.download')}
+                                                disabled={!!isDownloading}
+                                            >
+                                                <Download className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             );

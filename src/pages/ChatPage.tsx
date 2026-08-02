@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -107,7 +107,8 @@ const ChatPage = () => {
         containerRef,
         handleScroll,
         loadOlderMessages,
-        groupedMessages
+        groupedMessages,
+        autoGrow
     } = useChat({ roomId: courseId, courseName, targetUserId });
 
     // User list panel state
@@ -122,12 +123,6 @@ const ChatPage = () => {
      // Track whether user has scrolled up (for scroll-to-bottom button)
      const [scrolledUp, setScrolledUp] = useState(false);
 
-     const autoGrow = useCallback((el: HTMLTextAreaElement | null) => {
-         if (!el) return;
-         el.style.height = 'auto';
-         el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-     }, []);
- 
      // Scroll page to top when the chat opens
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -399,7 +394,7 @@ const ChatPage = () => {
                         )}
                         <div
                             data-bubble
-                            className={`max-w-[90%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl relative ${isOwnMessage
+                            className={`min-w-0 max-w-[90%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl relative ${isOwnMessage
                                 ? 'bg-gradient-to-br from-primary-700 to-primary-800 text-white rounded-br-md shadow-lg shadow-primary-500/20'
                                 : 'bg-gradient-to-br from-white to-primary-50/30 dark:from-brown-800/60 dark:to-brown-900/60 border border-primary-100/50 dark:border-primary-700/30 text-gray-800 dark:text-gray-100 rounded-bl-md shadow-sm'
                             }`}
@@ -449,7 +444,7 @@ const ChatPage = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-sm leading-relaxed px-3 py-1.5">
+                                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap px-3 py-1.5">
                                     {message.isDeleted ? (
                                         <span className="italic opacity-60">{t('chat.messageDeleted')}</span>
                                     ) : (
@@ -820,7 +815,7 @@ const ChatPage = () => {
                                 }}
                                 onClick={() => setShowEmojiPicker(false)}
                                 placeholder={courseIdFromQuery ? t('chat.typeMessage') + ' ' + t('chat.courseChat', { courseName }) : t('chat.typeMessage')}
-                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto p-2 sm:p-3 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
+                                className="flex-1 min-w-0 w-full resize-none overflow-y-auto max-h-[200px] p-2 sm:p-3 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && !isSending && handleSendMessage()}
                                 disabled={isSending}
                                 rows={1}
