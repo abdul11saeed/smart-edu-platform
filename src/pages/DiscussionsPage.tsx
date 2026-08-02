@@ -27,6 +27,7 @@ import {
 } from '../services/discussionService';
 import { recommendationService } from '../services/recommendationService';
 import { normalizeArabic } from '../utils/searchNormalizer';
+import { createNotification } from '../services/notificationService';
 
 interface Course {
   id: string;
@@ -353,6 +354,22 @@ const DiscussionsPage = () => {
     try {
       await addComment(discussionId, comment);
       setNewComment('');
+
+      // Create notification for discussion author
+      const discussion = discussions.find(d => d.id === discussionId);
+      if (discussion && discussion.authorId !== currentUser.id) {
+        createNotification({
+          type: 'discussion_reply',
+          title: t('notifications.discussionReplyTitle', { name: currentUser.name }),
+          body: newComment.length > 50 ? newComment.substring(0, 50) + '...' : newComment,
+          fromUserId: currentUser.id,
+          fromUserName: currentUser.name,
+          toUserId: discussion.authorId,
+          link: `/discussions`
+        }).catch((err) => {
+          console.warn('Failed to create reply notification:', err);
+        });
+      }
     } catch (error) {
       console.error('Error adding comment:', error);
       alert(t('discussions.commentAddError'));
@@ -371,7 +388,23 @@ const DiscussionsPage = () => {
     }
 
     try {
-      await toggleLike(discussionId, currentUser.id);
+      const liked = await toggleLike(discussionId, currentUser.id);
+      if (liked) {
+        const discussion = discussions.find(d => d.id === discussionId);
+        if (discussion && discussion.authorId !== currentUser.id) {
+          createNotification({
+            type: 'like',
+            title: t('notifications.likeTitle', { name: currentUser.name }),
+            body: t('notifications.likeBody', { title: discussion.title }),
+            fromUserId: currentUser.id,
+            fromUserName: currentUser.name,
+            toUserId: discussion.authorId,
+            link: `/discussions`
+          }).catch((err) => {
+            console.warn('Failed to create like notification:', err);
+          });
+        }
+      }
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -479,7 +512,24 @@ const DiscussionsPage = () => {
     }
 
     try {
-      await toggleCommentLike(discussionId, commentId, currentUser.id);
+      const liked = await toggleCommentLike(discussionId, commentId, currentUser.id);
+      if (liked) {
+        const discussion = discussions.find(d => d.id === discussionId);
+        const comment = discussion?.comments?.find(c => c.id === commentId);
+        if (comment && comment.authorId !== currentUser.id) {
+          createNotification({
+            type: 'like',
+            title: t('notifications.commentLikeTitle', { name: currentUser.name }),
+            body: t('notifications.commentLikeBody', { name: currentUser.name }),
+            fromUserId: currentUser.id,
+            fromUserName: currentUser.name,
+            toUserId: comment.authorId,
+            link: `/discussions`
+          }).catch((err) => {
+            console.warn('Failed to create comment like notification:', err);
+          });
+        }
+      }
     } catch (error) {
       console.error('Error toggling comment like:', error);
     }

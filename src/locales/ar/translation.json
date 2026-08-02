@@ -124,7 +124,16 @@
     "blockedYou": "هذا المستخدم قد حظرك",
     "conversationRequests": "طلبات المحادثات",
     "messageDeletedForYou": "تم حذف الرسالة لك",
-    "messageSoftDeleted": "تم حذف هذه الرسالة"
+    "messageSoftDeleted": "تم حذف هذه الرسالة",
+    "viewProfile": "عرض الملف الشخصي",
+    "userProfile": "ملف المستخدم",
+    "bio": "النبذة الشخصية",
+    "confirmBlockUser": "هل أنت متأكد من رغبتك في حظر هذا المستخدم؟",
+    "userBlockedChat": "لقد قمت بحظر هذا المستخدم",
+    "userBlockedChatSubtitle": "لن ترى رسائله ولن يتمكن من مراسلتك",
+    "cannotSendToBlockedUser": "لا يمكن إرسال الرسائل إلى مستخدم محظور",
+    "users": "المستخدمون",
+    "searchUsers": "البحث عن مستخدمين..."
   },
   "discussions": {
     "newDiscussion": "مناقشة جديدة",
@@ -398,22 +407,32 @@
     "uploading": "جارٍ الرفع..."
   },
   "notifications": {
-    "title": "منصة البرامج الأكاديمية للجامعات اليمنية",
-    "noNotifications": "No notifications",
-    "viewAll": "View all notifications",
-    "loadingNotifications": "Loading notifications...",
-    "back": "Back",
-    "notificationsList": "Notifications",
-    "noNotificationsYet": "No notifications yet. New notifications will appear here",
-    "markAsReadTitle": "Mark as read",
-    "unreadCountText": "You have {{count}} unread notifications",
-    "fromLabel": "Notifications",
-    "unreadNotification": "unread",
-    "from": "From",
-    "timeMinutesAgo": "{{minutes}} minute(s) ago",
-    "timeHoursAgo": "{{hours}} hour(s) ago",
-    "timeDaysAgo": "{{days}} day(s) ago",
-    "timeJustNow": "Just now"
+    "title": "الإشعارات",
+    "noNotifications": "لا توجد إشعارات",
+    "viewAll": "عرض جميع الإشعارات",
+    "loadingNotifications": "جارٍ تحميل الإشعارات...",
+    "back": "رجوع",
+    "notificationsList": "الإشعارات",
+    "noNotificationsYet": "لا توجد إشعارات بعد. ستظهر الإشعارات الجديدة هنا",
+    "markAsReadTitle": "تحديد كمقروء",
+    "unreadCountText": "لديك {{count}} إشعار غير مقروء",
+    "fromLabel": "من {{name}}",
+    "privateMessageTitle": "رسالة خاصة جديدة",
+    "messageEditedTitle": "تم تعديل رسالة",
+    "messageDeletedTitle": "تم حذف الرسالة",
+    "messageDeletedBody": "تم حذف رسالة من المحادثة",
+    "unreadNotification": "غير مقروء",
+    "from": "من",
+    "timeMinutesAgo": "منذ {{minutes}} دقيقة",
+    "timeHoursAgo": "منذ {{hours}} ساعة",
+    "timeDaysAgo": "منذ {{days}} يوم",
+    "timeJustNow": "الآن",
+    "discussionReplyTitle": "{{name}} رد على مناقشتك",
+    "discussionReplyBody": "{{preview}}",
+    "likeTitle": "{{name}} أعجب بمناقشتك",
+    "likeBody": "{{title}}",
+    "commentLikeTitle": "{{name}} أعجب بتعليقك",
+    "commentLikeBody": "{{name}} أعجب بتعليقك"
   },
   "profile": {
     "title": "منصة البرامج الأكاديمية للجامعات اليمنية",
@@ -992,3 +1011,4 @@
     "offline": "أنت غير متصل بالإنترنت"
   }
 }
+

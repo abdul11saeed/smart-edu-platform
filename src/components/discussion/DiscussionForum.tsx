@@ -21,6 +21,7 @@ import {
     DiscussionLikes,
     PublicDiscussion
 } from '../../services/discussionService';
+import { createNotification } from '../../services/notificationService';
 
 interface DiscussionForumProps {
     courseId: string;
@@ -208,6 +209,22 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
         try {
             await addComment(discussionId, comment);
             setNewComment('');
+
+            // Create notification for discussion author
+            const discussion = discussions.find(d => d.id === discussionId);
+            if (discussion && discussion.authorId !== currentUser.id) {
+                createNotification({
+                    type: 'discussion_reply',
+                    title: t('notifications.discussionReplyTitle', { name: currentUser.name }),
+                    body: newComment.length > 50 ? newComment.substring(0, 50) + '...' : newComment,
+                    fromUserId: currentUser.id,
+                    fromUserName: currentUser.name,
+                    toUserId: discussion.authorId,
+                    link: `/discussions`
+                }).catch((err) => {
+                    console.warn('Failed to create reply notification:', err);
+                });
+            }
         } catch (error) {
             console.error('Error adding comment:', error);
             alert(t('discussions.errorCommenting'));
@@ -226,7 +243,23 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
         }
 
         try {
-            await toggleLike(discussionId, currentUser.id);
+            const liked = await toggleLike(discussionId, currentUser.id);
+            if (liked) {
+                const discussion = discussions.find(d => d.id === discussionId);
+                if (discussion && discussion.authorId !== currentUser.id) {
+                    createNotification({
+                        type: 'like',
+                        title: t('notifications.likeTitle', { name: currentUser.name }),
+                        body: t('notifications.likeBody', { title: discussion.title }),
+                        fromUserId: currentUser.id,
+                        fromUserName: currentUser.name,
+                        toUserId: discussion.authorId,
+                        link: `/discussions`
+                    }).catch((err) => {
+                        console.warn('Failed to create like notification:', err);
+                    });
+                }
+            }
         } catch (error) {
             console.error('Error toggling like:', error);
         }

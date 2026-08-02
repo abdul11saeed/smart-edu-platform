@@ -1,8 +1,8 @@
-import { MessageCircle, Send, Smile, Reply, Copy, X, Edit3, Trash2, Check } from 'lucide-react';
+import { MessageCircle, Send, Smile, Reply, Copy, X, Edit3, Trash2, Check, ShieldOff, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../stores/appStore';
 import { useChat } from '../../hooks/useChat';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface ChatTabProps {
     courseId: string;
@@ -40,6 +40,8 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
         handleEdit,
         handleSaveEdit,
         handleDelete,
+        handleAdminDelete,
+        handleAddEmojiToMessage,
         handleTouchStart,
         handleTouchEnd,
         handleReply,
@@ -52,10 +54,17 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
         formatTime,
         getReactionSummary,
         cancelReply,
+        MESSAGE_EMOJIS,
         REACTION_EMOJIS,
         messageSent,
         toastMessage,
-        setToastMessage
+        setToastMessage,
+        isAdmin,
+        isPrivateChat,
+        swipedMessageId,
+        setSwipedMessageId,
+        rightSwipedMessageId,
+        setRightSwipedMessageId
     } = useChat({ roomId: courseId, courseName });
 
     const handleCopyMessage = async (text: string) => {
@@ -68,17 +77,36 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
         setContextMenu(null);
     };
 
+    // "Delete for me" messages (UI only)
+    const [deletedForMe, setDeletedForMe] = useState<Set<string>>(() => {
+        try {
+            const saved = localStorage.getItem(`deletedForMe_${courseId}_${currentUser?.id}`);
+            return saved ? new Set(JSON.parse(saved)) : new Set();
+        } catch {
+            return new Set();
+        }
+    });
+
+    const handleDeleteForMe = (messageId: string) => {
+        const newDeletedForMe = new Set(deletedForMe);
+        newDeletedForMe.add(messageId);
+        localStorage.setItem(`deletedForMe_${courseId}_${currentUser?.id}`, JSON.stringify(Array.from(newDeletedForMe)));
+        setDeletedForMe(newDeletedForMe);
+        setContextMenu(null);
+        setToastMessage(t('chat.messageHidden'));
+    };
+
     return (
-        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex flex-col h-full min-h-[400px] max-h-[80vh] bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-            {/* Header */}
-            <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+        <div dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex flex-col h-full min-h-[400px] max-h-[80vh] bg-gradient-to-br from-primary-50/80 to-white dark:from-brown-900/60 dark:to-brown-900/80 rounded-xl border border-primary-100/50 dark:border-primary-700/30">
+            {/* Header - Course Chat */}
+            <div className="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-brown-800 dark:via-brown-900 dark:to-brown-950 p-3 sm:p-4 flex-shrink-0">
                 <div className="flex items-center">
-                    <div className="bg-green-100 dark:bg-green-900/40 p-1.5 sm:p-2 rounded-lg ml-2 sm:ml-3">
-                        <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+                    <div className="bg-white/20 p-1.5 sm:p-2 rounded-lg ml-2 sm:ml-3">
+                        <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-300" />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">{t('chat.courseChat', { courseName })}</h3>
-                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('chat.coursePrivateChat', { courseName })}</p>
+                        <h3 className="font-semibold text-white text-sm sm:text-base">{t('chat.courseChat', { courseName })}</h3>
+                        <p className="text-[10px] sm:text-xs text-primary-200 dark:text-primary-300">{t('chat.coursePrivateChat', { courseName })}</p>
                     </div>
                 </div>
             </div>
@@ -109,6 +137,8 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                     </div>
                 ) : (
                     messages.map((msg) => {
+                        if (deletedForMe.has(msg.id)) return null;
+
                         const isCurrentUser = msg.senderId === currentUser?.id;
                         const reactions = msg.reactions || {};
                         const reactionSummary = getReactionSummary(reactions);
@@ -125,19 +155,104 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                     }
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    const x = Math.min(e.clientX, window.innerWidth - 230);
-                                    const y = Math.min(e.clientY, window.innerHeight - 300);
+
+                                    const messageEl = e.currentTarget;
+                                    const bubbleEl = messageEl.querySelector('[data-bubble]') as HTMLElement | null;
+                                    const rect = bubbleEl ? bubbleEl.getBoundingClientRect() : messageEl.getBoundingClientRect();
+                                    const isOwn = msg.senderId === currentUser?.id;
+
+                                    const menuWidth = 220;
+                                    let menuX: number, menuY: number;
+
+                                    if (isOwn) {
+                                        menuX = rect.left - menuWidth - 8;
+                                        menuY = rect.top;
+                                    } else {
+                                        menuX = rect.right + 8;
+                                        menuY = rect.top;
+                                    }
+
+                                    menuX = Math.max(10, Math.min(menuX, window.innerWidth - menuWidth - 10));
+                                    menuY = Math.max(10, Math.min(menuY, window.innerHeight - 300));
+
                                     setContextMenu({
                                         messageId: msg.id,
-                                        x: x > 10 ? x : 10,
-                                        y: y > 10 ? y : 10,
-                                        isOwnMessage: isCurrentUser
+                                        x: menuX,
+                                        y: menuY,
+                                        isOwnMessage: isOwn
                                     });
                                 }}
                                 onTouchStart={handleTouchStart}
                                 onTouchEnd={(e) => handleTouchEnd(e, msg)}
                             >
+                                {/* Mobile swipe action bar - appears when swiping LEFT (Reply) */}
+                                {!isEditing && !msg.isDeleted && swipedMessageId === msg.id && (
+                                    <div className={`flex gap-2 items-center order-first ml-2 sm:hidden`}>
+                                        <button
+                                            onClick={() => {
+                                                handleReply(msg);
+                                                setSwipedMessageId(null);
+                                            }}
+                                            className="p-2 bg-green-100 text-green-600 rounded-full shadow-md hover:bg-green-200 transition-colors"
+                                            title={t('chat.reply')}
+                                        >
+                                            <Reply className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                                {/* Mobile swipe action bar - appears when swiping RIGHT (Other actions) */}
+                                {!isEditing && !msg.isDeleted && rightSwipedMessageId === msg.id && (
+                                    <div className={`flex gap-2 items-center order-last ml-2 sm:hidden`}>
+                                        <button
+                                            onClick={() => {
+                                                handleCopyMessage(msg.text);
+                                                setRightSwipedMessageId(null);
+                                            }}
+                                            className="p-2 bg-blue-100 text-blue-600 rounded-full shadow-md hover:bg-blue-200 transition-colors"
+                                            title={t('chat.copy')}
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </button>
+                                        {(isCurrentUser || isAdmin) && (
+                                            <button
+                                                onClick={() => {
+                                                    handleDelete(msg.id);
+                                                    setRightSwipedMessageId(null);
+                                                }}
+                                                className="p-2 bg-red-100 text-red-600 rounded-full shadow-md hover:bg-red-200 transition-colors"
+                                                title={t('chat.deleteForEveryone')}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                        {!isCurrentUser && isPrivateChat && (
+                                            <button
+                                                onClick={() => {
+                                                    handleDeleteForMe(msg.id);
+                                                    setRightSwipedMessageId(null);
+                                                }}
+                                                className="p-2 bg-gray-200 text-gray-600 rounded-full shadow-md hover:bg-gray-300 transition-colors"
+                                                title={t('chat.hide')}
+                                            >
+                                                <ShieldOff className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                        {isAdmin && !isCurrentUser && (
+                                            <button
+                                                onClick={() => {
+                                                    handleAdminDelete(msg.id);
+                                                    setRightSwipedMessageId(null);
+                                                }}
+                                                className="p-2 bg-red-50 text-red-600 rounded-full shadow-md hover:bg-red-100 transition-colors"
+                                                title={t('chat.deleteAsAdmin')}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                                 <div
+                                    data-bubble
                                     className={`max-w-[85%] sm:max-w-[70%] rounded-2xl relative ${isCurrentUser
                                         ? 'bg-gradient-to-br from-green-500 to-green-600 text-white rounded-br-md'
                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-md'
@@ -352,15 +467,14 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                     </div>
                     {showEmojiPicker && (
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 p-1.5 sm:p-2 flex flex-wrap gap-0.5 sm:gap-1 z-50 w-[calc(100vw-2rem)] max-w-[320px] sm:max-w-[360px] overflow-y-auto max-h-[200px] sm:max-h-[240px]">
-                            {REACTION_EMOJIS.map(emoji => (
+                            {MESSAGE_EMOJIS.map(emoji => (
                                 <button
                                     key={emoji}
-                                    onClick={() => {
-                                        if (selectedMessage) {
-                                            handleReaction(selectedMessage, emoji);
-                                        }
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAddEmojiToMessage(emoji);
                                     }}
-                                    className="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-lg sm:text-xl transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center flex-shrink-0"
+                                    className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-lg sm:text-xl transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center flex-shrink-0"
                                 >
                                     {emoji}
                                 </button>

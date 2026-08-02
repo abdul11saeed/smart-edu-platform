@@ -1357,6 +1357,7 @@
    @supports not (height: 100dvh) {
      .mobile-chat-viewport {
        height: 100vh !important;
+       height: -webkit-fill-available !important;
      }
    }
 
@@ -1371,7 +1372,11 @@
    @media (max-width: 767px) {
      .mobile-chat-viewport {
        height: 100dvh;
-       height: calc(var(--mobile-chat-height, 100vh));
+       height: 100vh;
+       height: -webkit-fill-available;
+       /* Optimize rendering performance on mobile */
+       will-change: transform, height;
+       transform: translateZ(0);
      }
    }
 

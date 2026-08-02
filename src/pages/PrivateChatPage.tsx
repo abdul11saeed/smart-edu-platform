@@ -12,7 +12,9 @@ import {
     Copy,
     Trash2,
     Edit3,
-    ShieldOff
+    ShieldOff,
+    Shield,
+    UserX
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -55,6 +57,9 @@ const PrivateChatPage = () => {
     // Target user profile data
     const [targetUser, setTargetUser] = useState<{ photoURL?: string; bio?: string }>({});
 
+    // Profile modal state
+    const [showProfileModal, setShowProfileModal] = useState(false);
+
     // Create unique room ID for this private conversation
     const roomId = currentUser && targetUserId
         ? [currentUser.id, targetUserId].sort().join('_private_')
@@ -96,6 +101,8 @@ const PrivateChatPage = () => {
         MESSAGE_EMOJIS,
         REACTION_EMOJIS,
         swipedMessageId,
+        rightSwipedMessageId,
+        setRightSwipedMessageId,
         setSwipedMessageId,
         contextMenu,
         setContextMenu,
@@ -103,7 +110,11 @@ const PrivateChatPage = () => {
         isAdmin,
         containerRef,
         handleScroll,
-        loadOlderMessages
+        loadOlderMessages,
+        isTargetBlocked,
+        isBlockedByTarget,
+        handleBlockUser,
+        handleUnblockUser
     } = useChat({
         roomId,
         courseName: decodedUserName,
@@ -287,7 +298,8 @@ const PrivateChatPage = () => {
                             e.stopPropagation();
 
                             const messageEl = e.currentTarget;
-                            const rect = messageEl.getBoundingClientRect();
+                            const bubbleEl = messageEl.querySelector('[data-bubble]') as HTMLElement | null;
+                            const rect = bubbleEl ? bubbleEl.getBoundingClientRect() : messageEl.getBoundingClientRect();
                             const isOwn = message.senderId === currentUser?.id;
 
                             const menuWidth = 200;
@@ -297,23 +309,11 @@ const PrivateChatPage = () => {
                                 menuX = Math.max(10, Math.min(rect.left + rect.width / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10));
                                 menuY = Math.min(rect.bottom + 8, window.innerHeight - 280);
                             } else {
-                                const bubbleWidthPercent = 0.75;
-                                const bubbleWidth = rect.width * bubbleWidthPercent;
-
-                                let bubbleLeft: number, bubbleRight: number;
                                 if (isOwn) {
-                                    bubbleRight = rect.right;
-                                    bubbleLeft = rect.right - bubbleWidth;
-                                } else {
-                                    bubbleLeft = rect.left;
-                                    bubbleRight = rect.left + bubbleWidth;
-                                }
-
-                                if (isOwn) {
-                                    menuX = bubbleLeft - menuWidth - 8;
+                                    menuX = rect.left - menuWidth - 8;
                                     menuY = rect.top;
                                 } else {
-                                    menuX = bubbleRight + 8;
+                                    menuX = rect.right + 8;
                                     menuY = rect.top;
                                 }
 
@@ -331,7 +331,7 @@ const PrivateChatPage = () => {
                         onTouchStart={handleTouchStart}
                         onTouchEnd={(e) => handleTouchEnd(e, message)}
                     >
-                        {/* Mobile swipe action bar - appears when swiping left */}
+                        {/* Mobile swipe action bar - appears when swiping LEFT (Reply) */}
                         {!isEditing && !message.isDeleted && swipedMessageId === message.id && (
                             <div className={`flex gap-2 items-center ml-2 sm:hidden ${isOwnMessage ? 'order-first' : ''}`}>
                                 <button
@@ -344,10 +344,15 @@ const PrivateChatPage = () => {
                                 >
                                     <Reply className="h-4 w-4" />
                                 </button>
+                            </div>
+                        )}
+                        {/* Mobile swipe action bar - appears when swiping RIGHT (Other actions) */}
+                        {!isEditing && !message.isDeleted && rightSwipedMessageId === message.id && (
+                            <div className={`flex gap-2 items-center order-last ml-2 sm:hidden`}>
                                 <button
                                     onClick={() => {
                                         handleCopyMessage(message.text);
-                                        setSwipedMessageId(null);
+                                        setRightSwipedMessageId(null);
                                     }}
                                     className="p-2 bg-blue-100 text-blue-600 rounded-full shadow-md hover:bg-blue-200 transition-colors"
                                     title={t('chat.copy')}
@@ -358,7 +363,7 @@ const PrivateChatPage = () => {
                                     <button
                                         onClick={() => {
                                             handleDeleteForEveryone(message.id);
-                                            setSwipedMessageId(null);
+                                            setRightSwipedMessageId(null);
                                         }}
                                         className="p-2 bg-red-100 text-red-600 rounded-full shadow-md hover:bg-red-200 transition-colors"
                                         title={t('chat.deleteForEveryone')}
@@ -370,7 +375,7 @@ const PrivateChatPage = () => {
                                     <button
                                         onClick={() => {
                                             handleDeleteForMe(message.id);
-                                            setSwipedMessageId(null);
+                                            setRightSwipedMessageId(null);
                                         }}
                                         className="p-2 bg-gray-200 text-gray-600 rounded-full shadow-md hover:bg-gray-300 transition-colors"
                                         title={t('chat.hide')}
@@ -382,7 +387,7 @@ const PrivateChatPage = () => {
                                     <button
                                         onClick={() => {
                                             handleAdminDelete(message.id);
-                                            setSwipedMessageId(null);
+                                            setRightSwipedMessageId(null);
                                         }}
                                         className="p-2 bg-red-50 text-red-600 rounded-full shadow-md hover:bg-red-100 transition-colors"
                                         title={t('chat.deleteAsAdmin')}
@@ -393,9 +398,10 @@ const PrivateChatPage = () => {
                             </div>
                         )}
                         <div
+                            data-bubble
                             className={`max-w-[85%] sm:max-w-[75%] rounded-2xl relative ${isOwnMessage
-                                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white rounded-br-md'
-                                : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-bl-md shadow-sm'
+                                ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-md'
+                                : 'bg-gradient-to-br from-white to-green-50/30 dark:from-green-800/60 dark:to-green-900/60 border border-green-100/50 dark:border-green-700/30 text-gray-800 dark:text-gray-100 rounded-bl-md shadow-sm'
                                 }`}
                         >
                             {message.replyTo && (
@@ -584,25 +590,29 @@ const PrivateChatPage = () => {
                 </div>
             )}
 
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-4">
-                <button
-                    onClick={() => {
-                        // Safely navigate back - if no history, go to home
-                        if (window.history.length > 1) {
-                            navigate(-1);
-                        } else {
-                            navigate('/');
-                        }
-                    }}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    title={t('common.back')}
-                >
-                    <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                </button>
+            {/* Header - Private Chat */}
+            <div className="bg-gradient-to-r from-green-700 via-green-800 to-green-900 dark:from-green-800 dark:via-green-900 dark:to-green-950 rounded-2xl p-3 sm:p-4 mb-4 shadow-lg shadow-green-500/20 border border-white/10">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <button
+                        onClick={() => {
+                            // Safely navigate back - if no history, go to home
+                            if (window.history.length > 1) {
+                                navigate(-1);
+                            } else {
+                                navigate('/');
+                            }
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        title={t('common.back')}
+                    >
+                        <ArrowLeft className="h-5 w-5 text-green-100" />
+                    </button>
 
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                    <button
+                        onClick={() => setShowProfileModal(true)}
+                        className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex-shrink-0 hover:ring-2 hover:ring-green-300 transition-all cursor-pointer"
+                        title={t('chat.viewProfile')}
+                    >
                         {targetUser.photoURL ? (
                             <img
                                 src={targetUser.photoURL}
@@ -616,24 +626,97 @@ const PrivateChatPage = () => {
                                 </span>
                             </div>
                         )}
-                    </div>
+                    </button>
                     <div>
-                        <h1 className="text-xl font-bold flex items-center gap-2">
-                            <Lock className="h-5 w-5 text-green-600" />
+                        <h1 className="text-xl font-bold flex items-center gap-2 text-white">
+                            <Lock className="h-5 w-5 text-green-300" />
                             {decodedUserName}
                         </h1>
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            {t('chat.privateChatLabel')}
+                        <p className="text-sm text-green-200 dark:text-green-300 flex items-center gap-1">
+                            <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                            {targetUser.bio
+                                ? targetUser.bio.split(' ').slice(0, 3).join(' ')
+                                : t('chat.privateChatLabel')
+                            }
                         </p>
-                        {targetUser.bio && (
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-[300px]">
-                                {targetUser.bio}
-                            </p>
-                        )}
                     </div>
                 </div>
             </div>
+
+            {/* Profile Modal */}
+            {showProfileModal && (
+                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('chat.userProfile')}</h3>
+                            <button onClick={() => setShowProfileModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                                <X className="h-5 w-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 mb-3">
+                                {targetUser.photoURL ? (
+                                    <img src={targetUser.photoURL} alt={decodedUserName} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600">
+                                        <span className="text-white font-bold text-2xl">
+                                            {decodedUserName.charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">{decodedUserName}</h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('chat.privateChatLabel')}</p>
+                        </div>
+
+                        {targetUser.bio && (
+                            <div className="mb-6">
+                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('chat.bio')}</h5>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                                    {targetUser.bio}
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2">
+                            {isTargetBlocked ? (
+                                <button
+                                    onClick={() => {
+                                        if (targetUserId) {
+                                            handleUnblockUser(targetUserId);
+                                        }
+                                        setShowProfileModal(false);
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                                >
+                                    <Shield className="h-4 w-4" />
+                                    {t('chat.unblockUser')}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        if (targetUserId && window.confirm(t('chat.confirmBlockUser'))) {
+                                            handleBlockUser(targetUserId);
+                                            setShowProfileModal(false);
+                                        }
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+                                >
+                                    <UserX className="h-4 w-4" />
+                                    {t('chat.blockUser')}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setShowProfileModal(false)}
+                                className="px-4 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                {t('common.close')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Toast indicator */}
             {(messageSent || toastMessage) && (
@@ -654,10 +737,10 @@ const PrivateChatPage = () => {
             )}
 
              {/* Messages Container - responsive height using viewport units for mobile compatibility */}
-             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] flex flex-col">
+             <div className="bg-gradient-to-br from-green-50/80 to-white dark:from-green-900/30 dark:to-green-900/50 backdrop-blur-md rounded-xl shadow-lg shadow-green-500/10 border border-green-100/50 dark:border-green-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] flex flex-col">
                  <div
                      ref={containerRef}
-                     className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800"
+                     className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-green-50/40 to-emerald-50/20 dark:from-green-900/20 dark:to-green-900/30"
                      onScroll={() => {
                          handleScroll();
                          const el = containerRef.current;
@@ -685,11 +768,17 @@ const PrivateChatPage = () => {
                                 <div className="text-gray-500 text-sm">{t('common.loading')}</div>
                             </div>
                         </div>
-                    ) : Object.keys(groupedMessages).length === 0 ? (
+                    ) : isTargetBlocked && Object.keys(groupedMessages).length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                            <Lock className="h-12 w-12 mb-2 opacity-30" />
-                            <p>{t('chat.privateChatNoMessages')}</p>
-                            <p className="text-sm">{t('chat.privateChatStartNow')}</p>
+                            <ShieldOff className="h-12 w-12 mb-2 opacity-30" />
+                            <p>{t('chat.userBlockedChat')}</p>
+                            <p className="text-sm">{t('chat.userBlockedChatSubtitle')}</p>
+                        </div>
+                    ) : isTargetBlocked ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                            <ShieldOff className="h-12 w-12 mb-2 opacity-30" />
+                            <p>{t('chat.userBlockedChat')}</p>
+                            <p className="text-sm">{t('chat.userBlockedChatSubtitle')}</p>
                         </div>
                     ) : (
                         Object.entries(groupedMessages).map(([date, dateMessages]) =>
@@ -733,7 +822,13 @@ const PrivateChatPage = () => {
                 {/* Message Input */}
                 <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-800 rounded-b-xl">
                     {currentUser ? (
-                        <div className="flex gap-2 items-end relative" data-emoji-picker>
+                        (isTargetBlocked || isBlockedByTarget) ? (
+                            <div className="flex items-center justify-center gap-2 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                                <ShieldOff className={`h-5 w-5 ${isBlockedByTarget ? 'text-red-800 dark:text-red-300' : 'text-gray-400'}`} />
+                                <p className={`text-sm font-medium ${isBlockedByTarget ? 'text-red-800 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'}`}>{isBlockedByTarget ? t('chat.blockedYou') : t('chat.cannotSendToBlockedUser')}</p>
+                            </div>
+                        ) : (
+                            <div className="flex gap-2 items-end relative" data-emoji-picker>
                             <div className="relative">
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -786,6 +881,7 @@ const PrivateChatPage = () => {
                                 )}
                             </button>
                         </div>
+                        )
                     ) : (
                         <div className="text-center py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                             <p className="text-gray-600 dark:text-gray-300 text-sm">{t('chat.loggedInRequired')}</p>

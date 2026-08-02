@@ -3,12 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     Bell,
+    Edit,
     GraduationCap,
     LogOut,
     Menu,
+    MessageCircle,
     Moon,
+    Reply,
     Settings,
     Sun,
+    ThumbsUp,
+    Trash2,
     X,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
@@ -48,6 +53,23 @@ const UnifiedHeader = ({
 
     const unreadNotifications = notifications.filter((n) => !n.read);
     const unreadCount = unreadNotifications.length;
+
+    const getNotificationIcon = (type: Notification['type']) => {
+        switch (type) {
+            case 'private_message':
+                return <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />;
+            case 'discussion_reply':
+                return <Reply className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />;
+            case 'like':
+                return <ThumbsUp className="h-4 w-4 text-pink-600 dark:text-pink-400 flex-shrink-0" />;
+            case 'message_edited':
+                return <Edit className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />;
+            case 'message_deleted':
+                return <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />;
+            default:
+                return <Bell className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />;
+        }
+    };
 
     useEffect(() => {
         if (!currentUser?.id) return;
@@ -189,7 +211,7 @@ const UnifiedHeader = ({
                                                         className={`w-full text-right px-4 py-3 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 border-b border-brown-100 dark:border-brown-700/50 last:border-b-0 transition-all duration-200 ${!notification.read ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}`}
                                                     >
                                                         <div className="flex items-start gap-2">
-                                                            <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${!notification.read ? 'bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm shadow-primary-500/30' : 'bg-transparent'}`}></div>
+                                                            {getNotificationIcon(notification.type)}
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-medium text-brown-800 dark:text-neutral-100 text-sm">{notification.title}</div>
                                                                 {notification.body && <div className="text-xs text-brown-500 dark:text-neutral-400 mt-1 line-clamp-2">{notification.body}</div>}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
-import { ArrowLeft, Bell, Check } from 'lucide-react';
+import { ArrowLeft, Bell, Check, MessageCircle, Reply, ThumbsUp, Trash2, Edit } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 import { getUserNotifications, markNotificationAsRead, subscribeToUserNotifications, Notification } from '../services/notificationService';
 
@@ -56,12 +56,18 @@ const NotificationsPage = () => {
 
     const getNotificationIcon = (type: Notification['type']) => {
         switch (type) {
-            case 'private_message': return '💬';
-            case 'discussion_reply': return '💭';
-            case 'like': return '❤️';
-            case 'message_edited': return '✏️';
-            case 'message_deleted': return '🗑️';
-            default: return '🔔';
+            case 'private_message':
+                return <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
+            case 'discussion_reply':
+                return <Reply className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+            case 'like':
+                return <ThumbsUp className="h-5 w-5 text-pink-600 dark:text-pink-400" />;
+            case 'message_edited':
+                return <Edit className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
+            case 'message_deleted':
+                return <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />;
+            default:
+                return <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
         }
     };
 
@@ -146,7 +152,7 @@ const NotificationsPage = () => {
                                 }`}
                         >
                             <div className="flex items-start gap-3">
-                                <div className="text-2xl">{getNotificationIcon(notification.type)}</div>
+                                <div className="mt-0.5">{getNotificationIcon(notification.type)}</div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
                                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">

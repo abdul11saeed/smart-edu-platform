@@ -7,6 +7,7 @@ import {
     Send,
     ArrowLeft,
     Users,
+    Search,
     BookOpen,
     Check,
     CheckCheck,
@@ -92,6 +93,8 @@ const ChatPage = () => {
         handleReply,
         cancelReply,
         swipedMessageId,
+        rightSwipedMessageId,
+        setRightSwipedMessageId,
         contextMenu,
         setContextMenu,
         touchHandledRef,
@@ -111,6 +114,7 @@ const ChatPage = () => {
     const [showUserList, setShowUserList] = useState(false);
     const [userList, setUserList] = useState<Array<{ id: string; name: string; photoURL?: string; bio?: string }>>([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
+    const [userSearchQuery, setUserSearchQuery] = useState('');
 
      const messagesEndRef = useRef<HTMLDivElement>(null);
      const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -250,8 +254,8 @@ const ChatPage = () => {
                 try {
                     await createNotification({
                         type: 'message_deleted',
-                        title: t('chat.messageDeleted'),
-                        body: t('chat.messageDeleted'),
+                        title: t('notifications.messageDeletedTitle'),
+                        body: t('notifications.messageDeletedBody'),
                         fromUserId: currentUser.id,
                         fromUserName: currentUser.name,
                         toUserId: targetUserId,
@@ -302,7 +306,8 @@ const ChatPage = () => {
                             e.stopPropagation();
 
                             const messageEl = e.currentTarget;
-                            const rect = messageEl.getBoundingClientRect();
+                            const bubbleEl = messageEl.querySelector('[data-bubble]') as HTMLElement | null;
+                            const rect = bubbleEl ? bubbleEl.getBoundingClientRect() : messageEl.getBoundingClientRect();
                             const isOwn = message.senderId === currentUser?.id;
 
                             const menuWidth = 200;
@@ -312,23 +317,11 @@ const ChatPage = () => {
                                 menuX = Math.max(10, Math.min(rect.left + rect.width / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10));
                                 menuY = Math.min(rect.bottom + 8, window.innerHeight - 280);
                             } else {
-                                const bubbleWidthPercent = window.innerWidth < 640 ? 0.85 : 0.70;
-                                const bubbleWidth = rect.width * bubbleWidthPercent;
-
-                                let bubbleLeft: number, bubbleRight: number;
                                 if (isOwn) {
-                                    bubbleRight = rect.right;
-                                    bubbleLeft = rect.right - bubbleWidth;
-                                } else {
-                                    bubbleLeft = rect.left;
-                                    bubbleRight = rect.left + bubbleWidth;
-                                }
-
-                                if (isOwn) {
-                                    menuX = bubbleLeft - menuWidth - 8;
+                                    menuX = rect.left - menuWidth - 8;
                                     menuY = rect.top;
                                 } else {
-                                    menuX = bubbleRight + 8;
+                                    menuX = rect.right + 8;
                                     menuY = rect.top;
                                 }
 
@@ -341,7 +334,7 @@ const ChatPage = () => {
                         onTouchStart={handleTouchStart}
                         onTouchEnd={(e) => handleTouchEnd(e, message)}
                     >
-                        {/* Mobile swipe action bar - appears when swiping left */}
+                        {/* Mobile swipe action bar - appears when swiping LEFT (Reply) */}
                         {!isEditing && !message.isDeleted && isSwiped && (
                             <div className={`flex gap-2 items-center ml-2 sm:hidden ${isOwnMessage ? 'order-first' : ''}`}>
                                 <button
@@ -351,8 +344,16 @@ const ChatPage = () => {
                                 >
                                     <Reply className="h-4 w-4" />
                                 </button>
+                            </div>
+                        )}
+                        {/* Mobile swipe action bar - appears when swiping RIGHT (Other actions) */}
+                        {!isEditing && !message.isDeleted && rightSwipedMessageId === message.id && (
+                            <div className={`flex gap-2 items-center order-last ml-2 sm:hidden`}>
                                 <button
-                                    onClick={() => handleCopyMessage(message.text)}
+                                    onClick={() => {
+                                        handleCopyMessage(message.text);
+                                        setRightSwipedMessageId(null);
+                                    }}
                                     className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full shadow-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                                     title={t('chat.copy')}
                                 >
@@ -360,7 +361,10 @@ const ChatPage = () => {
                                 </button>
                                 {(isOwnMessage || isAdmin) && (
                                     <button
-                                        onClick={() => handleDeleteForEveryone(message.id)}
+                                        onClick={() => {
+                                            handleDeleteForEveryone(message.id);
+                                            setRightSwipedMessageId(null);
+                                        }}
                                         className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full shadow-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
                                         title={t('chat.deleteForEveryone')}
                                     >
@@ -369,7 +373,10 @@ const ChatPage = () => {
                                 )}
                                 {!isOwnMessage && isPrivateChat && (
                                     <button
-                                        onClick={() => handleDeleteForMe(message.id)}
+                                        onClick={() => {
+                                            handleDeleteForMe(message.id);
+                                            setRightSwipedMessageId(null);
+                                        }}
                                         className="p-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                                         title={t('chat.hide')}
                                     >
@@ -378,7 +385,10 @@ const ChatPage = () => {
                                 )}
                                 {isAdmin && !isOwnMessage && (
                                     <button
-                                        onClick={() => handleAdminDelete(message.id)}
+                                        onClick={() => {
+                                            handleAdminDelete(message.id);
+                                            setRightSwipedMessageId(null);
+                                        }}
                                         className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full shadow-md hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                                         title={t('chat.deleteAsAdmin')}
                                     >
@@ -388,9 +398,10 @@ const ChatPage = () => {
                             </div>
                         )}
                         <div
+                            data-bubble
                             className={`max-w-[90%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl relative ${isOwnMessage
                                 ? 'bg-gradient-to-br from-primary-700 to-primary-800 text-white rounded-br-md shadow-lg shadow-primary-500/20'
-                                : 'bg-gradient-to-br from-white to-primary-50/30 dark:from-slate-700 dark:to-slate-800 border border-primary-100/50 dark:border-primary-700/30 text-gray-800 dark:text-gray-100 rounded-bl-md shadow-sm'
+                                : 'bg-gradient-to-br from-white to-primary-50/30 dark:from-brown-800/60 dark:to-brown-900/60 border border-primary-100/50 dark:border-primary-700/30 text-gray-800 dark:text-gray-100 rounded-bl-md shadow-sm'
                             }`}
                         >
                             {message.replyTo && (
@@ -498,50 +509,53 @@ const ChatPage = () => {
 
     return (
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-4xl">
-            {/* Header */}
-            <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <button onClick={() => {
-                    // Safely navigate back - if no history, go to home
-                    if (window.history.length > 1) {
-                        navigate(-1);
-                    } else {
-                        navigate('/');
-                    }
-                }}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t('common.back')}>
-                    <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                </button>
-                <div className="flex-1 min-w-0">
-                    <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2 truncate">
-                        <MessageCircle className="h-4 w-5 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                        <span className="truncate">{courseName}</span>
-                        {isPrivateChat && <Lock className="h-4 w-4 text-green-600 flex-shrink-0" />}
-                    </h1>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate">
-                        {courseIdFromQuery ? (
-                            <><BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.courseChat')}</>
-                        ) : targetUserId ? (
-                            <><Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.privateChatLabel')}</>
-                        ) : (
-                            <><Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.generalChat')}</>
-                        )}
-                    </p>
-                </div>
+            {/* Header - General Chat */}
+            <div className="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-brown-800 dark:via-brown-900 dark:to-brown-950 rounded-2xl p-3 sm:p-4 mb-4 shadow-lg shadow-primary-500/20 border border-white/10">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <button onClick={() => {
+                        // Safely navigate back - if no history, go to home
+                        if (window.history.length > 1) {
+                            navigate(-1);
+                        } else {
+                            navigate('/');
+                        }
+                    }}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors" title={t('common.back')}>
+                        <ArrowLeft className="h-5 w-5 text-primary-100" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2 truncate text-white">
+                            <MessageCircle className="h-4 w-5 sm:h-5 sm:w-5 text-secondary-300 flex-shrink-0" />
+                            <span className="truncate">{courseName}</span>
+                            {isPrivateChat && <Lock className="h-4 w-4 text-secondary-300 flex-shrink-0" />}
+                        </h1>
+                        <p className="text-xs sm:text-sm text-primary-200 dark:text-primary-300 flex items-center gap-1 truncate">
+                            {courseIdFromQuery ? (
+                                <><BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.courseChat')}</>
+                            ) : targetUserId ? (
+                                <><Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.privateChatLabel')}</>
+                            ) : (
+                                <><Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" /> {t('chat.generalChat')}</>
+                            )}
+                        </p>
+                    </div>
 
                 {!courseIdFromQuery && !targetUserId && (
                     <button onClick={() => setShowUserList(!showUserList)}
-                        className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showUserList ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors flex-shrink-0 ${showUserList ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-primary-100'}`}
                         title={t('chat.openPrivateChats')} aria-label={t('chat.openPrivateChats')}>
                         <Users className="h-5 w-5" />
+                        <span className="text-sm font-medium">{t('chat.users')}</span>
                     </button>
                 )}
 
                 {targetUserId && (
                     <button onClick={() => navigate('/chat')}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 flex-shrink-0" title={t('chat.backToGeneralChat')}>
+                        className="p-2 rounded-lg hover:bg-white/10 text-primary-100 flex-shrink-0" title={t('chat.backToGeneralChat')}>
                         <Lock className="h-5 w-5" />
                     </button>
                 )}
+            </div>
             </div>
 
             {/* User List Panel */}
@@ -549,8 +563,22 @@ const ChatPage = () => {
                 <div className="fixed inset-0 bg-black/50 z-[9999] flex items-start justify-center pt-16 sm:pt-20 p-4 overflow-y-auto" onClick={() => setShowUserList(false)}>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-sm w-full max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-5rem)] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('chat.usersInGeneralChat')}</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                <span>{t('chat.users')}</span>
+                            </h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('chat.selectUserForPrivateChat')}</p>
+
+                            <div className="relative mt-3">
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={userSearchQuery}
+                                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                                    placeholder={t('chat.searchUsers')}
+                                    className="w-full pr-9 pl-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"
+                                />
+                            </div>
                         </div>
                         {loadingUsers ? (
                             <div className="p-4 text-center">
@@ -563,7 +591,10 @@ const ChatPage = () => {
                             </div>
                         ) : (
                             <div>
-                                {userList.filter(u => u.id !== currentUser?.id).map((user) => (
+                                {userList
+                                    .filter(u => u.id !== currentUser?.id)
+                                    .filter(u => !userSearchQuery || u.name.toLowerCase().includes(userSearchQuery.toLowerCase()))
+                                    .map((user) => (
                                     <button
                                         key={user.id}
                                         onClick={() => startPrivateChat(user.id, user.name)}
@@ -675,8 +706,8 @@ const ChatPage = () => {
             )}
 
              {/* Messages Container - responsive height using viewport units for mobile compatibility */}
-             <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/5 border border-primary-100/50 dark:border-primary-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] flex flex-col">
-                 <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-primary-50/30 to-white dark:from-slate-800/80 dark:to-slate-800/90"
+             <div className="bg-gradient-to-br from-primary-50/80 to-white dark:from-brown-900/60 dark:to-brown-900/80 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 dark:border-primary-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] flex flex-col">
+                 <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-primary-50/40 to-primary-100/20 dark:from-brown-800/40 dark:to-brown-900/30"
                      onScroll={() => {
                          handleScroll();
                          const el = containerRef.current;

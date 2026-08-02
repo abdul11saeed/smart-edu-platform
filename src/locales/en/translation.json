@@ -124,7 +124,16 @@
     "blockedYou": "This user has blocked you",
     "conversationRequests": "Conversation Requests",
     "messageDeletedForYou": "Message deleted for you",
-    "messageSoftDeleted": "This message was deleted"
+    "messageSoftDeleted": "This message was deleted",
+    "viewProfile": "View Profile",
+    "userProfile": "User Profile",
+    "bio": "Bio",
+    "confirmBlockUser": "Are you sure you want to block this user?",
+    "userBlockedChat": "You have blocked this user",
+    "userBlockedChatSubtitle": "You won't see their messages and they won't be able to message you",
+    "cannotSendToBlockedUser": "Cannot send messages to a blocked user",
+    "users": "Users",
+    "searchUsers": "Search users..."
   },
   "discussions": {
     "newDiscussion": "New Discussion",
@@ -407,13 +416,23 @@
     "noNotificationsYet": "No notifications yet. New notifications will appear here",
     "markAsReadTitle": "Mark as read",
     "unreadCountText": "You have {{count}} unread notifications",
-    "fromLabel": "Notifications",
+    "fromLabel": "from {{name}}",
+    "privateMessageTitle": "New private message",
+    "messageEditedTitle": "Message edited",
+    "messageDeletedTitle": "Message deleted",
+    "messageDeletedBody": "A message has been deleted from the conversation",
     "unreadNotification": "unread",
     "from": "From",
     "timeMinutesAgo": "{{minutes}} minute(s) ago",
     "timeHoursAgo": "{{hours}} hour(s) ago",
     "timeDaysAgo": "{{days}} day(s) ago",
-    "timeJustNow": "Just now"
+    "timeJustNow": "Just now",
+    "discussionReplyTitle": "{{name}} replied to your discussion",
+    "discussionReplyBody": "{{preview}}",
+    "likeTitle": "{{name}} liked your discussion",
+    "likeBody": "{{title}}",
+    "commentLikeTitle": "{{name}} liked your comment",
+    "commentLikeBody": "{{name}} liked your comment"
   },
   "profile": {
     "title": "Profile",
@@ -992,3 +1011,4 @@
     "offline": "You are offline"
   }
 }
+

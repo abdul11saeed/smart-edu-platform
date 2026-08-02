@@ -1,5 +1,6 @@
 // Shared Chat Hook - Unified logic for ChatPage, PrivateChatPage and ChatTab
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     sendMessage,
     subscribeMessages,
@@ -13,11 +14,41 @@ import {
     ChatRoomMessage
 } from '../services/chatService';
 import { createNotification } from '../services/notificationService';
+import { isBlocked, isBlockedBy, blockUser, unblockUser, getBlockedUsers, subscribeToBlockedUsers } from '../services/blockService';
 import { useAppStore } from '../stores/appStore';
 
-const MESSAGE_EMOJIS = ['😀', '😂', '😮', '😢', '😡', '👍', '❤️', '👏', '🎉', '🔥', '✨', '🙏', '💯', '🤔', '😉', '😅', '🤗', '🤩', '🤷', '👌', '👀', '🙌', '💪', '🥳', '⚡', '⭐', '✅', '💖', '💔', '🎊', '📚', '📝', '📢', '✉️', '📱', '💻', '🎓', '🏆', '🎯', '🚀'];
+const MESSAGE_EMOJIS = [
+    '😀','😂','😮','😢','😡','👍','❤️','👏','🎉','🔥',
+    '✨','🙏','💯','🤔','😉','😅','🤗','🤩','🤷','👌',
+    '👀','🙌','💪','🥳','⚡','⭐','✅','💖','💔','🎊',
+    '📚','📝','📢','✉️','📱','💻','🎓','🏆','🎯','🚀',
+    '😍','🥰','😘','😎','🤓','🧐','😏','😒','😞','😔',
+    '😟','😕','🙁','😣','😖','😫','😩','🥺','😢','😭',
+    '😤','😠','🤬','🤯','😳','🥵','🥶','😱','😨','😰',
+    '😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑',
+    '😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤',
+    '😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕',
+    '🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀',
+    '☠️','👽','👾','🤖','🎃','😺','😸','😹','😻','😼',
+    '😽','🙀','😿','😾','🐶','🐱','🐭','🐹','🐰','🦊',
+    '🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵',
+    '🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥',
+    '🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛',
+    '🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🦂','🐢',
+    '🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡',
+    '🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓',
+    '🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃',
+    '🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕',
+    '🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢',
+    '🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦥','🐁','🐀',
+    '🐿','🦔'
+];
 
-const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏', '💯'];
+const REACTION_EMOJIS = [
+    '👍','❤️','😂','😮','😢','🙏','🔥','👏','💯','😍',
+    '🎉','🤔','😡','👀','✨','💪','🙌','🥳','⚡','⭐',
+    '🤗','🤩','👌','🥺','😎','🤓','😏','😒','😤','🤯'
+];
 
 const DEFAULT_LIMIT = 50;
 const LOAD_STEP = 50;
@@ -37,6 +68,7 @@ interface UseChatOptions {
 export const useChat = (options: UseChatOptions) => {
     const { roomId, courseName, targetUserId } = options;
     const { currentUser } = useAppStore();
+    const { t } = useTranslation();
 
     // State
     const [messages, setMessages] = useState<ChatRoomMessage[]>([]);
@@ -47,6 +79,9 @@ export const useChat = (options: UseChatOptions) => {
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [messageLimit, setMessageLimit] = useState(DEFAULT_LIMIT);
+    const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
+    const [isTargetBlocked, setIsTargetBlocked] = useState(false);
+    const [isBlockedByTarget, setIsBlockedByTarget] = useState(false);
 
     // Memoized grouped messages by date
     const groupedMessages = useMemo(() => {
@@ -70,6 +105,7 @@ export const useChat = (options: UseChatOptions) => {
 
     // Mobile action state
     const [swipedMessageId, setSwipedMessageId] = useState<string | null>(null);
+    const [rightSwipedMessageId, setRightSwipedMessageId] = useState<string | null>(null);
     const touchStartXRef = useRef<number>(0);
     const touchStartYRef = useRef<number>(0);
     const touchStartTimeRef = useRef<number>(0);
@@ -106,6 +142,39 @@ export const useChat = (options: UseChatOptions) => {
         loadingOlderRef.current = true;
         setMessageLimit((prev) => prev + LOAD_STEP);
     }, []);
+
+    // Subscribe to blocked users list (for private chat)
+    useEffect(() => {
+        if (!currentUser || !targetUserId) {
+            setBlockedUserIds([]);
+            setIsTargetBlocked(false);
+            setIsBlockedByTarget(false);
+            return;
+        }
+
+        // Check if target user is blocked by current user
+        isBlocked(currentUser.id, targetUserId).then(setIsTargetBlocked);
+
+        // Check if target user has blocked the current user
+        isBlockedBy(currentUser.id, targetUserId).then(setIsBlockedByTarget);
+
+        // Subscribe to real-time blocked users list
+        const unsubscribe = subscribeToBlockedUsers(currentUser.id, (blockedIds) => {
+            setBlockedUserIds(blockedIds);
+            // Update isTargetBlocked when the list changes
+            if (targetUserId) {
+                setIsTargetBlocked(blockedIds.includes(targetUserId));
+            }
+        });
+
+        return () => unsubscribe();
+    }, [currentUser?.id, targetUserId]);
+
+    // Filter out messages from blocked users
+    const filteredMessages = useMemo(() => {
+        if (blockedUserIds.length === 0) return messages;
+        return messages.filter(msg => !blockedUserIds.includes(msg.senderId));
+    }, [messages, blockedUserIds]);
 
     // Subscribe to real-time messages (with reactions merge handled by the service)
     useEffect(() => {
@@ -158,6 +227,31 @@ export const useChat = (options: UseChatOptions) => {
         // messages from appearing.
     }, [roomId, messageLimit, currentUser?.id]);
 
+    // Block/unblock handlers
+    const handleBlockUser = useCallback(async (userId: string) => {
+        if (!currentUser) return;
+        try {
+            await blockUser(currentUser.id, userId);
+            setIsTargetBlocked(true);
+            setBlockedUserIds(prev => [...prev, userId]);
+            setToastMessage(t('chat.userBlocked'));
+        } catch (err) {
+            setError(t('chat.errorBlockingUser'));
+        }
+    }, [currentUser, t]);
+
+    const handleUnblockUser = useCallback(async (userId: string) => {
+        if (!currentUser) return;
+        try {
+            await unblockUser(currentUser.id, userId);
+            setIsTargetBlocked(false);
+            setBlockedUserIds(prev => prev.filter(id => id !== userId));
+            setToastMessage(t('chat.userUnblocked'));
+        } catch (err) {
+            setError(t('chat.errorUnblockingUser'));
+        }
+    }, [currentUser, t]);
+
     // Hide toast indicator
     useEffect(() => {
         if (messageSent || toastMessage) {
@@ -172,6 +266,14 @@ export const useChat = (options: UseChatOptions) => {
     // Send message
     const handleSendMessage = useCallback(async () => {
         if (!newMessage.trim() || !currentUser) return;
+        if (isTargetBlocked) {
+            setError(t('chat.cannotSendToBlockedUser'));
+            return;
+        }
+        if (isBlockedByTarget) {
+            setError(t('chat.blockedYou'));
+            return;
+        }
 
         const messageText = newMessage.trim();
         setNewMessage('');
@@ -189,17 +291,21 @@ export const useChat = (options: UseChatOptions) => {
             setReplyTo(null);
 
             if (isPrivateChat && targetUserId) {
-                createNotification({
-                    type: 'private_message',
-                    title: 'رسالة خاصة جديدة',
-                    body: messageText.length > 50 ? messageText.substring(0, 50) + '...' : messageText,
-                    fromUserId: currentUser.id,
-                    fromUserName: currentUser.name,
-                    toUserId: targetUserId,
-                    link: `/chat/private?userId=${currentUser.id}&userName=${encodeURIComponent(currentUser.name)}`
-                }).catch((err) => {
-                    console.warn('Failed to create notification:', err);
-                });
+                // Check if the recipient has blocked the sender
+                const blockedByTarget = await isBlockedBy(currentUser.id, targetUserId);
+                if (!blockedByTarget) {
+                    createNotification({
+                        type: 'private_message',
+                        title: t('notifications.privateMessageTitle'),
+                        body: messageText.length > 50 ? messageText.substring(0, 50) + '...' : messageText,
+                        fromUserId: currentUser.id,
+                        fromUserName: currentUser.name,
+                        toUserId: targetUserId,
+                        link: `/chat/private?userId=${currentUser.id}&userName=${encodeURIComponent(currentUser.name)}`
+                    }).catch((err) => {
+                        console.warn('Failed to create notification:', err);
+                    });
+                }
             }
         } catch (err) {
             setError('حدث خطأ أثناء إرسال الرسالة');
@@ -207,7 +313,7 @@ export const useChat = (options: UseChatOptions) => {
         } finally {
             setIsSending(false);
         }
-    }, [newMessage, currentUser, roomId, replyTo, isPrivateChat, targetUserId, scrollToBottom]);
+    }, [newMessage, currentUser, roomId, replyTo, isPrivateChat, targetUserId, scrollToBottom, isTargetBlocked, isBlockedByTarget, t]);
 
     // Handle reaction
     const handleReaction = useCallback(async (messageId: string, emoji: string) => {
@@ -266,7 +372,7 @@ export const useChat = (options: UseChatOptions) => {
             if (currentUser && isPrivateChat && targetUserId) {
                 createNotification({
                     type: 'message_edited',
-                    title: 'تم تعديل رسالة',
+                    title: t('notifications.messageEditedTitle'),
                     body: editingText.length > 50 ? editingText.substring(0, 50) + '...' : editingText,
                     fromUserId: currentUser.id,
                     fromUserName: currentUser.name,
@@ -329,14 +435,21 @@ export const useChat = (options: UseChatOptions) => {
             return;
         }
 
-        if (Math.abs(deltaX) > 80 && Math.abs(deltaY) < 50 && !swipedMessageId) {
+        if (Math.abs(deltaX) > 80 && Math.abs(deltaY) < 50) {
             if (deltaX > 0) {
+                // Swipe LEFT - Reply
                 setSwipedMessageId(message.id);
+                setRightSwipedMessageId(null);
+            } else if (deltaX < 0) {
+                // Swipe RIGHT - Other actions
+                setRightSwipedMessageId(message.id);
+                setSwipedMessageId(null);
             }
-        } else if (swipedMessageId === message.id) {
+        } else if (swipedMessageId === message.id || rightSwipedMessageId === message.id) {
             setSwipedMessageId(null);
+            setRightSwipedMessageId(null);
         }
-    }, [swipedMessageId]);
+    }, [swipedMessageId, rightSwipedMessageId]);
 
     // Utility functions
     const formatTime = useCallback((timestamp: number) => {
@@ -384,7 +497,7 @@ export const useChat = (options: UseChatOptions) => {
 
     return {
         // State
-        messages,
+        messages: filteredMessages,
         newMessage,
         setNewMessage,
         isLoading,
@@ -418,6 +531,8 @@ export const useChat = (options: UseChatOptions) => {
         // Mobile state
         swipedMessageId,
         setSwipedMessageId,
+        rightSwipedMessageId,
+        setRightSwipedMessageId,
         touchHandledRef,
 
         // Context menu
@@ -434,6 +549,13 @@ export const useChat = (options: UseChatOptions) => {
         containerRef,
         handleScroll,
         scrollToBottom,
+
+        // Block handlers
+        isTargetBlocked,
+        isBlockedByTarget,
+        blockedUserIds,
+        handleBlockUser,
+        handleUnblockUser,
 
         // Handlers
         handleSendMessage,

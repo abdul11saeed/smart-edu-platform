@@ -156,6 +156,7 @@ const timeAgo = (ts: number): string => {
    const [copiedId, setCopiedId] = useState<string | null>(null);
    const [viewportH, setViewportH] = useState<number>(typeof window !== 'undefined' ? window.innerHeight : 800);
    const [isNarrow, setIsNarrow] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+   const initialMountRef = useRef(true);
 
    const { aiChatOpenMode, setAiChatOpenMode } = useAppStore();
 
@@ -189,16 +190,33 @@ const timeAgo = (ts: number): string => {
   }, [isOpen, initialSelectedFile]);
 
   // Handle click outside to close modal
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, onClose]);
+   // Use touchstart with a small delay to avoid closing during normal interaction
+   useEffect(() => {
+     if (!isOpen) return;
+     let timeoutId: number | null = null;
+
+     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+       const target = event.target as Node;
+       if (chatRef.current && !chatRef.current.contains(target)) {
+         // Small delay to let any ongoing touch/mouse interaction settle
+         timeoutId = window.setTimeout(() => {
+           onClose();
+         }, 150);
+       }
+     };
+
+     // Use touchstart for mobile (fires before mousedown) and mousedown for desktop
+     document.addEventListener('touchstart', handleClickOutside, { passive: true });
+     document.addEventListener('mousedown', handleClickOutside);
+
+     return () => {
+       if (timeoutId !== null) {
+         clearTimeout(timeoutId);
+       }
+       document.removeEventListener('touchstart', handleClickOutside);
+       document.removeEventListener('mousedown', handleClickOutside);
+     };
+   }, [isOpen, onClose]);
 
   // Lock page scroll while the chat is open. We also remember the scroll position
   // so that closing the chat returns the user to exactly where they were on the
@@ -206,63 +224,66 @@ const timeAgo = (ts: number): string => {
   // On mobile (narrow), we skip body overflow locking because it interferes with
   // the browser's viewport resize behavior when the virtual keyboard opens/closes,
   // which causes the chat to appear stuck or mispositioned.
-  useEffect(() => {
-    if (!isOpen) return;
-    const docEl = document.documentElement;
-    const body = document.body;
-    let scrollY = 0;
+   useEffect(() => {
+     if (!isOpen) return;
+     const docEl = document.documentElement;
+     const body = document.body;
+     let scrollY = 0;
 
-    // Get scroll position and calculate scrollbar width safely
-    try {
-      scrollY = window.scrollY;
-    } catch (e) {
-      scrollY = 0;
-    }
+     // Get scroll position and calculate scrollbar width safely
+     try {
+       scrollY = window.scrollY;
+     } catch (e) {
+       scrollY = 0;
+     }
 
-    const computeScrollBarWidth = () => {
-      try {
-        return (window.innerWidth || 0) - (docEl.clientWidth || 0);
-      } catch (e) {
-        return 0;
-      }
-    };
+     const computeScrollBarWidth = () => {
+       try {
+         return (window.innerWidth || 0) - (docEl.clientWidth || 0);
+       } catch (e) {
+         return 0;
+       }
+     };
 
-    const scrollBarWidth = computeScrollBarWidth();
-    const isRTL = docEl.dir === 'rtl';
+     const scrollBarWidth = computeScrollBarWidth();
+     const isRTL = docEl.dir === 'rtl';
 
-    const previous = {
-      bodyOverflow: body.style.overflow,
-      docOverflow: docEl.style.overflow,
-      paddingRight: body.style.paddingRight,
-      paddingLeft: body.style.paddingLeft,
-    };
+     const previous = {
+       bodyOverflow: body.style.overflow,
+       docOverflow: docEl.style.overflow,
+       paddingRight: body.style.paddingRight,
+       paddingLeft: body.style.paddingLeft,
+     };
 
-    // Only lock body scroll on desktop to avoid mobile viewport resize issues
-    if (!isNarrow) {
-      body.style.overflow = 'hidden';
-      docEl.style.overflow = 'hidden';
-      // Prevent the page from shifting horizontally when the scrollbar disappears
-      if (scrollBarWidth > 0) {
-        if (isRTL) body.style.paddingLeft = `${scrollBarWidth}px`;
-        else body.style.paddingRight = `${scrollBarWidth}px`;
-      }
-    }
+     // Only lock body scroll on desktop to avoid mobile viewport resize issues
+     if (!isNarrow) {
+       body.style.overflow = 'hidden';
+       docEl.style.overflow = 'hidden';
+       // Prevent the page from shifting horizontally when the scrollbar disappears
+       if (scrollBarWidth > 0) {
+         if (isRTL) body.style.paddingLeft = `${scrollBarWidth}px`;
+         else body.style.paddingRight = `${scrollBarWidth}px`;
+       }
+     }
 
-    return () => {
-      if (!isNarrow) {
-        body.style.overflow = previous.bodyOverflow;
-        docEl.style.overflow = previous.docOverflow;
-        body.style.paddingRight = previous.paddingRight;
-        body.style.paddingLeft = previous.paddingLeft;
-      }
-      // Return the page to where the user was before opening the chat
-      try {
-        window.scrollTo({ top: scrollY, behavior: 'instant' });
-      } catch (e) {
-        // ignore scroll errors on cleanup
-      }
-    };
-  }, [isOpen, isNarrow]);
+     return () => {
+       if (!isNarrow) {
+         body.style.overflow = previous.bodyOverflow;
+         docEl.style.overflow = previous.docOverflow;
+         body.style.paddingRight = previous.paddingRight;
+         body.style.paddingLeft = previous.paddingLeft;
+       }
+       // Return the page to where the user was before opening the chat
+       // Use requestAnimationFrame to ensure the browser has finished any pending layout
+       requestAnimationFrame(() => {
+         try {
+           window.scrollTo({ top: scrollY, behavior: 'instant' });
+         } catch (e) {
+           // ignore scroll errors on cleanup
+         }
+       });
+     };
+   }, [isOpen, isNarrow]);
 
   // Escape to close
   useEffect(() => {
@@ -331,14 +352,17 @@ const timeAgo = (ts: number): string => {
    }, [isOpen, storageKey]);
 
   // Auto-scroll to latest message
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
-  }, [messages, isLoading]);
+   // Use instant scroll on initial mount for snappy feel, smooth for subsequent messages
+   useEffect(() => {
+     if (messagesContainerRef.current) {
+       const behavior = initialMountRef.current ? 'instant' : 'smooth';
+       initialMountRef.current = false;
+       messagesContainerRef.current.scrollTo({
+         top: messagesContainerRef.current.scrollHeight,
+         behavior
+       });
+     }
+   }, [messages, isLoading]);
 
   // Update welcome message when language changes so it always matches the selected language
   useEffect(() => {
@@ -360,8 +384,12 @@ const timeAgo = (ts: number): string => {
 
      const update = () => {
        try {
+         // Use visualViewport dimensions when available for accurate mobile measurement
+         // visualViewport accounts for on-screen keyboards, address bar, and other browser chrome
+         const newWidth = vv ? vv.width : (window.innerWidth || 1280);
          const newHeight = vv ? vv.height : (window.innerHeight || 800);
-         const newIsNarrow = (window.innerWidth || 1280) < 768;
+         // Use a slightly wider threshold to prevent flickering around the breakpoint
+         const newIsNarrow = newWidth < 768;
 
          // Only update state if values actually changed to prevent unnecessary re-renders
          const heightChanged = newHeight !== lastHeight;
@@ -396,13 +424,14 @@ const timeAgo = (ts: number): string => {
      // Initial update
      update();
 
+     // Listen to visualViewport resize for accurate mobile measurement
      if (vv) {
        vv.addEventListener('resize', scheduleUpdate);
      }
      window.addEventListener('resize', scheduleUpdate);
-     window.addEventListener('focus', scheduleUpdate);
 
-     // Also listen for orientation change which affects viewport on mobile
+     // Listen for orientation change which affects viewport on mobile
+     // Note: orientationchange is deprecated but still fires on some older browsers
      window.addEventListener('orientationchange', scheduleUpdate);
 
      return () => {
@@ -413,7 +442,6 @@ const timeAgo = (ts: number): string => {
          vv.removeEventListener('resize', scheduleUpdate);
        }
        window.removeEventListener('resize', scheduleUpdate);
-       window.removeEventListener('focus', scheduleUpdate);
        window.removeEventListener('orientationchange', scheduleUpdate);
      };
    }, [isOpen]);
@@ -868,12 +896,12 @@ const timeAgo = (ts: number): string => {
   const activeAction = quickActions.find((a) => a.action === activeTool);
 
   return createPortal(
-    <div
-      ref={chatRef}
-      onClick={(e) => e.stopPropagation()}
-      className="fixed top-0 left-0 right-0 md:top-auto md:bottom-4 md:mx-auto w-full md:w-[min(920px,92vw)] md:h-[78vh] md:min-h-[520px] md:max-h-[calc(100dvh-2rem)] bg-white dark:bg-gray-900 rounded-none md:rounded-2xl shadow-2xl border-0 md:border md:border-gray-200 dark:md:border-gray-700 flex flex-col z-[100] overflow-hidden relative mobile-chat-viewport"
-      style={isNarrow ? { height: `${viewportH}px` } : undefined}
-    >
+     <div
+       ref={chatRef}
+       onClick={(e) => e.stopPropagation()}
+       className="fixed top-0 left-0 right-0 md:top-auto md:bottom-4 md:mx-auto w-full md:w-[min(920px,92vw)] md:h-[78vh] md:min-h-[520px] md:max-h-[calc(100dvh-2rem)] bg-white dark:bg-gray-900 rounded-none md:rounded-2xl shadow-2xl border-0 md:border md:border-gray-200 dark:md:border-gray-700 flex flex-col z-[200] overflow-hidden relative mobile-chat-viewport"
+       style={isNarrow ? { height: `${viewportH}px`, willChange: 'transform, height', transform: 'translateZ(0)' } : undefined}
+     >
       {/* ===== Header ===== */}
       <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 text-white px-4 pt-[env(safe-area-inset-top)] py-3 flex items-center justify-between flex-shrink-0 shadow-md">
         <div className="flex items-center gap-2 min-w-0">
