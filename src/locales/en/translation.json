@@ -1,8 +1,8 @@
 {
   "app": {
-    "title": "Yemen Universities Academic Programs Platform",
-    "description": "An intelligent educational platform designed for Yemeni university students",
-    "name": "Yemen Universities Academic Programs Platform"
+    "title": "Academic programs platform for online universities",
+    "description": "An intelligent educational platform designed for online universities",
+    "name": "Academic programs platform for online universities"
   },
   "nav": {
     "home": "Home",
@@ -42,7 +42,6 @@
     "passwordMinLength": "Password must be at least 6 characters",
     "confirmPasswordRequired": "Confirm password is required",
     "passwordsMismatch": "Passwords do not match",
-    "copyright": "Yemen Universities Academic Programs Platform. All rights reserved",
     "name": "EduAI"
   },
   "chat": {
@@ -71,7 +70,6 @@
     "addEmoji": "Add emoji",
     "openPrivateChats": "Open private chat list",
     "backToGeneralChat": "Back to General Chat",
-    "usersInGeneralChat": "Users in General Chat",
     "selectUserForPrivateChat": "Select a user to start a private chat",
     "copyMessage": "Message copied",
     "messageCopied": "Message copied",
@@ -90,50 +88,25 @@
     "scrollToBottom": "Scroll to bottom",
     "loggedInRequired": "Please log in",
     "errorSendingMessage": "An error occurred while sending the message",
-    "privateChatNoMessages": "No private messages yet",
-    "privateChatStartNow": "Start the conversation now!",
     "privateMessagePlaceholder": "Type a private message to {{name}}...",
     "deleteMessageTitle": "Message deleted",
     "deleteMessageBody": "A message has been deleted from the conversation",
-    "messageTooLong": "Message exceeds the maximum length of {{max}} characters",
-    "charactersRemaining": "{{count}} characters remaining",
-    "charactersExceeded": "{{count}} characters over limit",
-    "typingIndicator": "{{name}} is typing...",
-    "typingMultiple": "Several people are typing...",
-    "chatRequest": "New Chat Request",
-    "chatRequestBody": "{{name}} wants to start a private chat with you",
-    "chatRequestSent": "Chat request sent",
-    "chatRequestAccepted": "Chat request accepted",
-    "chatRequestAcceptedBody": "{{name}} accepted your chat request",
-    "chatRequestRejected": "Chat request rejected",
-    "errorChatRequest": "Failed to send chat request",
-    "errorAcceptingRequest": "Failed to accept chat request",
-    "errorRejectingRequest": "Failed to reject chat request",
-    "chatRequests": "Chat Requests",
-    "pendingRequests": "Pending Requests",
-    "noChatRequests": "No chat requests",
-    "accept": "Accept",
-    "reject": "Reject",
+    "bio": "Bio",
     "blockUser": "Block User",
+    "blockedYou": "You have been blocked",
+    "cannotSendToBlockedUser": "Cannot send messages to blocked user",
+    "confirmBlockUser": "Are you sure you want to block this user?",
+    "errorBlockingUser": "Error blocking user",
+    "errorUnblockingUser": "Error unblocking user",
+    "searchUsers": "Search users...",
     "unblockUser": "Unblock User",
     "userBlocked": "User blocked",
-    "userUnblocked": "User unblocked",
-    "errorBlockingUser": "Failed to block user",
-    "errorUnblockingUser": "Failed to unblock user",
-    "blockedMessage": "You have blocked this user",
-    "blockedYou": "This user has blocked you",
-    "conversationRequests": "Conversation Requests",
-    "messageDeletedForYou": "Message deleted for you",
-    "messageSoftDeleted": "This message was deleted",
-    "viewProfile": "View Profile",
+    "userBlockedChat": "You cannot chat with this user",
+    "userBlockedChatSubtitle": "This user has blocked you",
     "userProfile": "User Profile",
-    "bio": "Bio",
-    "confirmBlockUser": "Are you sure you want to block this user?",
-    "userBlockedChat": "You have blocked this user",
-    "userBlockedChatSubtitle": "You won't see their messages and they won't be able to message you",
-    "cannotSendToBlockedUser": "Cannot send messages to a blocked user",
+    "userUnblocked": "User unblocked",
     "users": "Users",
-    "searchUsers": "Search users..."
+    "viewProfile": "View Profile"
   },
   "discussions": {
     "newDiscussion": "New Discussion",
@@ -194,10 +167,10 @@
     "publicChat": "Public Chat",
     "sendComment": "Post comment",
     "sendMessage": "Send",
-    "seoDescription": "Discuss with peers and teachers on Yemen Universities Platform",
+    "seoDescription": "Discuss with peers and teachers on Academic programs platform for online universities",
     "seoFallbackName": "Discussion",
     "seoStructuredName": "Discussion {{title}}",
-    "seoTitle": "Discussions - Yemen Universities Platform",
+    "seoTitle": "Discussions - Academic programs platform for online universities",
     "unlike": "Unlike"
   },
   "ai": {
@@ -206,7 +179,7 @@
     "send": "Send",
     "thinking": "Thinking...",
     "connectionError": "Could not reach the AI service. Check your connection to the server.",
-    "welcome": "Hello! I am the Yemen Universities Academic Programs Platform AI assistant 🤖\nI can help you explain concepts, summarize files, generate questions, and translate text.\nSelect a tool above or type your question directly!",
+    "welcome": "Hello! I am the Academic programs platform for online universities AI assistant 🤖\nI can help you explain concepts, summarize files, generate questions, and translate text.\nSelect a tool above or type your question directly!",
     "close": "Close",
     "newChat": "New chat",
     "noHistory": "No previous conversations yet.",
@@ -417,22 +390,21 @@
     "markAsReadTitle": "Mark as read",
     "unreadCountText": "You have {{count}} unread notifications",
     "fromLabel": "from {{name}}",
-    "privateMessageTitle": "New private message",
-    "messageEditedTitle": "Message edited",
-    "messageDeletedTitle": "Message deleted",
-    "messageDeletedBody": "A message has been deleted from the conversation",
     "unreadNotification": "unread",
     "from": "From",
     "timeMinutesAgo": "{{minutes}} minute(s) ago",
     "timeHoursAgo": "{{hours}} hour(s) ago",
     "timeDaysAgo": "{{days}} day(s) ago",
     "timeJustNow": "Just now",
-    "discussionReplyTitle": "{{name}} replied to your discussion",
-    "discussionReplyBody": "{{preview}}",
-    "likeTitle": "{{name}} liked your discussion",
+    "commentLikeBody": "{{preview}}",
+    "commentLikeTitle": "{{title}}",
+    "discussionReplyTitle": "{{title}}",
     "likeBody": "{{title}}",
-    "commentLikeTitle": "{{name}} liked your comment",
-    "commentLikeBody": "{{name}} liked your comment"
+    "likeTitle": "{{title}}",
+    "messageDeletedBody": "{{preview}}",
+    "messageDeletedTitle": "{{title}}",
+    "messageEditedTitle": "{{title}}",
+    "privateMessageTitle": "{{title}}"
   },
   "profile": {
     "title": "Profile",
@@ -454,9 +426,9 @@
     "addPhoto": "Add profile photo",
     "loginRequiredViewProfile": "You must log in to view your profile",
     "welcome": "Welcome",
-    "memberSinceDays": "عضو منذ {{days}} يوم",
-    "memberSinceMonths": "عضو منذ {{months}} شهر",
-    "memberSinceYears": "عضو منذ {{years}} سنة"
+    "memberSinceDays": "Member for {{days}} days",
+    "memberSinceMonths": "Member for {{months}} months",
+    "memberSinceYears": "Member for {{years}} years"
   },
   "errors": {
     "generic": "An unexpected error occurred",
@@ -624,48 +596,48 @@
     "userRegistered": "User registered"
   },
   "adminReports": {
-    "activeUsers": "المستخدمون النشطون",
-    "activityDistribution": "توزيع النشاط",
-    "busiestDay": "أكثر الأيام نشاطاً",
-    "by": "بواسطة",
-    "byFilesDiscussionsActivity": "حسب الملفات والمناقشات والنشاط",
-    "byRepliesLikes": "حسب الردود والإعجابات",
-    "byTotalDownloads": "حسب إجمالي التنزيلات",
-    "byUploadedFiles": "حسب الملفات المرفوعة",
-    "dailyEvents": "الأحداث اليومية",
-    "engagementRate": "معدل التفاعل",
-    "errorLoading": "حدث خطأ أثناء تحميل التحليلات",
-    "fileTypeDistribution": "توزيع أنواع الملفات",
-    "filesUploaded": "{{count}} ملف تم رفعه",
-    "lastUpdated": "آخر تحديث: {{date}}",
-    "likes": "الإعجابات",
-    "mostActiveUsers": "المستخدمون الأكثر نشاطاً",
-    "noActivityYet": "لا يوجد نشاط بعد",
-    "noDataCourse": "لا توجد بيانات",
-    "noDataDay": "لا توجد بيانات",
-    "noDetails": "لا توجد تفاصيل",
-    "noDiscussionsYet": "لا توجد مناقشات بعد",
-    "noDownloadsYet": "لا توجد تنزيلات بعد",
-    "notEnoughData": "لا توجد بيانات كافية",
-    "peakHours": "ساعات الذروة",
-    "refresh": "تحديث",
-    "relativeShare": "النسبة النسبية",
-    "replies": "الردود",
-    "siteUsageDays": "أيام استخدام الموقع",
-    "subtitle": "نظرة شاملة على أداء المنصة",
-    "title": "التقارير والتحليلات",
-    "topColleges": "أفضل الكليات",
-    "topCourse": "المقرر الأكثر تحميلاً",
-    "topCoursesByDownloads": "أكثر المقررات تحميلاً",
-    "topDiscussions": "أكثر المناقشات تفاعلاً",
-    "totalComments": "إجمالي التعليقات",
-    "totalDiscussions": "إجمالي المناقشات",
-    "totalDownloads": "إجمالي التنزيلات",
-    "totalFiles": "إجمالي الملفات",
-    "totalLikes": "إجمالي الإعجابات",
-    "totalUsers": "إجمالي المستخدمين",
-    "weekdayActivity": "النشاط حسب أيام الأسبوع",
-    "weeklyActivity": "النشاط الأسبوعي",
+    "activeUsers": "Active Users",
+    "activityDistribution": "Activity Distribution",
+    "busiestDay": "Busiest Day",
+    "by": "By",
+    "byFilesDiscussionsActivity": "By Files, Discussions & Activity",
+    "byRepliesLikes": "By Replies & Likes",
+    "byTotalDownloads": "By Total Downloads",
+    "byUploadedFiles": "By Uploaded Files",
+    "dailyEvents": "Daily Events",
+    "engagementRate": "Engagement Rate",
+    "errorLoading": "Error loading analytics",
+    "fileTypeDistribution": "File Type Distribution",
+    "filesUploaded": "{{count}} files uploaded",
+    "lastUpdated": "Last updated: {{date}}",
+    "likes": "Likes",
+    "mostActiveUsers": "Most Active Users",
+    "noActivityYet": "No activity yet",
+    "noDataCourse": "No data",
+    "noDataDay": "No data",
+    "noDetails": "No details",
+    "noDiscussionsYet": "No discussions yet",
+    "noDownloadsYet": "No downloads yet",
+    "notEnoughData": "Not enough data",
+    "peakHours": "Peak Hours",
+    "refresh": "Refresh",
+    "relativeShare": "Relative Share",
+    "replies": "Replies",
+    "siteUsageDays": "Site Usage Days",
+    "subtitle": "Comprehensive platform performance overview",
+    "title": "Reports & Analytics",
+    "topColleges": "Top Colleges",
+    "topCourse": "Top Course by Downloads",
+    "topCoursesByDownloads": "Top Courses by Downloads",
+    "topDiscussions": "Top Discussions",
+    "totalComments": "Total Comments",
+    "totalDiscussions": "Total Discussions",
+    "totalDownloads": "Total Downloads",
+    "totalFiles": "Total Files",
+    "totalLikes": "Total Likes",
+    "totalUsers": "Total Users",
+    "weekdayActivity": "Weekday Activity",
+    "weeklyActivity": "Weekly Activity",
     "activeDays": "Active for {{days}} days",
     "commentsMade": "Comments made",
     "discussionsCreated": "Discussions created"
@@ -683,7 +655,7 @@
     "getUpdates": "Get the latest updates and educational articles",
     "enterEmail": "Enter your email",
     "subscribe": "Subscribe Now",
-    "joinPlatform": "Join the Yemen Universities Academic Programs Platform",
+    "joinPlatform": "Join the Academic programs platform for online universities",
     "loginAccess": "Log in to access all educational services",
     "login": "Log In",
     "allRightsReserved": "All rights reserved",
@@ -693,7 +665,7 @@
     "contactTitle": "Contact Us"
   },
   "studentHome": {
-    "welcomeGuestTitle": "Yemen Universities Academic Programs Platform welcomes you",
+    "welcomeGuestTitle": "Academic programs platform for online universities welcomes you",
     "welcomeGuestDescription": "An intelligent educational platform to help students learn better. You can browse academic files and resources publicly.",
     "welcomeGuestLoginCta": "Log in to benefit from all services: download, share, chat, and AI assistant.",
     "loginNow": "Log in now",
@@ -763,7 +735,11 @@
       "Always at your service because your education is our priority, welcome to the world of learning.",
       "Start your journey today with our distinguished resources and shine among the courses.",
       "May God help you succeed and grant you useful knowledge, welcome again."
-    ]
+    ],
+    "welcomeTitle": "Academic programs platform for online universities welcomes you",
+    "welcomeAdmin": "Welcome back, manager {{name}}. We hope you are well, we are here to serve you.",
+    "myFiles": "My Files",
+    "welcomeStudent": "Welcome {{name}} to Academic programs platform for online universities, {{motivation}}"
   },
   "recommendations": {
     "categoryRecommended": "Recommended for you",
@@ -790,9 +766,9 @@
     "startExploring": "Start exploring",
     "points": "points",
     "saved": "saved",
-    "seoTitle": "Recommendations & Articles - Yemen Universities Academic Programs Platform",
-    "seoDescription": "Yemen Universities Academic Programs Platform - browse articles, news, courses, scholarships, and training designed for university students.",
-    "seoDefaultTitle": "Yemen Universities Academic Programs Platform",
+    "seoTitle": "Recommendations & Articles - Academic programs platform for online universities",
+    "seoDescription": "Academic programs platform for online universities - browse articles, news, courses, scholarships, and training designed for university students.",
+    "seoDefaultTitle": "Academic programs platform for online universities",
     "recommendedContent": "Recommended content",
     "suggestions": "Suggestions & Recommendations",
     "publicDescription": "Selected educational content for university students",
@@ -834,8 +810,8 @@
     }
   },
   "courseWorkspace": {
-    "title": "{name} Course - Yemeni Universities Academic Programs Platform",
-    "description": "Browse {name} course files on the Yemeni Universities Academic Programs Platform - academic files, discussions, and chat. Log in to download and participate.",
+    "title": "{name} Course - Academic programs platform for online universities",
+    "description": "Browse {name} course files on the Academic programs platform for online universities - academic files, discussions, and chat. Log in to download and participate.",
     "active": "Active"
   },
   "hierarchicalSelector": {
@@ -883,11 +859,11 @@
   },
   "about": {
     "title": "About the Platform",
-    "description": "Yemen Universities Academic Programs Platform is an intelligent educational platform designed specifically for Yemeni university students, aiming to facilitate access to high-quality education through artificial intelligence technologies."
+    "description": "Academic programs platform for online universities is an intelligent educational platform designed specifically for online university students, aiming to facilitate access to high-quality education through artificial intelligence technologies."
   },
   "terms": {
     "title": "Terms & Conditions",
-    "description": "By using the Yemen Universities Academic Programs Platform, you agree to comply with the following terms.",
+    "description": "By using the Academic programs platform for online universities, you agree to comply with the following terms.",
     "acceptTerms": "Acceptance of terms",
     "acceptTermsContent": "You must be authorized to use the platform, and you are responsible for maintaining the confidentiality of your account data.",
     "acceptableUse": "Acceptable use",
@@ -900,11 +876,11 @@
     "description": "We are here to help. You can contact us through the following channels:",
     "phone": "+977777777777",
     "email": "eduaiplatform55@gmail.com",
-    "metaDescription": "Yemeni Universities Academic Programs Platform - Contact us at +977777777777 or email eduaiplatform55@gmail.com."
+    "metaDescription": "Academic programs platform for online universities - Contact us at +977777777777 or email eduaiplatform55@gmail.com."
   },
   "courseFiles": {
-    "title": "{name} Files - Yemeni Universities Academic Programs Platform",
-    "description": "Browse {name} course files on the Yemeni Universities Academic Programs Platform - preview academic content and download after registration.",
+    "title": "{name} Files - Academic programs platform for online universities",
+    "description": "Browse {name} course files on the Academic programs platform for online universities - preview academic content and download after registration.",
     "backToHome": "Back to Home",
     "loading": "Loading files...",
     "autoTag": "Auto tag",
@@ -950,22 +926,22 @@
     "backToLogin": "Back to login"
   },
   "seo": {
-    "homeTitle": "Home - Yemen Universities Academic Programs Platform",
+    "homeTitle": "Home - Academic programs platform for online universities",
     "homeGuestDescription": "An intelligent educational platform to help students learn better. You can browse academic files and resources publicly.",
-    "homeLoggedInDescription": "Yemen Universities Academic Programs Platform - upload files and share them with your peers. An intelligent educational platform for Yemeni university students.",
-    "homeDefaultTitle": "Yemen Universities Academic Programs Platform"
+    "homeLoggedInDescription": "Academic programs platform for online universities - upload files and share them with your peers. An intelligent educational platform for online university students.",
+    "homeDefaultTitle": "Academic programs platform for online universities"
   },
   "privateChat": {
     "userNotFound": "User"
   },
   "activity": {
-    "new": "جديد"
+    "new": "New"
   },
   "darkMode": {
-    "toggle": "تبديل الوضع الليلي"
+    "toggle": "Toggle dark mode"
   },
   "userManagement": {
-    "unknownRole": "دور غير معروف"
+    "unknownRole": "Unknown role"
   },
   "adminRoute": {
     "checkingPermissions": "Checking permissions...",
@@ -1011,4 +987,5 @@
     "offline": "You are offline"
   }
 }
+
 

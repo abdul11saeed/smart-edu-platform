@@ -22,6 +22,10 @@ import {
     PublicDiscussion
 } from '../../services/discussionService';
 import { createNotification } from '../../services/notificationService';
+import { database } from '../../firebase/config';
+import { ref, onValue, off } from 'firebase/database';
+
+const DISCUSSION_LIKES_REF = 'discussion_likes';
 
 interface DiscussionForumProps {
     courseId: string;
@@ -100,32 +104,45 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
         return () => unsubscribe();
     }, [courseId, currentUser]);
 
-    // Subscribe to real-time likes for all discussions
+    // Subscribe to real-time likes for all discussions (optimized: single listener)
     useEffect(() => {
-        const unsubscribes: (() => void)[] = [];
-
         // Guests cannot like, and the likes node requires auth — skip for them.
         if (!currentUser) return;
 
-        discussions.forEach((discussion) => {
-            if (discussion.id) {
-                const unsubscribe = subscribeToLikes(
-                    discussion.id,
-                    currentUser?.id || null,
-                    (likes) => {
-                        setLikesMap((prev) => ({
-                            ...prev,
-                            [discussion.id!]: likes
-                        }));
+        const likesRef = ref(database, DISCUSSION_LIKES_REF);
+        const unsubscribe = onValue(likesRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const allLikes = snapshot.val() as Record<string, Record<string, boolean>>;
+                const newLikesMap: Record<string, DiscussionLikes> = {};
+                
+                // Filter for current discussions only
+                discussions.forEach((discussion) => {
+                    if (discussion.id && allLikes[discussion.id]) {
+                        const userIds = allLikes[discussion.id];
+                        newLikesMap[discussion.id] = {
+                            likeCount: Object.keys(userIds).length,
+                            likedByCurrentUser: !!userIds[currentUser.id],
+                            userIds
+                        };
+                    } else if (discussion.id) {
+                        newLikesMap[discussion.id] = { likeCount: 0, likedByCurrentUser: false, userIds: {} };
                     }
-                );
-                unsubscribes.push(unsubscribe);
+                });
+                
+                setLikesMap(newLikesMap);
+            } else {
+                // No likes at all - clear for current discussions
+                const emptyMap: Record<string, DiscussionLikes> = {};
+                discussions.forEach((d) => {
+                    if (d.id) emptyMap[d.id] = { likeCount: 0, likedByCurrentUser: false, userIds: {} };
+                });
+                setLikesMap(emptyMap);
             }
+        }, (error) => {
+            console.error('Error subscribing to likes:', error);
         });
 
-        return () => {
-            unsubscribes.forEach((unsub) => unsub());
-        };
+        return () => off(likesRef);
     }, [discussions, currentUser?.id]);
 
      // Subscribe to chat if showing

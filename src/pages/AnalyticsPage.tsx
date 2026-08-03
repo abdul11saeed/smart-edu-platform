@@ -16,6 +16,7 @@ import { database } from '../firebase/config';
 import { AnalyticsData, ActivityItem } from '../utils/analyticsTracker';
 import { getStatistics } from '../services/dataService';
 import { getTotalFileCount } from '../services/courseFilesService';
+import { formatNumberEn, formatFixedEn } from '../utils/formatNumbers';
 
 // Event type labels
 const eventTypeLabels: Record<string, string> = {
@@ -124,17 +125,17 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, bg
 
 // Activity item component
 const ActivityFeedItem: React.FC<{ activity: ActivityItem }> = ({ activity }) => {
-    const { t } = useTranslation();
-    const Icon = eventTypeIcons[activity.type] || Activity;
-    const colorClass = eventTypeColors[activity.type] || 'bg-gray-500';
+   const { t } = useTranslation();
+   const Icon = eventTypeIcons[activity.type] || Activity;
+   const colorClass = eventTypeColors[activity.type] || 'bg-gray-500';
 
-    const timeAgo = (timestamp: number) => {
-        const seconds = Math.floor((Date.now() - timestamp) / 1000);
-        if (seconds < 60) return t('analytics.now');
-        if (seconds < 3600) return `${Math.floor(seconds / 60)} ${t('analytics.minutesAgo', { minutes: Math.floor(seconds / 60) })}`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)} ${t('analytics.hoursAgo', { hours: Math.floor(seconds / 3600) })}`;
-        return `${Math.floor(seconds / 86400)} ${t('analytics.daysAgo', { days: Math.floor(seconds / 86400) })}`;
-    };
+   const timeAgo = (timestamp: number) => {
+       const seconds = Math.floor((Date.now() - timestamp) / 1000);
+       if (seconds < 60) return t('analytics.now');
+       if (seconds < 3600) return `${formatNumberEn(Math.floor(seconds / 60))} ${t('analytics.minutesAgo', { minutes: Math.floor(seconds / 60) })}`;
+       if (seconds < 86400) return `${formatNumberEn(Math.floor(seconds / 3600))} ${t('analytics.hoursAgo', { hours: Math.floor(seconds / 3600) })}`;
+       return `${formatNumberEn(Math.floor(seconds / 86400))} ${t('analytics.daysAgo', { days: Math.floor(seconds / 86400) })}`;
+   };
 
     const getPayloadText = () => {
         const payload = activity.payload;
@@ -467,16 +468,16 @@ const AnalyticsPage: React.FC = () => {
                                     <span className="text-sm text-gray-500">{t('analytics.filesPerUser')}</span>
                                     <span className="text-sm font-medium text-gray-900">
                                         {fsStats.totalUsers > 0
-                                            ? (fsStats.totalFiles / fsStats.totalUsers).toFixed(1)
-                                            : 0}
+                                            ? formatFixedEn(fsStats.totalFiles / fsStats.totalUsers, 1)
+                                            : '0'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-gray-500">{t('analytics.avgMessages')}</span>
                                     <span className="text-sm font-medium text-gray-900">
                                         {fsStats.totalUsers > 0
-                                            ? (messagesCount / fsStats.totalUsers).toFixed(1)
-                                            : 0}
+                                            ? formatFixedEn(messagesCount / fsStats.totalUsers, 1)
+                                            : '0'}
                                     </span>
                                 </div>
                             </div>

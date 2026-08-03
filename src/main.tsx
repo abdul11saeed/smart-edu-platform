@@ -12,6 +12,15 @@ import 'highlight.js/styles/github-dark.css' // Syntax highlighting theme (dark 
 import 'katex/dist/katex.min.css' // Math (KaTeX) styling
 import './index.css'
 
+// Register Service Worker for offline support and caching
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('Service Worker registration failed:', err);
+    });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>

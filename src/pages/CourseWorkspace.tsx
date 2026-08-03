@@ -29,7 +29,7 @@ interface TabConfig {
 }
 
 const tabs: TabConfig[] = [
-    { id: 'files', label: 'home.allFiles', icon: FileText },
+    { id: 'files', label: 'studentHome.allFiles', icon: FileText },
     { id: 'upload', label: 'nav.upload', icon: Upload },
     { id: 'discussions', label: 'nav.discussions', icon: MessageSquare },
     { id: 'chat', label: 'nav.chat', icon: MessageCircle },

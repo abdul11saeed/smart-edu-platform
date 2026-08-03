@@ -30,6 +30,7 @@ import {
     DonutChart,
 } from '../components/ui/charts';
 import { getDashboardAnalytics, AdminAnalytics } from '../services/adminAnalyticsService';
+import { formatNumberEn, formatFixedEn } from '../utils/formatNumbers';
 
 // ---------- KPI Card ----------
 interface KpiProps {
@@ -41,15 +42,13 @@ interface KpiProps {
     suffix?: string;
 }
 const KpiCard: React.FC<KpiProps> = ({ title, value, icon: Icon, color, bg, suffix }) => {
-    const { i18n } = useTranslation();
-    const locale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
     return (
         <Card className="relative overflow-hidden">
             <div className={`absolute -left-4 -top-4 w-20 h-20 rounded-full ${bg} opacity-10`}></div>
             <div className="relative flex items-center justify-between">
                 <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-                    <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString(locale)}{suffix}</p>
+                    <p className={`text-2xl font-bold ${color}`}>{formatNumberEn(value)}{suffix}</p>
                 </div>
                 <div className={`p-3 rounded-lg ${bg}`}>
                     <Icon className="h-5 w-5 text-white" />
@@ -106,7 +105,8 @@ const AdminReports: React.FC = () => {
     const [data, setData] = useState<AdminAnalytics>(initialData);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const locale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
+    // Use English locale for date formatting only
+    const dateLocale = i18n.language === 'ar' ? 'ar-SA' : 'en-US';
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -156,7 +156,7 @@ const AdminReports: React.FC = () => {
                         <div className="flex items-center gap-3">
                             {data.generatedAt > 0 && !loading && (
                                 <span className="text-xs text-gray-400 hidden sm:block">
-                                    {t('adminReports.lastUpdated', { date: new Date(data.generatedAt).toLocaleString(locale) })}
+                                    {t('adminReports.lastUpdated', { date: new Date(data.generatedAt).toLocaleString(dateLocale) })}
                                 </span>
                             )}
                             <button
@@ -240,7 +240,7 @@ const AdminReports: React.FC = () => {
                                         data={data.topCoursesByDownloads.map((c) => ({
                                             label: c.courseName,
                                             value: c.downloads,
-                                            sublabel: `${c.filesCount} ${t('adminReports.filesUploaded', { count: c.filesCount })}`,
+                                            sublabel: `${formatNumberEn(c.filesCount)} ${t('adminReports.filesUploaded', { count: c.filesCount })}`,
                                         }))}
                                     />
                                 ) : (
@@ -261,11 +261,11 @@ const AdminReports: React.FC = () => {
                                                         {u.name}
                                                     </p>
                                                     <p className="text-xs text-gray-400 truncate">
-                                                        {[u.filesUploaded > 0 ? `${u.filesUploaded} ${t('adminReports.filesUploaded', { count: u.filesUploaded })}` : '', u.discussionsCreated > 0 ? `${u.discussionsCreated} ${t('adminReports.discussionsCreated', { count: u.discussionsCreated })}` : '', u.commentsMade > 0 ? `${u.commentsMade} ${t('adminReports.commentsMade', { count: u.commentsMade })}` : '', u.activeDays > 0 ? `${u.activeDays} ${t('adminReports.activeDays', { count: u.activeDays })}` : ''].filter(Boolean).join(' · ') || t('adminReports.noDetails')}
+                                                        {[u.filesUploaded > 0 ? `${formatNumberEn(u.filesUploaded)} ${t('adminReports.filesUploaded', { count: u.filesUploaded })}` : '', u.discussionsCreated > 0 ? `${formatNumberEn(u.discussionsCreated)} ${t('adminReports.discussionsCreated', { count: u.discussionsCreated })}` : '', u.commentsMade > 0 ? `${formatNumberEn(u.commentsMade)} ${t('adminReports.commentsMade', { count: u.commentsMade })}` : '', u.activeDays > 0 ? `${formatNumberEn(u.activeDays)} ${t('adminReports.activeDays', { count: u.activeDays })}` : ''].filter(Boolean).join(' · ') || t('adminReports.noDetails')}
                                                     </p>
                                                 </div>
                                                 <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                                    {u.score.toLocaleString(locale)}
+                                                    {formatNumberEn(u.score)}
                                                 </span>
                                             </div>
                                         ))}
@@ -303,11 +303,11 @@ const AdminReports: React.FC = () => {
                                             <div className="flex items-center gap-3 text-xs shrink-0">
                                                 <span className="flex items-center gap-1 text-teal-600" title={t('adminReports.replies')}>
                                                     <MessageCircle className="h-4 w-4" />
-                                                    {d.commentsCount}
+                                                    {formatNumberEn(d.commentsCount)}
                                                 </span>
                                                 <span className="flex items-center gap-1 text-pink-600" title={t('adminReports.likes')}>
                                                     <ThumbsUp className="h-4 w-4" />
-                                                    {d.likesCount}
+                                                    {formatNumberEn(d.likesCount)}
                                                 </span>
                                             </div>
                                         </div>

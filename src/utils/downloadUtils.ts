@@ -122,7 +122,9 @@ export const formatFileSize = (bytes?: number): string => {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    const value = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+    // Always use English numerals for the numeric part
+    return `${value.toLocaleString('en-US')} ${sizes[i]}`;
 };
 
 export const downloadFile = async (url: string, options: DownloadOptions): Promise<boolean> => {

@@ -24,6 +24,7 @@ Thumbs.db
 # Firebase
 firebase-debug.log
 ui-debug.log
+.firebase/hosting.*.cache
 
 # Server (backend - keep package.json but not dependencies)
 # server/node_modules/ - already covered by node_modules/

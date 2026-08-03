@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { RecommendationContent, BadgeType } from '../../types';
 import { BookOpen, Heart, Bookmark, Eye, Calendar, Clock, Lock, AlertTriangle, Timer, Sparkles, Flame, Star, GraduationCap, TrendingUp } from 'lucide-react';
+import { formatNumberEn } from '../../utils/formatNumbers';
 
 interface RecommendationCardProps {
     content: RecommendationContent;
@@ -123,7 +124,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                     )}
                     <span className="flex items-center gap-1.5">
                         <Eye className="h-3 w-3" />
-                        {content.viewsCount}
+                        {formatNumberEn(content.viewsCount)}
                     </span>
                     {content.registrationDeadline && (
                         <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
