@@ -9,7 +9,7 @@ import PageTransition from '../components/ui/PageTransition';
 import ScrollToTop from '../components/navigation/ScrollToTop';
 import FileUploadModal from '../components/ui/FileUploadModal';
 import { useAppStore } from '../stores/appStore';
-import { isChatPage } from '../utils/chatPage';
+import { isChatPage, isHeaderHiddenPage } from '../utils/chatPage';
 
 function AppShell() {
     const location = useLocation();
@@ -21,6 +21,9 @@ function AppShell() {
     const handleUploadClick = () => setIsUploadModalOpen(true);
 
     const isFullscreenPage = isChatPage(location.pathname);
+    // Header is hidden only on full-screen chat pages (/chat, /chat/private, /ai-chat).
+    // It shows on the discussions page (/discussions) as requested.
+    const isHeaderHidden = isHeaderHiddenPage(location.pathname);
     const showBreadcrumbs = !isFullscreenPage && !['/', '/login', '/register', '/reset-password', '/upload'].includes(location.pathname);
 
     // Note: /upload route is handled by UploadRedirect component in App.tsx
@@ -106,13 +109,13 @@ function AppShell() {
 
             {/* Main content */}
             <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full">
-                {/* Header — hidden on fullscreen pages (chat, discussions, AI chat) */}
-                {!isFullscreenPage && (
+                {/* Header — hidden only on full-screen chat pages (/chat, /chat/private, /ai-chat). Shows on discussions. */}
+                {!isHeaderHidden && (
                     <UnifiedHeader onMenuClick={handleMenuClick} sidebarOpen={sidebarOpen} />
                 )}
 
                 {/* Page Content */}
-                <main className={`flex-1 transition-all duration-300 overflow-x-hidden ${isFullscreenPage ? 'p-0' : 'p-4 pt-16 lg:p-6 lg:pt-16 xl:p-8 xl:pt-16'}`}>
+                <main className={`flex-1 transition-all duration-300 overflow-x-hidden ${isHeaderHidden ? 'p-0' : 'p-4 pt-16 lg:p-6 lg:pt-16 xl:p-8 xl:pt-16'}`}>
                     {showBreadcrumbs && <Breadcrumbs />}
                     <PageTransition>
                         <Outlet />

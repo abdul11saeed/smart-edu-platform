@@ -306,6 +306,7 @@ const ChatPage = () => {
                             const bubbleEl = messageEl.querySelector('[data-bubble]') as HTMLElement | null;
                             const rect = bubbleEl ? bubbleEl.getBoundingClientRect() : messageEl.getBoundingClientRect();
                             const isOwn = message.senderId === currentUser?.id;
+                            const isRTL = i18n.language === 'ar';
 
                             const menuWidth = 200;
                             let menuX: number, menuY: number;
@@ -314,13 +315,23 @@ const ChatPage = () => {
                                 menuX = Math.max(10, Math.min(rect.left + rect.width / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10));
                                 menuY = Math.min(rect.bottom + 8, window.innerHeight - 280);
                             } else {
-                                if (isOwn) {
-                                    menuX = rect.left - menuWidth - 8;
-                                    menuY = rect.top;
+                                // Position menu beside the message bubble (outer side)
+                                if (isRTL) {
+                                    if (isOwn) {
+                                        menuX = rect.left - menuWidth - 8;
+                                    } else {
+                                        menuX = rect.right + 8;
+                                    }
                                 } else {
-                                    menuX = rect.right + 8;
-                                    menuY = rect.top;
+                                    if (isOwn) {
+                                        menuX = rect.right + 8;
+                                    } else {
+                                        menuX = rect.left - menuWidth - 8;
+                                    }
                                 }
+
+                                // Vertical center alignment with message bubble
+                                menuY = rect.top + rect.height / 2 - 140; // approximate half menu height
 
                                 menuX = Math.max(10, Math.min(menuX, window.innerWidth - menuWidth - 10));
                                 menuY = Math.max(10, Math.min(menuY, window.innerHeight - 280));
@@ -483,20 +494,7 @@ const ChatPage = () => {
                                 </div>
                             )}
 
-                            {/* Reaction picker for selected message - responsive positioning */}
-                            {selectedMessage === message.id && (
-                                <div className={`absolute ${isOwnMessage
-                                    ? 'bottom-full left-1/2 -translate-x-1/2 mb-2'
-                                    : 'bottom-full left-1/2 -translate-x-1/2 mb-2'
-                                } bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 p-2 flex flex-wrap gap-1 z-50 min-w-max max-w-[90vw] sm:max-w-max`}>
-                                    {REACTION_EMOJIS.map(emoji => (
-                                        <button key={emoji} onClick={() => handleReaction(message.id, emoji)}
-                                            className="p-1 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-base sm:text-lg sm:text-xl transition-colors min-w-[30px] min-h-[30px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center">
-                                            {emoji}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                            
                         </div>
                     </div>
                 );
@@ -689,6 +687,7 @@ const ChatPage = () => {
                                                 </button>
                                             ))}
                                         </div>
+                                        
                                         <div className="border-t border-gray-100 dark:border-gray-700 my-0.5 sm:my-1"></div>
                                         {isPrivateChat && (
                                             <button onClick={() => handleDeleteForMe(menuMessage.id)}

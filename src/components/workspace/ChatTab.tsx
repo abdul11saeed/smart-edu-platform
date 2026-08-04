@@ -179,17 +179,30 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                     const bubbleEl = messageEl.querySelector('[data-bubble]') as HTMLElement | null;
                                     const rect = bubbleEl ? bubbleEl.getBoundingClientRect() : messageEl.getBoundingClientRect();
                                     const isOwn = msg.senderId === currentUser?.id;
+                                    const isRTL = i18n.language === 'ar';
 
                                     const menuWidth = 220;
                                     let menuX: number, menuY: number;
 
-                                    if (isOwn) {
-                                        menuX = rect.left - menuWidth - 8;
-                                        menuY = rect.top;
+                                    // Position menu beside the message bubble (outer side)
+                                    if (isRTL) {
+                                        // In RTL: own messages on left, non-own on right
+                                        if (isOwn) {
+                                            menuX = rect.left - menuWidth - 8;
+                                        } else {
+                                            menuX = rect.right + 8;
+                                        }
                                     } else {
-                                        menuX = rect.right + 8;
-                                        menuY = rect.top;
+                                        // In LTR: own messages on right, non-own on left
+                                        if (isOwn) {
+                                            menuX = rect.right + 8;
+                                        } else {
+                                            menuX = rect.left - menuWidth - 8;
+                                        }
                                     }
+
+                                    // Vertical center alignment with message bubble
+                                    menuY = rect.top + rect.height / 2 - 150; // approximate half menu height
 
                                     menuX = Math.max(10, Math.min(menuX, window.innerWidth - menuWidth - 10));
                                     menuY = Math.max(10, Math.min(menuY, window.innerHeight - 300));
@@ -364,17 +377,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                         )}
                                     </div>
 
-                                    {/* Reaction picker for selected message - responsive positioning */}
-                                    {selectedMessage === msg.id && (
-                                        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 p-1.5 sm:p-2 flex flex-wrap gap-0.5 sm:gap-1 z-50 min-w-max max-w-[90vw] sm:max-w-max`}>
-                                            {REACTION_EMOJIS.map(emoji => (
-                                                <button key={emoji} onClick={() => handleReaction(msg.id, emoji)}
-                                                    className="p-1 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-base sm:text-xl transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center">
-                                                    {emoji}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                    
                                 </div>
                             </div>
                         );
@@ -454,6 +457,7 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                                 </button>
                                             ))}
                                         </div>
+                                        
                                     </>
                                 )}
                             </>

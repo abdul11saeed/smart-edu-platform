@@ -927,8 +927,8 @@ const chatContent = (
       onClick={(e) => e.stopPropagation()}
       className={[
         'flex flex-col relative',
-        fullPage
-          ? 'h-dvh w-full'
+fullPage
+          ? 'fixed inset-0 z-[200] overflow-hidden'
           : [
               'fixed z-[200] mobile-chat-viewport overflow-hidden',
               isNarrow ? 'inset-0 rounded-none' : '',

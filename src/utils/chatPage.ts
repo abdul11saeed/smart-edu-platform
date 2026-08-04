@@ -6,7 +6,16 @@
  */
 const FULLSCREEN_PATHS = ['/chat', '/chat/private', '/ai-chat', '/discussions'] as const;
 
+// Pages where the top header is hidden entirely (full-screen chat pages).
+// Discussions (/discussions) is intentionally NOT included so the header shows there.
+const HEADER_HIDDEN_PATHS = ['/chat', '/chat/private', '/ai-chat'] as const;
+
 export const isChatPage = (pathname: string): boolean =>
     FULLSCREEN_PATHS.some(
+        (path) => pathname === path || pathname.startsWith(path + '/'),
+    );
+
+export const isHeaderHiddenPage = (pathname: string): boolean =>
+    HEADER_HIDDEN_PATHS.some(
         (path) => pathname === path || pathname.startsWith(path + '/'),
     );
