@@ -59,7 +59,8 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
         setSwipedMessageId,
         rightSwipedMessageId,
         setRightSwipedMessageId,
-        autoGrow
+        autoGrow,
+        typingUsers
     } = useChat({ roomId: courseId, courseName });
 
     const handleCopyMessage = async (text: string) => {
@@ -116,6 +117,29 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         >
                             {t('chat.loadPreviousMessages')}
                         </button>
+                    </div>
+                )}
+
+                {/* Typing indicator */}
+                {Object.entries(typingUsers).filter(([, data]) => data.isTyping).length > 0 && (
+                    <div className="flex justify-start mb-2">
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
+                            <div className="flex gap-1">
+                                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                            </div>
+                            <span>
+                                {Object.entries(typingUsers)
+                                    .filter(([, data]) => data.isTyping)
+                                    .map(([, data]) => data.userName)
+                                    .join(', ')}
+                                {' '}
+                                {Object.entries(typingUsers).filter(([, data]) => data.isTyping).length === 1
+                                    ? t('chat.typingNow') || 'يكتب الآن...'
+                                    : t('chat.typingNowPlural') || 'يكتبون الآن...'}
+                            </span>
+                        </div>
                     </div>
                 )}
 

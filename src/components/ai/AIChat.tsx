@@ -75,6 +75,7 @@ interface AIChatProps {
   allFiles?: ChatFile[];
   currentUser?: AIChatUser | null;
   initialSelectedFile?: ChatFile | null;
+  fullPage?: boolean;
 }
 
 const STORAGE_PREFIX = 'eduai_ai_conversations';
@@ -142,7 +143,7 @@ const timeAgo = (ts: number): string => {
   }
 };
 
- const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser = null, initialSelectedFile }: AIChatProps) => {
+ const AIChat = ({ isOpen, onClose, courseFiles = [], allFiles = [], currentUser = null, initialSelectedFile, fullPage = false }: AIChatProps) => {
    const { t, i18n } = useTranslation();
    const isRTL = i18n.language === 'ar';
    const [messages, setMessages] = useState<Message[]>([makeGreeting(t)]);
@@ -233,8 +234,9 @@ const timeAgo = (ts: number): string => {
   // On mobile (narrow), we skip body overflow locking because it interferes with
   // the browser's viewport resize behavior when the virtual keyboard opens/closes,
   // which causes the chat to appear stuck or mispositioned.
+  // In fullPage mode, the chat is part of the normal page flow, so no scroll lock is needed.
    useEffect(() => {
-     if (!isOpen) return;
+     if (!isOpen || fullPage) return;
      const docEl = document.documentElement;
      const body = document.body;
      let scrollY = 0;
@@ -292,7 +294,7 @@ const timeAgo = (ts: number): string => {
          }
        });
      };
-   }, [isOpen, isNarrow]);
+   }, [isOpen, isNarrow, fullPage]);
 
   // Escape to close
   useEffect(() => {
@@ -811,7 +813,7 @@ const timeAgo = (ts: number): string => {
   const autoGrow = (el: HTMLTextAreaElement | null) => {
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    el.style.height = el.scrollHeight + 'px';
   };
 
   const openConversation = (id: string) => {
@@ -919,24 +921,22 @@ const timeAgo = (ts: number): string => {
 
   const activeAction = quickActions.find((a) => a.action === activeTool);
 
-  return createPortal(
-     <div
-       ref={chatRef}
-       onClick={(e) => e.stopPropagation()}
-       // On mobile (isNarrow): use inset-0 to anchor to all four edges of the visual viewport.
-       // This prevents the chat from shifting when visualViewport.scroll fires (keyboard, auto-scroll).
-       // On desktop: centered floating panel at bottom.
-       className={[
-         'fixed z-[200] flex flex-col overflow-hidden relative mobile-chat-viewport',
-         // Mobile: fill entire visual viewport
-         isNarrow ? 'inset-0 rounded-none' : '',
-         // Desktop: centered floating panel
-         !isNarrow && 'top-auto bottom-4 mx-auto w-[min(920px,92vw)] h-[78vh] min-h-[520px] max-h-[calc(100dvh-2rem)] rounded-2xl border border-gray-200 dark:border-gray-700',
-       ].filter(Boolean).join(' ')}
-       // On mobile, use inset-0 via CSS (no inline height needed).
-       // On desktop, no inline style.
-       style={undefined}
-     >
+const chatContent = (
+    <div
+      ref={chatRef}
+      onClick={(e) => e.stopPropagation()}
+      className={[
+        'flex flex-col relative',
+        fullPage
+          ? 'h-dvh w-full'
+          : [
+              'fixed z-[200] mobile-chat-viewport overflow-hidden',
+              isNarrow ? 'inset-0 rounded-none' : '',
+              !isNarrow && 'top-auto bottom-4 mx-auto w-[min(920px,92vw)] h-[78vh] min-h-[520px] max-h-[calc(100dvh-2rem)] rounded-2xl border border-gray-200 dark:border-gray-700',
+            ].filter(Boolean).join(' '),
+      ].filter(Boolean).join(' ')}
+      style={undefined}
+    >
       {/* ===== Header ===== */}
       <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 text-white px-4 pt-[env(safe-area-inset-top)] py-3 flex items-center justify-between flex-shrink-0 shadow-md">
         <div className="flex items-center gap-2 min-w-0">
@@ -997,7 +997,7 @@ const timeAgo = (ts: number): string => {
       </div>
 
       {/* ===== Body ===== */}
-       <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 overflow-y-auto overflow-x-hidden scroll-auto bg-gray-50 dark:bg-gray-900/60 overscroll-contain">
+       <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-gray-50 dark:bg-gray-900/60 overscroll-contain">
         {/* Quick Actions - sticky */}
         <div className="sticky top-0 z-10 bg-white/85 dark:bg-gray-800/85 backdrop-blur border-b border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center gap-2 mb-2">
@@ -1071,7 +1071,7 @@ const timeAgo = (ts: number): string => {
                   {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
 
-                <div className="relative group">
+<div className="relative group min-w-0 flex-1">
                   {message.role === 'ai' && message.content && (
                     <button
                       onClick={() => copyMessage(message.content, message.id)}
@@ -1086,8 +1086,8 @@ const timeAgo = (ts: number): string => {
                       )}
                     </button>
                   )}
-                  <div
-                    className={`min-w-0 max-w-full w-full rounded-2xl px-3 py-2.5 sm:px-3.5 sm:py-3 text-sm leading-relaxed shadow-sm overflow-hidden overscroll-contain break-words ${message.role === 'user'
+<div
+                    className={`min-w-0 max-w-full w-full rounded-2xl px-3 py-2.5 sm:px-3.5 sm:py-3 text-sm leading-relaxed shadow-sm overflow-x-auto overscroll-contain break-words ${message.role === 'user'
                       ? 'bg-primary-600 text-white rounded-tr-sm'
                       : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-700 rounded-tl-sm'
                       }`}
@@ -1164,7 +1164,7 @@ const timeAgo = (ts: number): string => {
             }}
             onKeyPress={handleKeyPress}
             placeholder={t('ai.placeholder')}
-            className="flex-1 resize-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-xl p-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none leading-relaxed"
+            className="flex-1 min-w-0 w-full resize-none overflow-y-auto max-h-[200px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-xl p-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none leading-relaxed"
             rows={1}
           />
           <button
@@ -1275,9 +1275,14 @@ const timeAgo = (ts: number): string => {
           </p>
         </div>
       </aside>
-    </div>,
-    document.body
+    </div>
   );
+
+  if (fullPage) {
+    return chatContent;
+  }
+
+  return createPortal(chatContent, document.body);
 };
 
 export default AIChat;

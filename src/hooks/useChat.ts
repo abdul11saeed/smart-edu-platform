@@ -11,7 +11,13 @@ import {
     removeReaction,
     markMessageAsRead,
     markAllMessagesAsRead,
-    ChatRoomMessage
+    ChatRoomMessage,
+    setUserOnline,
+    setUserOffline,
+    subscribeToPresence,
+    subscribeToTyping,
+    setTypingStatus,
+    clearTypingStatus
 } from '../services/chatService';
 import { createNotification } from '../services/notificationService';
 import { isBlocked, isBlockedBy, blockUser, unblockUser, getBlockedUsers, subscribeToBlockedUsers } from '../services/blockService';
@@ -82,6 +88,11 @@ export const useChat = (options: UseChatOptions) => {
     const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
     const [isTargetBlocked, setIsTargetBlocked] = useState(false);
     const [isBlockedByTarget, setIsBlockedByTarget] = useState(false);
+
+    // Presence & Typing state
+    const [typingUsers, setTypingUsers] = useState<Record<string, { isTyping: boolean; timestamp: number; userName: string }>>({});
+    const [onlineUsers, setOnlineUsers] = useState<Record<string, { status: string; lastSeen: number; currentRoom: string | null; userName: string }>>({});
+    const typingTimeoutRef = useRef<number | null>(null);
 
     // Memoized grouped messages by date
     const groupedMessages = useMemo(() => {
@@ -176,6 +187,94 @@ export const useChat = (options: UseChatOptions) => {
 
         return () => unsubscribe();
     }, [currentUser?.id, targetUserId]);
+
+    // ============================================
+    // Presence & Typing Effects
+    // ============================================
+
+    // Set user online when joining a room, offline when leaving
+    useEffect(() => {
+        if (!currentUser || !roomId) return;
+
+        const setupPresence = async () => {
+            try {
+                await setUserOnline(currentUser.id, currentUser.name, roomId);
+            } catch (err) {
+                console.warn('Failed to set user online:', err);
+            }
+        };
+
+        setupPresence();
+
+        // Set offline when leaving the room
+        return () => {
+            setUserOffline(currentUser.id).catch(() => { /* ignore */ });
+            // Clear typing status on unmount
+            clearTypingStatus(currentUser.id, roomId).catch(() => { /* ignore */ });
+        };
+    }, [currentUser?.id, roomId]);
+
+    // Subscribe to all users presence
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const unsubscribe = subscribeToPresence((presenceMap) => {
+            setOnlineUsers(presenceMap);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser?.id]);
+
+    // Subscribe to typing indicators in current room
+    useEffect(() => {
+        if (!roomId) return;
+
+        const unsubscribe = subscribeToTyping(roomId, (typingMap) => {
+            // Filter out current user from typing display
+            const filtered = { ...typingMap };
+            if (currentUser && filtered[currentUser.id]) {
+                delete filtered[currentUser.id];
+            }
+            setTypingUsers(filtered);
+        });
+
+        return () => unsubscribe();
+    }, [roomId, currentUser?.id]);
+
+    // Send typing indicator when user is typing
+    useEffect(() => {
+        if (!currentUser || !roomId) return;
+
+        const trimmedMessage = newMessage.trim();
+
+        if (trimmedMessage.length > 0) {
+            // User is typing - send typing status
+            setTypingStatus(currentUser.id, currentUser.name, roomId, true);
+
+            // Clear previous timeout
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+
+            // Auto-clear typing after 2 seconds of inactivity
+            typingTimeoutRef.current = window.setTimeout(() => {
+                clearTypingStatus(currentUser.id, roomId).catch(() => { /* ignore */ });
+            }, 2000);
+        } else {
+            // User stopped typing or cleared message
+            clearTypingStatus(currentUser.id, roomId).catch(() => { /* ignore */ });
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = null;
+            }
+        }
+
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+        };
+    }, [newMessage, currentUser, roomId]);
 
     // Filter out messages from blocked users
     const filteredMessages = useMemo(() => {
@@ -286,6 +385,11 @@ export const useChat = (options: UseChatOptions) => {
         setNewMessage('');
         setIsSending(true);
         userScrolledUpRef.current = false;
+
+        // Clear typing status after sending
+        if (currentUser && roomId) {
+            clearTypingStatus(currentUser.id, roomId).catch(() => { /* ignore */ });
+        }
 
         try {
             await sendMessage(roomId, messageText, {
@@ -551,6 +655,10 @@ export const useChat = (options: UseChatOptions) => {
         isAdmin,
         isPrivateChat,
         courseName: courseName || 'الدردشة',
+
+        // Presence & Typing
+        typingUsers,
+        onlineUsers,
 
         // Scroll (shared)
         containerRef,

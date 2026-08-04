@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import {
@@ -19,7 +19,8 @@ interface SidebarProps {
 
 const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) => {
     const { t } = useTranslation();
-    const { currentUser, setIsAIChatOpen } = useAppStore();
+    const { currentUser } = useAppStore();
+    const navigate = useNavigate();
     const location = useLocation();
     const sidebarRef = useRef<HTMLDivElement>(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -83,13 +84,13 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
         navItems.push({ path: '/admin/reports', icon: BarChart3, label: t('nav.adminReports'), roles: ['admin'] });
     }
 
-    navItems.push({
+navItems.push({
         action: 'aiChat',
         icon: Bot,
         label: t('nav.aiAssistant'),
         roles: ['student', 'admin'],
         onClick: () => {
-            setIsAIChatOpen(true);
+            navigate('/ai-chat');
             onClose?.();
         }
     });
@@ -112,9 +113,9 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
                 bg-[#FFFBEB]/95 dark:bg-brown-900/95 backdrop-blur-xl shadow-2xl shadow-primary-500/10 dark:shadow-brown-950/50 flex flex-col z-40 ${borderStart} border-brown-200/50 dark:border-brown-700/30
                 ${isMobile
                     ? `fixed inset-y-0 ${sideStart}-0 w-72 transform transition-all duration-300 ease-in-out `
-                        + (isOpen ? 'translate-x-0 opacity-100 visible pointer-events-auto' : `${translateClosed} opacity-0 invisible pointer-events-none`)
+                    + (isOpen ? 'translate-x-0 opacity-100 visible pointer-events-auto' : `${translateClosed} opacity-0 invisible pointer-events-none`)
                     : `fixed top-0 ${sideStart}-0 h-screen w-72 transform transition-all duration-300 ease-in-out `
-                        + (isOpen ? 'translate-x-0 opacity-100' : `${translateClosed} opacity-0 invisible pointer-events-none`)}
+                    + (isOpen ? 'translate-x-0 opacity-100' : `${translateClosed} opacity-0 invisible pointer-events-none`)}
                 ${className || ''}
             `}
             style={{ direction: isRTL ? 'rtl' : 'ltr' }}
@@ -122,7 +123,7 @@ const Sidebar = ({ onUploadClick, isOpen, onClose, className }: SidebarProps) =>
             {/* Logo Section with gradient accent */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-brown-200/50 dark:border-brown-700/30 bg-gradient-to-r from-primary-50/50 to-transparent dark:from-primary-900/20 dark:to-transparent">
                 <NavLink to="/" className="flex items-center gap-2 group animate-card-appear" onClick={onClose}>
-                <div className="bg-gradient-to-br from-[#5C3A1E] via-[#7B4D2A] to-[#D97706] p-2 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-105 animate-icon-pulse transition-all duration-300 shadow-[#7B4D2A]/20 hover:shadow-[#7B4D2A]/40 border border-white/20">
+                    <div className="bg-gradient-to-br from-[#5C3A1E] via-[#7B4D2A] to-[#D97706] p-2 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-105 animate-icon-pulse transition-all duration-300 shadow-[#7B4D2A]/20 hover:shadow-[#7B4D2A]/40 border border-white/20">
                         <GraduationCap className="h-5 w-5 text-white" />
                     </div>
                     <span className="text-lg font-bold bg-gradient-to-r from-[#3B2314] to-[#D97706] bg-clip-text text-transparent group-hover:from-[#5C3A1E] group-hover:to-[#B45309] transition-all duration-200">

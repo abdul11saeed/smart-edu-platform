@@ -137,11 +137,11 @@ const CodeBlock = memo(function CodeBlock({ language = 'text', className, childr
                 </button>
             </div>
 
-            {/* Code area */}
+{/* Code area */}
             <pre className="m-0 bg-[#0d1117] p-3 sm:p-4 text-xs sm:text-sm leading-relaxed whitespace-pre">
                 {/* !p-0 neutralizes github-dark.css 1em padding so it doesn't stack
                     on top of the <pre> padding (avoids a double inset) */}
-                <code className={`${className || ''} hljs font-mono whitespace-pre !p-0 min-w-0 break-all`} style={{ wordBreak: 'break-word' }}>{children}</code>
+                <code className={`${className || ''} hljs font-mono whitespace-pre !p-0 min-w-0`}>{children}</code>
             </pre>
         </div>
     );

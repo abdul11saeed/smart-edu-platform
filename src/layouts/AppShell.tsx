@@ -20,7 +20,8 @@ function AppShell() {
     const handleMenuClick = () => toggleSidebar();
     const handleUploadClick = () => setIsUploadModalOpen(true);
 
-    const showBreadcrumbs = !['/', '/login', '/register', '/reset-password', '/upload'].includes(location.pathname);
+    const isFullscreenPage = isChatPage(location.pathname);
+    const showBreadcrumbs = !isFullscreenPage && !['/', '/login', '/register', '/reset-password', '/upload'].includes(location.pathname);
 
     // Note: /upload route is handled by UploadRedirect component in App.tsx
     // which redirects to / and opens the upload modal
@@ -105,11 +106,13 @@ function AppShell() {
 
             {/* Main content */}
             <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full">
-                {/* Header */}
-                <UnifiedHeader onMenuClick={handleMenuClick} sidebarOpen={sidebarOpen} />
+                {/* Header — hidden on fullscreen pages (chat, discussions, AI chat) */}
+                {!isFullscreenPage && (
+                    <UnifiedHeader onMenuClick={handleMenuClick} sidebarOpen={sidebarOpen} />
+                )}
 
                 {/* Page Content */}
-                <main className="flex-1 transition-all duration-300 overflow-x-hidden p-4 pt-16 lg:p-6 lg:pt-16 xl:p-8 xl:pt-16">
+                <main className={`flex-1 transition-all duration-300 overflow-x-hidden ${isFullscreenPage ? 'p-0' : 'p-4 pt-16 lg:p-6 lg:pt-16 xl:p-8 xl:pt-16'}`}>
                     {showBreadcrumbs && <Breadcrumbs />}
                     <PageTransition>
                         <Outlet />

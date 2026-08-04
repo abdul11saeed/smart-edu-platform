@@ -1,6 +1,6 @@
 // Firebase Realtime Database service for course-specific real-time chat
 import { database } from '../firebase/config';
-import { ref, set, push, get, onValue, query, limitToLast, update, remove } from 'firebase/database';
+import { ref, set, push, get, onValue, query, limitToLast, update, remove, onDisconnect } from 'firebase/database';
 import { trackMessageSent } from '../utils/analyticsTracker';
 
 // Data model: chat_rooms/{courseId}/messages/{messageId}
@@ -368,4 +368,120 @@ export const getChatUsers = async (): Promise<Array<{ id: string; name: string; 
         return users;
     }
     return [];
+};
+
+// ============================================
+// Presence & Typing Indicator Services
+// ============================================
+
+const PRESENCE_REF = 'presence';
+const TYPING_REF = 'typing';
+
+/**
+ * Set the current user as online in a specific room.
+ * Uses onDisconnect to automatically set offline when connection drops.
+ */
+export const setUserOnline = async (userId: string, userName: string, roomId: string): Promise<void> => {
+    const userPresenceRef = ref(database, `${PRESENCE_REF}/${userId}`);
+    const presenceData = {
+        status: 'online',
+        lastSeen: Date.now(),
+        currentRoom: roomId,
+        userName: userName
+    };
+
+    await set(userPresenceRef, presenceData);
+    onDisconnect(userPresenceRef).set({
+        status: 'offline',
+        lastSeen: Date.now(),
+        currentRoom: null,
+        userName: userName
+    });
+};
+
+/**
+ * Set the current user as offline (e.g., when leaving a chat)
+ */
+export const setUserOffline = async (userId: string): Promise<void> => {
+    const userPresenceRef = ref(database, `${PRESENCE_REF}/${userId}`);
+    await set(userPresenceRef, {
+        status: 'offline',
+        lastSeen: Date.now(),
+        currentRoom: null,
+        userName: null
+    });
+};
+
+/**
+ * Subscribe to online status of all users
+ * Returns a map of userId -> presence data
+ */
+export const subscribeToPresence = (callback: (presenceMap: Record<string, { status: string; lastSeen: number; currentRoom: string | null; userName: string }>) => void): (() => void) => {
+    const presenceRef = ref(database, PRESENCE_REF);
+
+    const unsubscribe = onValue(presenceRef, (snapshot) => {
+        const presenceMap: Record<string, { status: string; lastSeen: number; currentRoom: string | null; userName: string }> = {};
+        if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                presenceMap[childSnapshot.key || ''] = {
+                    status: data.status || 'offline',
+                    lastSeen: data.lastSeen || Date.now(),
+                    currentRoom: data.currentRoom || null,
+                    userName: data.userName || ''
+                };
+            });
+        }
+        callback(presenceMap);
+    });
+
+    return () => unsubscribe();
+};
+
+/**
+ * Subscribe to typing indicators in a specific room
+ */
+export const subscribeToTyping = (roomId: string, callback: (typingMap: Record<string, { isTyping: boolean; timestamp: number; userName: string }>) => void): (() => void) => {
+    const typingRef = ref(database, `${TYPING_REF}/${roomId}`);
+
+    const unsubscribe = onValue(typingRef, (snapshot) => {
+        const typingMap: Record<string, { isTyping: boolean; timestamp: number; userName: string }> = {};
+        if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                typingMap[childSnapshot.key || ''] = {
+                    isTyping: data.isTyping || false,
+                    timestamp: data.timestamp || 0,
+                    userName: data.userName || ''
+                };
+            });
+        }
+        callback(typingMap);
+    });
+
+    return () => unsubscribe();
+};
+
+/**
+ * Set typing status for the current user in a room
+ */
+export const setTypingStatus = async (userId: string, userName: string, roomId: string, isTyping: boolean): Promise<void> => {
+    const typingRef = ref(database, `${TYPING_REF}/${roomId}/${userId}`);
+    if (isTyping) {
+        await set(typingRef, {
+            isTyping: true,
+            timestamp: Date.now(),
+            userName: userName
+        });
+    } else {
+        await set(typingRef, null);
+    }
+};
+
+/**
+ * Clear typing status for the current user in a room
+ */
+export const clearTypingStatus = async (userId: string, roomId: string): Promise<void> => {
+    const typingRef = ref(database, `${TYPING_REF}/${roomId}/${userId}`);
+    await set(typingRef, null);
 };

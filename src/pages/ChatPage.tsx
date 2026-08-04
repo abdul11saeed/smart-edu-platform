@@ -108,7 +108,9 @@ const ChatPage = () => {
         handleScroll,
         loadOlderMessages,
         groupedMessages,
-        autoGrow
+        autoGrow,
+        typingUsers,
+        onlineUsers
     } = useChat({ roomId: courseId, courseName, targetUserId });
 
     // User list panel state
@@ -595,23 +597,33 @@ const ChatPage = () => {
                                         onClick={() => startPrivateChat(user.id, user.name)}
                                         className="w-full p-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0"
                                     >
-                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                                            {user.photoURL ? (
-                                                <img
-                                                    src={user.photoURL}
-                                                    alt={user.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900/40">
-                                                    <span className="font-semibold text-green-700 dark:text-green-300">{user.name.charAt(0).toUpperCase()}</span>
-                                                </div>
+                                        <div className="relative flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+                                                {user.photoURL ? (
+                                                    <img
+                                                        src={user.photoURL}
+                                                        alt={user.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900/40">
+                                                        <span className="font-semibold text-green-700 dark:text-green-300">{user.name.charAt(0).toUpperCase()}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {onlineUsers[user.id] && (
+                                                <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 ${
+                                                    onlineUsers[user.id].status === 'online' ? 'bg-green-400' : 'bg-gray-400'
+                                                }`} title={onlineUsers[user.id].status === 'online' ? 'متصل' : 'غير متصل'} />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0 text-right">
                                             <span className="font-medium text-gray-900 dark:text-gray-100 block truncate">{user.name}</span>
                                             {user.bio && (
                                                 <span className="text-xs text-gray-500 dark:text-gray-400 block truncate">{user.bio}</span>
+                                            )}
+                                            {onlineUsers[user.id] && onlineUsers[user.id].status === 'online' && (
+                                                <span className="text-xs text-green-600 dark:text-green-400 block">متصل</span>
                                             )}
                                         </div>
                                     </button>
@@ -719,6 +731,29 @@ const ChatPage = () => {
                             >
                                 {t('chat.loadPreviousMessages')}
                             </button>
+                        </div>
+                    )}
+
+                    {/* Typing indicator */}
+                    {Object.entries(typingUsers).filter(([, data]) => data.isTyping).length > 0 && (
+                        <div className="flex justify-start mb-2">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
+                                <div className="flex gap-1">
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                </div>
+                                <span>
+                                    {Object.entries(typingUsers)
+                                        .filter(([, data]) => data.isTyping)
+                                        .map(([, data]) => data.userName)
+                                        .join(', ')}
+                                    {' '}
+                                    {Object.entries(typingUsers).filter(([, data]) => data.isTyping).length === 1
+                                        ? t('chat.typingNow') || 'يكتب الآن...'
+                                        : t('chat.typingNowPlural') || 'يكتبون الآن...'}
+                                </span>
+                            </div>
                         </div>
                     )}
 

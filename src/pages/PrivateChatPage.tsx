@@ -115,7 +115,9 @@ const PrivateChatPage = () => {
         isBlockedByTarget,
         handleBlockUser,
         handleUnblockUser,
-        autoGrow
+        autoGrow,
+        typingUsers,
+        onlineUsers
     } = useChat({
         roomId,
         courseName: decodedUserName,
@@ -626,13 +628,24 @@ const PrivateChatPage = () => {
                         <h1 className="text-xl font-bold flex items-center gap-2 text-white">
                             <Lock className="h-5 w-5 text-green-300" />
                             {decodedUserName}
+                            {targetUserId && onlineUsers[targetUserId] && (
+                                <span className={`w-2.5 h-2.5 rounded-full ${
+                                    onlineUsers[targetUserId].status === 'online' ? 'bg-green-400' : 'bg-gray-400'
+                                }`} title={onlineUsers[targetUserId].status === 'online' ? 'متصل' : 'غير متصل'} />
+                            )}
                         </h1>
                         <p className="text-sm text-green-200 dark:text-green-300 flex items-center gap-1">
-                            <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                            {targetUser.bio
-                                ? targetUser.bio.split(' ').slice(0, 3).join(' ')
-                                : t('chat.privateChatLabel')
-                            }
+                            {targetUserId && onlineUsers[targetUserId] && onlineUsers[targetUserId].status === 'online' ? (
+                                <><span className="w-2 h-2 bg-green-400 rounded-full"></span> متصل</>
+                            ) : (
+                                <>
+                                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                                    {targetUser.bio
+                                        ? targetUser.bio.split(' ').slice(0, 3).join(' ')
+                                        : t('chat.privateChatLabel')
+                                    }
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -753,6 +766,20 @@ const PrivateChatPage = () => {
                             >
                                 {t('chat.loadPreviousMessages')}
                             </button>
+                        </div>
+                    )}
+
+                    {/* Typing indicator */}
+                    {targetUserId && typingUsers[targetUserId] && typingUsers[targetUserId].isTyping && (
+                        <div className="flex justify-start mb-2">
+                            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full shadow-sm border border-green-200 dark:border-green-700">
+                                <div className="flex gap-1">
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                </div>
+                                <span>{decodedUserName} {t('chat.typingNow') || 'يكتب الآن...'}</span>
+                            </div>
                         </div>
                     )}
 

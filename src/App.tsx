@@ -66,15 +66,46 @@ const UploadRedirect = () => {
   );
 };
 
-// Full-page AI Chat wrapper — opens in a new browser tab/window
-// when the user clicks "مساعد الذكاء الاصطناعي" from the sidebar.
+// Full-page AI Chat wrapper — opens as a full page when navigating to /ai-chat
+// Receives the current user, course files, all user files and the initial
+// selected file from the store so the full-page chat behaves exactly like the
+// floating one (files, Ask-AI pre-selection, etc.).
 const AIChatFullPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const {
+    currentUser,
+    currentCourseFiles,
+    allUserFiles,
+    aiChatInitialFile,
+    setAiChatInitialFile,
+  } = useAppStore();
+
   return (
     <AIChat
       isOpen={true}
-      onClose={() => navigate(-1)}
-      currentUser={useAppStore.getState().currentUser}
+      onClose={() => { navigate(-1); setAiChatInitialFile(null); }}
+      currentUser={currentUser}
+      initialSelectedFile={aiChatInitialFile}
+      courseFiles={currentCourseFiles.map(f => {
+        const textPreview = f.localTextPreview;
+        return {
+          id: f.id,
+          name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
+          content: textPreview || f.downloadURL || f.url || undefined,
+          readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
+        };
+      })}
+      allFiles={allUserFiles.map(f => {
+        const textPreview = f.localTextPreview;
+        return {
+          id: f.id,
+          name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
+          content: textPreview || f.downloadURL || f.url || undefined,
+          readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
+        };
+      })}
+      fullPage={true}
     />
   );
 };
@@ -107,7 +138,7 @@ function App() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { setCurrentUser, currentUser, currentCourseFiles, allUserFiles, reset, isAIChatOpen, setIsAIChatOpen, isDarkMode, setIsDarkMode, aiChatInitialFile, setAiChatInitialFile, setIsOffline } = useAppStore();
+const { setCurrentUser, currentUser, reset, isDarkMode, setIsDarkMode, setIsOffline } = useAppStore();
 
   const { subscribeToUniversities } = useCatalogStore();
 
@@ -204,16 +235,7 @@ function App() {
     }
   }, [navigate]);
 
-  // Clear initial file selection after AIChat picks it up
-  useEffect(() => {
-    if (aiChatInitialFile && isAIChatOpen) {
-      // Let AIChat read it via initialSelectedFile, then clear
-      const timer = setTimeout(() => setAiChatInitialFile(null), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [aiChatInitialFile, isAIChatOpen, setAiChatInitialFile]);
-
-  return (
+return (
     <ToastProvider>
       <div className={`min-h-screen ${isDarkMode ? 'bg-neutral-900' : 'bg-neutral-50'}`}>
         <Routes>
@@ -270,36 +292,9 @@ function App() {
           </Route>
         </Routes>
 
-        {/* Global AI Chat (floating) */}
-        <AIChat
-          isOpen={isAIChatOpen}
-          onClose={() => { setIsAIChatOpen(false); setAiChatInitialFile(null); }}
-          currentUser={currentUser}
-          initialSelectedFile={aiChatInitialFile}
-          courseFiles={currentCourseFiles.map(f => {
-            const textPreview = f.localTextPreview;
-            return {
-              id: f.id,
-              name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
-              content: textPreview || f.downloadURL || f.url || undefined,
-              readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
-            };
-          })}
-          allFiles={allUserFiles.map(f => {
-            const textPreview = f.localTextPreview;
-            return {
-              id: f.id,
-              name: f.name || f.displayName || f.originalFileName || t('common.untitledFile'),
-              content: textPreview || f.downloadURL || f.url || undefined,
-              readable: !!(textPreview && !['[ملف', '[File'].some(prefix => textPreview.startsWith(prefix)))
-            };
-          })}
-        />
-
-        {/* Floating Action Buttons — hidden on chat and discussions pages so they don't overlap content */}
+{/* Floating Action Buttons — hidden on chat, discussions and AI chat pages so they don't overlap content */}
         {!isChatPage(location.pathname) && (
-          <div className={`fixed bottom-4 left-6 flex flex-col space-y-3 z-40 md:bottom-6 transition-all duration-300 ease-out ${isAIChatOpen ? 'opacity-0 pointer-events-none scale-95 translate-y-2' : 'opacity-100 pointer-events-auto scale-100 translate-y-0'
-            }`}>
+          <div className="fixed bottom-4 left-6 flex flex-col space-y-3 z-40 md:bottom-6 transition-all duration-300 ease-out">
             <button
               onClick={() => navigate('/chat')}
               className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white p-4 rounded-full shadow-lg shadow-secondary-500/30 hover:shadow-xl hover:shadow-secondary-500/40 transition-all duration-200 ease-smooth hover:scale-105 active:scale-95 animate-card-glow"
@@ -324,7 +319,7 @@ function App() {
                   navigate('/login', { state: { aiLoginRequired: true } });
                   return;
                 }
-                setIsAIChatOpen(true);
+                navigate('/ai-chat');
               }}
               className="bg-gradient-to-r from-primary-700 via-secondary-600 to-primary-500 text-white p-4 rounded-full shadow-lg shadow-primary-600/30 hover:shadow-xl transition-all duration-300 ease-spring hover:scale-105 active:scale-95 animate-glow-wave"
               title={t('nav.aiAssistant')}

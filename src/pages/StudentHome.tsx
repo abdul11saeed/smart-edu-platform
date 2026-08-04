@@ -757,10 +757,10 @@ const StudentHome: React.FC = () => {
                                                     {t('studentHome.download')}
                                                 </button>
                                             )}
-                                            <button
+<button
                                                 className="btn-modern-ai px-2.5 py-1.5 text-xs"
                                                 onClick={() => {
-                                                    const { setIsAIChatOpen, setAiChatInitialFile, setAiChatOpenMode } = useAppStore.getState();
+                                                    const { setAiChatInitialFile } = useAppStore.getState();
                                                     const localPreview = file.localTextPreview;
                                                     const hasValidPreview = localPreview && !['[ملف', '[File'].some(prefix => localPreview.startsWith(prefix));
                                                     setAiChatInitialFile({
@@ -769,8 +769,7 @@ const StudentHome: React.FC = () => {
                                                         content: hasValidPreview ? file.localTextPreview : (file.downloadURL || file.url || undefined),
                                                         readable: hasValidPreview ? true : (file.localTextPreview ? false : undefined),
                                                     });
-                                                    setAiChatOpenMode('resume-if-recent');
-                                                    setIsAIChatOpen(true);
+                                                    navigate('/ai-chat');
                                                 }}
                                                 title={t('studentHome.askAI')}
                                             >
