@@ -397,14 +397,14 @@
     "timeDaysAgo": "{{days}} day(s) ago",
     "timeJustNow": "Just now",
     "commentLikeBody": "{{preview}}",
-    "commentLikeTitle": "{{title}}",
-    "discussionReplyTitle": "{{title}}",
-    "likeBody": "{{title}}",
-    "likeTitle": "{{title}}",
+    "commentLikeTitle": "Comment Like",
+    "discussionReplyTitle": "Discussion Reply",
+    "likeBody": "Liked \"{{title}}\"",
+    "likeTitle": "New Like",
     "messageDeletedBody": "{{preview}}",
-    "messageDeletedTitle": "{{title}}",
-    "messageEditedTitle": "{{title}}",
-    "privateMessageTitle": "{{title}}"
+    "messageDeletedTitle": "Message Deleted",
+    "messageEditedTitle": "Message Edited",
+    "privateMessageTitle": "New Private Message"
   },
   "profile": {
     "title": "Profile",
