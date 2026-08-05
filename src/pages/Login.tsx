@@ -52,7 +52,7 @@ const Login: React.FC = () => {
     }
   }, [currentUser, navigate]);
 
-const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     setLoginError('');
 
@@ -68,6 +68,11 @@ const onSubmit = async (data: LoginForm) => {
       // If the auth state observer already set the user (success via onAuthChange)
       // and navigation is imminent, do NOT show a misleading error message.
       if (useAppStore.getState().currentUser) {
+        return;
+      }
+      // When the popup was blocked and we fell back to the full-page redirect
+      // flow, the page is about to navigate to Google. Do not flash an error.
+      if (error?.message === 'AUTH_REDIRECT_IN_PROGRESS') {
         return;
       }
       setLoginError(error.message || t('auth.loginError'));
@@ -90,6 +95,11 @@ const onSubmit = async (data: LoginForm) => {
       // If the auth state observer already set the user (success via onAuthChange)
       // and navigation is imminent, do NOT show a misleading error message.
       if (useAppStore.getState().currentUser) {
+        return;
+      }
+      // When the popup was blocked and we fell back to the full-page redirect
+      // flow, the page is about to navigate to Google. Do not flash an error.
+      if (error?.message === 'AUTH_REDIRECT_IN_PROGRESS') {
         return;
       }
       setLoginError(error.message || t('auth.loginError'));
@@ -171,7 +181,7 @@ const onSubmit = async (data: LoginForm) => {
 
           <div className="flex items-center justify-between mt-2">
             <Link to="/reset-password" className="text-sm text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] transition-colors">
-                {t('auth.forgotPassword')}
+              {t('auth.forgotPassword')}
             </Link>
           </div>
 
@@ -235,7 +245,7 @@ const onSubmit = async (data: LoginForm) => {
 
           <div className="text-center mt-6">
             <Link to="/register" className="text-[#7B4D2A] dark:text-[#D4A77A] hover:text-[#3B2314] dark:hover:text-[#B8865E] font-medium transition-colors">
-               {t('auth.noAccount', 'ليس لديك حساب؟ سجل الآن')}
+              {t('auth.noAccount', 'ليس لديك حساب؟ سجل الآن')}
             </Link>
           </div>
         </form>

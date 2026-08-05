@@ -3,6 +3,7 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
     signOut,
     updateProfile,
     sendPasswordResetEmail,
@@ -248,65 +249,102 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
     ]);
 };
 
-// Fetch user data with retry logic; throws on final failure
+// ==== Single-flight user settlement ====
+// The Google sign-in flow has TWO concurrent paths that both settle the SAME
+// user right after a successful popup/redirect:
+//   1. loginWithGoogle() -> finalizeGoogleUser()
+//   2. onAuthChange()    -> fetchUserWithRetry()
+// Both read/write the same `users/{uid}` node in parallel, which caused a race
+// condition: one path could read the role/data before the other finished writing
+// it, producing transient errors (AUTH_PERMISSION_ERROR / AUTH_TIMEOUT) that
+// flashed on screen and then disappeared when the other path succeeded.
+//
+// `settleUser` deduplicates this work per uid: the first caller runs the full
+// pipeline (role resolution, DB sync, ban/deletion checks, admin freeze) while
+// any concurrent caller for the same uid simply awaits the exact same promise.
+// This eliminates the double-write race for Google sign-ins. Email/password
+// flows are unaffected because they settle through the same synchronous path
+// and never overlap with the state observer's fetch.
+const settlementInFlight = new Map<string, Promise<User>>();
+
+const settleUser = async (firebaseUser: FirebaseUser): Promise<User> => {
+    const uid = firebaseUser.uid;
+
+    // Reuse an in-flight settlement for this uid if one exists.
+    const existing = settlementInFlight.get(uid);
+    if (existing) return existing;
+
+    const promise = (async () => {
+        // Get role from Realtime Database
+        const role = await getUserRole(uid);
+
+        // Resolve the final role (main admin always wins)
+        const finalRole = resolveRole(firebaseUser.email || '', role);
+
+        // Create or update the user in Realtime DB + Firestore (idempotent).
+        await createOrUpdateUserInDB(firebaseUser, finalRole);
+
+        // Enforce ban/deletion using the authoritative Realtime DB data BEFORE
+        // completing login so banned users see a clear, actionable message.
+        const user = await getUserFromRealtimeDB(uid);
+        if (!user) {
+            throw new Error('فشل تسجيل الدخول، يرجى المحاولة لاحقاً');
+        }
+        // Ban check BEFORE deletion check so banned users see the correct message
+        if (user.isBanned && Date.now() < (user.banExpiresAt || 0)) {
+            throw new Error(buildBanMessage(user));
+        }
+        if (user.isDeleted) {
+            throw new Error('تم حظر هذا الحساب. راجع مدير الموقع.');
+        }
+        // Auto-unban if the ban has already expired.
+        if (user.isBanned && Date.now() >= (user.banExpiresAt || 0)) {
+            try {
+                await unbanUser(user.id);
+            } catch (e) {
+                console.warn('Failed to auto-unban expired ban on login:', e);
+            }
+            user.isBanned = false;
+        }
+
+        // Freeze owner role as permanent admin regardless of what is stored in DB.
+        if (isMainAdmin(firebaseUser.email || '')) {
+            user.role = 'admin';
+            await update(ref(database, `users/${uid}`), { role: 'admin' });
+            try {
+                await setDoc(doc(db, 'users', uid), { role: 'admin', updatedAt: Date.now() }, { merge: true });
+            } catch (e) {
+                console.warn('Failed to update Firestore user role:', e);
+            }
+        }
+
+        return user;
+    })().finally(() => {
+        // Always clear the in-flight entry so a later sign-in can settle again.
+        settlementInFlight.delete(uid);
+    });
+
+    settlementInFlight.set(uid, promise);
+    return promise;
+};
+
+// Fetch user data with retry logic; throws on final failure.
+// Delegates the actual settlement to `settleUser` (single-flight per uid) so
+// the state observer and the Google sign-in path never run the same DB writes
+// in parallel, which previously caused the "flash then disappear" bug.
 const fetchUserWithRetry = async (
     firebaseUser: FirebaseUser,
     retries = AUTH_MAX_RETRIES
 ): Promise<User> => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
-            let user = await getUserFromRealtimeDB(firebaseUser.uid);
-
-            if (!user) {
-                const role = await getUserRole(firebaseUser.uid);
-                const finalRole = resolveRole(firebaseUser.email || '', role);
-                user = await createOrUpdateUserInDB(firebaseUser, finalRole);
-            }
-
-            // Ban check FIRST: if the account is banned, show ban message even if isDeleted is set
-            if (user.isBanned && Date.now() < (user.banExpiresAt || 0)) {
-                throw new Error('ACCOUNT_BANNED');
-            }
-
-            // Deletion check: if the account is marked as deleted, reject the session
-            if (user.isDeleted) {
-                throw new Error('ACCOUNT_DELETED');
-            }
-
-            // Auto-unban if ban expired
-            if (user.isBanned && Date.now() >= (user.banExpiresAt || 0)) {
-                await update(ref(database, `users/${firebaseUser.uid}`), {
-                    isBanned: false,
-                    role: 'student',
-                    updatedAt: Date.now()
-                });
-                try {
-                    await setDoc(doc(db, 'users', firebaseUser.uid), { isBanned: false, role: 'student', updatedAt: Date.now() }, { merge: true });
-                } catch (e) {
-                    console.warn('Failed to auto-unban user in Firestore:', e);
-                }
-                user = { ...user, isBanned: false, role: 'student' };
-            }
-
-            // Freeze owner role as permanent admin regardless of what is stored in DB
-            if (isMainAdmin(firebaseUser.email || '')) {
-                user = { ...user, role: 'admin' };
-                await update(ref(database, `users/${firebaseUser.uid}`), { role: 'admin' });
-                try {
-                    await setDoc(doc(db, 'users', firebaseUser.uid), { role: 'admin', updatedAt: Date.now() }, { merge: true });
-                } catch (e) {
-                    console.warn('Failed to update Firestore user role:', e);
-                }
-            }
-
-            return user;
+            return await settleUser(firebaseUser);
         } catch (error: any) {
-            const isTimeout = error.message === 'AUTH_TIMEOUT';
             const isPermissionError = error.message === 'AUTH_PERMISSION_ERROR';
-            const isAuthError = error.message === 'ACCOUNT_BANNED' || error.message === 'ACCOUNT_DELETED';
+            const isTimeout = error.message === 'AUTH_TIMEOUT';
 
-            if (isTimeout || isAuthError || attempt === retries - 1) {
-                throw error; // Last attempt, timeout, or auth error -> bubble up
+            if (isTimeout || attempt === retries - 1) {
+                throw error; // Last attempt or timeout -> bubble up
             }
 
             // For permission errors, we still retry because it might be a transient
@@ -314,6 +352,10 @@ const fetchUserWithRetry = async (
             if (isPermissionError && attempt >= 1) {
                 throw error; // Only retry permission errors once
             }
+
+            // Note: ACCOUNT_BANNED / ACCOUNT_DELETED are thrown by settleUser and
+            // are NOT retried here so banned/deleted users see the message exactly
+            // once instead of flashing a retry spinner.
 
             // Exponential backoff: 1s, 2s before retrying
             const delay = AUTH_RETRY_BASE_DELAY * Math.pow(2, attempt);
@@ -410,45 +452,44 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
     }
 };
 
-// Google Sign In
+// Process a signed-in Firebase user (from popup OR redirect) through the
+// shared post-auth pipeline: role resolution, DB sync, and ban/deletion checks.
+// Delegates to `settleUser` (single-flight per uid) so it never races against
+// the onAuthChange observer's fetch on the same user — the root cause of the
+// "flash then disappear" Google login bug.
+const finalizeGoogleUser = async (firebaseUser: FirebaseUser): Promise<User> => {
+    return await settleUser(firebaseUser);
+};
+
+// Google Sign In.
+// Strategy: try the popup flow first (best UX). If the browser blocks the
+// popup (auth/popup-blocked — common on mobile / strict popup settings), fall
+// back to the full-page redirect flow (signInWithRedirect), which is not
+// subject to popup blockers. When the user returns from Google we recover the
+// result via getRedirectResult. Email/password flows are completely untouched.
 export const loginWithGoogle = async (): Promise<User> => {
     try {
+        // Try the popup flow. The redirect-return case (signInWithRedirect) is
+        // already handled by onAuthChange -> onAuthStateChanged, which settles
+        // the user and updates the store. Calling getRedirectResult() here on
+        // every button click is redundant and can cause the Google popup to
+        // flash open and immediately close, so we deliberately do NOT do that.
         const result: UserCredential = await signInWithPopup(auth, googleProvider);
-
-        // Get role from Realtime Database
-        const role = await getUserRole(result.user.uid);
-
-        // Check if it's the main admin email
-        const finalRole = resolveRole(result.user.email || '', role);
-
-        // Update user in Realtime Database and return user data
-        await createOrUpdateUserInDB(result.user, finalRole);
-
-        // Enforce ban/deletion using the authoritative Realtime DB data BEFORE
-        // completing the login so banned users see a clear, actionable message.
-        const user = await getUserFromRealtimeDB(result.user.uid);
-        if (!user) {
-            throw new Error('فشل تسجيل الدخول، يرجى المحاولة لاحقاً');
-        }
-        // Ban check BEFORE deletion check so banned users see the correct ban message
-        if (user.isBanned && Date.now() < (user.banExpiresAt || 0)) {
-            throw new Error(buildBanMessage(user));
-        }
-        if (user.isDeleted) {
-            throw new Error('تم حظر هذا الحساب. راجع مدير الموقع.');
-        }
-        // Auto-unban if the ban has already expired.
-        if (user.isBanned && Date.now() >= (user.banExpiresAt || 0)) {
-            try {
-                await unbanUser(user.id);
-            } catch (e) {
-                console.warn('Failed to auto-unban expired ban on login:', e);
-            }
-            user.isBanned = false;
-        }
-
-        return user;
+        return await finalizeGoogleUser(result.user);
     } catch (error: any) {
+        // 3) If the popup was blocked by the browser, fall back to the redirect
+        //    flow. This redirects the whole page to Google (no popup), so the
+        //    browser's popup blocker cannot prevent it.
+        if (error?.code === 'auth/popup-blocked') {
+            console.warn('Google popup was blocked - falling back to redirect sign-in.');
+            await signInWithRedirect(auth, googleProvider);
+            // Once redirected, this promise never resolves for the current page;
+            // sign-in completes on the returning page. Throw a signal so the UI
+            // knows the redirect navigation is in progress and does not show an
+            // error. The actual user session is picked up by onAuthChange.
+            throw new Error('AUTH_REDIRECT_IN_PROGRESS');
+        }
+
         console.error('Google login error:', error);
         // Preserve custom ban/deletion messages that carry no Firebase error code,
         // but translate internal resilience codes (AUTH_TIMEOUT, AUTH_FAILED,

@@ -39,7 +39,7 @@ const Register: React.FC = () => {
     }
   }, [currentUser, navigate]);
 
-const onSubmit = async (data: RegisterForm) => {
+  const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     setRegisterError('');
 
@@ -73,6 +73,11 @@ const onSubmit = async (data: RegisterForm) => {
       // If the auth state observer already set the user (success via onAuthChange)
       // and navigation is imminent, do NOT show a misleading error message.
       if (useAppStore.getState().currentUser) {
+        return;
+      }
+      // When the popup was blocked and we fell back to the full-page redirect
+      // flow, the page is about to navigate to Google. Do not flash an error.
+      if (error?.message === 'AUTH_REDIRECT_IN_PROGRESS') {
         return;
       }
       setRegisterError(error.message || t('auth.loginError'));
