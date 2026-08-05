@@ -559,13 +559,13 @@ const DiscussionForum = ({ courseId }: DiscussionForumProps) => {
                 </div>
             ) : (
                 // Chat View
-                <div className="bg-[#FFFBEB] dark:bg-brown-900 rounded-xl border border-brown-200 dark:border-brown-700 p-6 shadow-sm">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center text-brown-800 dark:text-neutral-100">
+                <div className="bg-[#FFFBEB] dark:bg-brown-900 rounded-xl border border-brown-200 dark:border-brown-700 p-6 shadow-sm flex flex-col min-h-[400px]">
+                    <h2 className="text-xl font-semibold mb-4 flex items-center text-brown-800 dark:text-neutral-100 flex-shrink-0">
                         <MessageCircle className="h-5 w-5 mr-2 text-primary-500" />
                         {t('discussions.publicChat')}
                     </h2>
 
-                    <div ref={chatContainerRef} className="h-64 sm:h-80 md:h-96 overflow-y-auto border border-brown-200 dark:border-brown-700 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 bg-brown-50 dark:bg-brown-800/50 custom-scrollbar">
+                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto border border-brown-200 dark:border-brown-700 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 bg-brown-50 dark:bg-brown-800/50 custom-scrollbar min-h-[200px] max-h-[calc(100vh-300px)]">
                         {chatMessages.length === 0 ? (
                             <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                                 {t('discussions.noMessagesYet')}

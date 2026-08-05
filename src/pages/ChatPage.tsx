@@ -297,9 +297,9 @@ const ChatPage = () => {
                 const isSwiped = swipedMessageId === message.id;
 
                 return (
-                    <div
+<div
                         key={message.id}
-                        className={`mb-3 flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
+                        className={`chat-msg-row mb-3 flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
                         onContextMenu={(e) => {
                             if (touchHandledRef.current) {
                                 touchHandledRef.current = false;
@@ -320,19 +320,19 @@ const ChatPage = () => {
                             if (window.innerWidth < 480) {
                                 menuX = Math.max(10, Math.min(rect.left + rect.width / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10));
                                 menuY = Math.min(rect.bottom + 8, window.innerHeight - 280);
-                            } else {
-                                // Position menu beside the message bubble (outer side)
+} else {
+                                // Position menu beside the message bubble (inner side)
                                 if (isRTL) {
                                     if (isOwn) {
-                                        menuX = rect.left - menuWidth - 8;
-                                    } else {
                                         menuX = rect.right + 8;
+                                    } else {
+                                        menuX = rect.left - menuWidth - 8;
                                     }
                                 } else {
                                     if (isOwn) {
-                                        menuX = rect.right + 8;
-                                    } else {
                                         menuX = rect.left - menuWidth - 8;
+                                    } else {
+                                        menuX = rect.right + 8;
                                     }
                                 }
 
@@ -508,8 +508,11 @@ const ChatPage = () => {
         </div>
     );
 
-    return (
-        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-4xl">
+return (
+        <div
+            className="chat-page-root container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-4xl flex flex-col overflow-hidden"
+            style={{ height: `${viewportH}px` }}
+        >
             {/* Header - General Chat */}
             <div className="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-brown-800 dark:via-brown-900 dark:to-brown-950 rounded-2xl p-3 sm:p-4 mb-4 shadow-lg shadow-primary-500/20 border border-white/10">
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -647,8 +650,8 @@ const ChatPage = () => {
             )}
 
             {/* Context Menu */}
-            {contextMenu && (
-                <div className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[180px] max-w-[calc(100vw-20px)]"
+{contextMenu && (
+                <div className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 w-[220px] max-w-[calc(100vw-20px)] max-h-[70vh] overflow-y-auto"
                     style={{ left: contextMenu.x, top: contextMenu.y }}
                     onClick={(e) => e.stopPropagation()}>
                     {(() => {
@@ -720,10 +723,9 @@ const ChatPage = () => {
 {/* Messages Container - responsive height using viewport units for mobile compatibility.
                  On mobile we use the dynamic visualViewport height (viewportH) instead of 100vh so that
                  the input stays docked right above the on-screen keyboard (no large gap / hiding behind it).
-                 The chat-messages-container class (mobile only) overrides height with the visual viewport. */}
-             <div
-                 className="chat-messages-container bg-gradient-to-br from-primary-50/80 to-white dark:from-brown-900/60 dark:to-brown-900/80 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 dark:border-primary-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] flex flex-col"
-                 style={{ ['--chat-vh' as string]: `${viewportH}px` }}
+                 Height is calculated dynamically: viewportH - headerHeight (approx 120-160px depending on screen size). */}
+<div
+                 className="chat-messages-container bg-gradient-to-br from-primary-50/80 to-white dark:from-brown-900/60 dark:to-brown-900/80 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 dark:border-primary-700/30 flex flex-col flex-1 min-h-0"
              >
                  <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-primary-50/40 to-primary-100/20 dark:from-brown-800/40 dark:to-brown-900/30"
                      onScroll={() => {

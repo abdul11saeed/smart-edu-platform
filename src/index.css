@@ -1349,6 +1349,19 @@
      @apply animate-card-appear rounded-2xl border border-brown-200/80 dark:border-brown-700/60 bg-gradient-to-br from-white to-brown-50 dark:from-brown-900 dark:to-brown-950 backdrop-blur-sm shadow-sm hover:shadow-xl hover:shadow-primary-500/10 dark:hover:shadow-primary-900/30 hover:-translate-y-1 hover:border-primary-200/50 dark:hover:border-primary-700/30 transition-all duration-300 ease-spring;
    }
 
+/* ============================================
+      CHAT MESSAGE SWIPE SUPPORT
+      Allows horizontal swipe gestures on individual
+      message rows (reply / actions) while still
+      allowing vertical scrolling of the message list.
+      Without this, the browser/touch device intercepts
+      horizontal swipes for navigation/scroll, so the
+      swipe-to-reply/actions gestures never fire.
+      ============================================ */
+   .chat-msg-row {
+     touch-action: pan-y;
+   }
+
    /* ============================================
       VIEWPORT HEIGHT FALLBACKS FOR MOBILE
       Provides safe fallback for browsers that
@@ -1367,34 +1380,39 @@
      max-width: 100vw;
    }
 
-/* Mobile chat viewport: when JS inline style is not yet applied,
+    /* Mobile chat viewport: when JS inline style is not yet applied,
       ensure the chat fills the visible viewport safely.
       Uses inset-0 (all four edges) to anchor to visual viewport and prevent
       shifting when keyboard opens/closes or page auto-scrolls. */
+    @media (max-width: 767px) {
+      .mobile-chat-viewport {
+        /* Use inset-0 to anchor to all edges of visual viewport */
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        /* Height fallbacks for browsers without inset support */
+        height: 100dvh;
+        height: 100vh;
+        height: -webkit-fill-available;
+        /* Prevent scroll chaining to parent elements */
+        overscroll-behavior: contain;
+       }
+    }
+
+/* Chat page root (mobile fallback).
+      The chat pages size the root container to the JS-provided visualViewport
+      height (useVisualViewportHeight) which keeps the input docked right above
+      the on-screen keyboard. This class provides a safe fallback before JS
+      runs and for browsers without visualViewport support, using dynamic
+      viewport units instead of a fixed 100vh so the layout never leaves a gap
+      below the input. */
    @media (max-width: 767px) {
-     .mobile-chat-viewport {
-       /* Use inset-0 to anchor to all edges of visual viewport */
-       top: 0;
-       bottom: 0;
-       left: 0;
-       right: 0;
-       /* Height fallbacks for browsers without inset support */
+     .chat-page-root {
        height: 100dvh;
        height: 100vh;
        height: -webkit-fill-available;
-       /* Prevent scroll chaining to parent elements */
        overscroll-behavior: contain;
-      }
-   }
-
-   /* Chat input keyboard gap fix (mobile only).
-      The chat pages set --chat-vh to the dynamic visualViewport height via
-      React (useVisualViewportHeight). Using it instead of 100vh keeps the
-      input docked right above the on-screen keyboard. On desktop the
-      sm:/md: Tailwind height classes still apply (unchanged). */
-   @media (max-width: 767px) {
-     .chat-messages-container {
-       height: calc(var(--chat-vh, 100vh) - 200px) !important;
      }
    }
 

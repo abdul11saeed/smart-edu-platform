@@ -1,6 +1,7 @@
 // Shared Chat Hook - Unified logic for ChatPage, PrivateChatPage and ChatTab
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import {
     sendMessage,
     subscribeMessages,
@@ -93,6 +94,10 @@ export const useChat = (options: UseChatOptions) => {
     const [typingUsers, setTypingUsers] = useState<Record<string, { isTyping: boolean; timestamp: number; userName: string }>>({});
     const [onlineUsers, setOnlineUsers] = useState<Record<string, { status: string; lastSeen: number; currentRoom: string | null; userName: string }>>({});
     const typingTimeoutRef = useRef<number | null>(null);
+    // Shared across effect instances (StrictMode mount->cleanup->mount) so a
+    // pending offline timer from a previous instance can be cancelled by the
+    // next mount instead of wiping the user's online status moments later.
+    const offlineTimerRef = useRef<number | null>(null);
 
     // Memoized grouped messages by date
     const groupedMessages = useMemo(() => {
@@ -192,9 +197,30 @@ export const useChat = (options: UseChatOptions) => {
     // Presence & Typing Effects
     // ============================================
 
-    // Set user online when joining a room, offline when leaving
-    useEffect(() => {
+// Set user online when joining a room, offline when leaving.
+    // We re-establish presence whenever the window regains focus or the app
+    // comes back online, because the Firebase SDK may have dropped the
+    // connection while the tab was backgrounded/offline (in which case the
+    // onDisconnect handler already marked the user as offline even though the
+    // user is still viewing the chat).
+    //
+    // IMPORTANT: React.StrictMode double-invokes effects in development
+    // (mount -> cleanup -> mount). If the cleanup immediately calls
+    // setUserOffline, the presence node is wiped right after it is set, so the
+    // other party never sees the user as online. We therefore debounce the
+    // offline write on a short timer: if the effect re-mounts (StrictMode or a
+    // quick tab switch) the pending offline write is cancelled and online stays.
+useEffect(() => {
         if (!currentUser || !roomId) return;
+
+        // Cancel any offline write scheduled by a previous effect instance. Under
+        // React.StrictMode the effect runs mount -> cleanup -> mount; the first
+        // cleanup schedules setUserOffline which would wipe the online status set
+        // by the second mount. Using a shared ref lets the second mount cancel it.
+        if (offlineTimerRef.current !== null) {
+            clearTimeout(offlineTimerRef.current);
+            offlineTimerRef.current = null;
+        }
 
         const setupPresence = async () => {
             try {
@@ -206,11 +232,29 @@ export const useChat = (options: UseChatOptions) => {
 
         setupPresence();
 
-        // Set offline when leaving the room
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') setupPresence();
+        };
+        const handleOnline = () => setupPresence();
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('focus', handleOnline);
+
+        // Set offline when leaving the room (debounced so StrictMode's
+        // immediate cleanup does not wipe the online status set above).
         return () => {
-            setUserOffline(currentUser.id).catch(() => { /* ignore */ });
-            // Clear typing status on unmount
-            clearTypingStatus(currentUser.id, roomId).catch(() => { /* ignore */ });
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('focus', handleOnline);
+            if (offlineTimerRef.current !== null) {
+                clearTimeout(offlineTimerRef.current);
+            }
+            offlineTimerRef.current = window.setTimeout(() => {
+                setUserOffline(currentUser.id).catch(() => { /* ignore */ });
+                // Clear typing status on unmount
+                clearTypingStatus(currentUser.id, roomId).catch(() => { /* ignore */ });
+            }, 1500);
         };
     }, [currentUser?.id, roomId]);
 
@@ -247,9 +291,11 @@ export const useChat = (options: UseChatOptions) => {
 
         const trimmedMessage = newMessage.trim();
 
-        if (trimmedMessage.length > 0) {
-            // User is typing - send typing status
-            setTypingStatus(currentUser.id, currentUser.name, roomId, true);
+if (trimmedMessage.length > 0) {
+            // User is typing - send typing status (fire-and-forget, never let a
+            // transient write failure produce an unhandled rejection that could
+            // hide the indicator from the other party).
+            setTypingStatus(currentUser.id, currentUser.name, roomId, true).catch(() => { /* ignore */ });
 
             // Clear previous timeout
             if (typingTimeoutRef.current) {
@@ -546,26 +592,39 @@ export const useChat = (options: UseChatOptions) => {
             return;
         }
 
-        if (Math.abs(deltaX) > 80 && Math.abs(deltaY) < 50) {
-            if (deltaX > 0) {
-                // Swipe LEFT - Reply
-                setSwipedMessageId(message.id);
+if (Math.abs(deltaX) > 80 && Math.abs(deltaY) < 50) {
+            if (deltaX < 0) {
+                // Swipe RIGHT - start a reply directly (shows the quote/replyTo
+                // indicator at the bottom and attaches the reply reference to the
+                // next sent message). This is the expected mobile gesture.
+                setReplyTo({ id: message.id, text: message.text, senderName: message.senderName });
+                setShowEmojiPicker(false);
+                setSwipedMessageId(null);
                 setRightSwipedMessageId(null);
-            } else if (deltaX < 0) {
-                // Swipe RIGHT - Other actions
+            } else if (deltaX > 0) {
+                // Swipe LEFT - Other actions
                 setRightSwipedMessageId(message.id);
                 setSwipedMessageId(null);
             }
-        } else if (swipedMessageId === message.id || rightSwipedMessageId === message.id) {
-            setSwipedMessageId(null);
-            setRightSwipedMessageId(null);
+} else if (swipedMessageId === message.id || rightSwipedMessageId === message.id) {
+            // If the tap is on one of the swipe action bar buttons, don't dismiss
+            // the bar here. Otherwise the bar unmounts before the browser fires
+            // the synthesized click, so the button's onClick (e.g. swipe-to-reply)
+            // never runs and the reply quote is never created.
+            const touchTarget = e.target as HTMLElement;
+            if (!touchTarget.closest('button')) {
+                setSwipedMessageId(null);
+                setRightSwipedMessageId(null);
+            }
         }
     }, [swipedMessageId, rightSwipedMessageId]);
 
-    // Utility functions
+// Utility functions
     const formatTime = useCallback((timestamp: number) => {
-        return new Date(timestamp).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
-    }, []);
+        // Respect the active UI language instead of always formatting in Arabic.
+        const locale = t('language.code', { defaultValue: i18n.language === 'en' ? 'en-US' : 'ar-SA' });
+        return new Date(timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    }, [t]);
 
     const getReactionSummary = useCallback((reactions?: Record<string, string[]>): { emoji: string; count: number }[] => {
         if (!reactions) return [];

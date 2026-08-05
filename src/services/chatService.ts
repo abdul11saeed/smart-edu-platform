@@ -217,12 +217,24 @@ export const adminDeleteMessage = async (
         // Security: In production, validate admin role on the backend
         // This is a client-side helper that should only be called after
         // proper authentication and authorization checks
-        if (requesterId) {
+if (requesterId) {
             console.warn('adminDeleteMessage called with requesterId - ensure backend validation');
         }
+        // Remove the message first. Its removal is the authoritative operation.
         await remove(messageRef);
-        const reactionsRef = ref(database, `${CHAT_REACTIONS_REF}/${chatId}/${messageId}`);
-        await remove(reactionsRef);
+
+        // Best-effort cleanup of the associated reactions node. The security
+        // rules for `chat_reactions` only let a user delete their OWN reaction
+        // slot, so removing the whole node may be denied when other users have
+        // reacted. We must never let that permission failure abort the message
+        // deletion (it would surface as an error in the UI even though the
+        // message was already removed).
+        try {
+            const reactionsRef = ref(database, `${CHAT_REACTIONS_REF}/${chatId}/${messageId}`);
+            await remove(reactionsRef);
+        } catch (e) {
+            console.warn('Reactions cleanup skipped (best-effort):', e);
+        }
         return true;
     }
     return false;
@@ -239,12 +251,24 @@ export const deleteMessage = async (
     const messageRef = ref(database, `${CHAT_ROOMS_REF}/${chatId}/messages/${messageId}`);
     const snapshot = await get(messageRef);
 
-    if (snapshot.exists()) {
+if (snapshot.exists()) {
         const message = snapshot.val() as ChatRoomMessage;
         if (message.senderId === senderId) {
+            // Remove the message first. Its removal is the authoritative operation.
             await remove(messageRef);
-            const reactionsRef = ref(database, `${CHAT_REACTIONS_REF}/${chatId}/${messageId}`);
-            await remove(reactionsRef);
+
+            // Best-effort cleanup of the associated reactions node. The security
+            // rules for `chat_reactions` only let a user delete their OWN reaction
+            // slot, so removing the whole node may be denied when other users have
+            // reacted. We must never let that permission failure abort the message
+            // deletion (it would surface as an error in the UI even though the
+            // message was already removed).
+            try {
+                const reactionsRef = ref(database, `${CHAT_REACTIONS_REF}/${chatId}/${messageId}`);
+                await remove(reactionsRef);
+            } catch (e) {
+                console.warn('Reactions cleanup skipped (best-effort):', e);
+            }
             return true;
         }
     }

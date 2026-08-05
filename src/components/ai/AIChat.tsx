@@ -160,11 +160,11 @@ const timeAgo = (ts: number): string => {
      if (typeof window === 'undefined') return 800;
      return window.visualViewport?.height ?? window.innerHeight;
    });
-   const [isNarrow, setIsNarrow] = useState<boolean>(() => {
-     if (typeof window === 'undefined') return false;
-     return (window.visualViewport?.width ?? window.innerWidth) < 768;
-   });
-   const initialMountRef = useRef(true);
+    const [isNarrow, setIsNarrow] = useState<boolean>(() => {
+      if (typeof window === 'undefined') return false;
+      return (window.visualViewport?.width ?? window.innerWidth) < 768;
+    });
+    const initialMountRef = useRef(true);
    // Track visualViewport offsetTop to handle scroll events on mobile (keyboard, auto-scroll)
    const viewportOffsetTopRef = useRef<number>(0);
 
@@ -364,6 +364,8 @@ const timeAgo = (ts: number): string => {
 
   // Auto-scroll to latest message
    // Use instant scroll on initial mount for snappy feel, smooth for subsequent messages
+   // viewportH is included so that when the virtual keyboard opens/closes (mobile),
+   // the latest messages stay visible instead of being hidden behind the input/keyboard.
    useEffect(() => {
       if (messagesContainerRef.current) {
         const behavior = initialMountRef.current || isNarrow ? 'instant' : 'smooth';
@@ -373,7 +375,7 @@ const timeAgo = (ts: number): string => {
           behavior
         });
       }
-    }, [messages, isLoading, isNarrow]);
+    }, [messages, isLoading, isNarrow, viewportH]);
 
   // Update welcome message when language changes so it always matches the selected language
   useEffect(() => {
@@ -414,14 +416,14 @@ const timeAgo = (ts: number): string => {
          const heightChanged = newHeight !== lastHeight;
          const narrowChanged = newIsNarrow !== lastNarrow;
 
-         if (heightChanged) {
-           lastHeight = newHeight;
-           setViewportH(newHeight);
-         }
-         if (narrowChanged) {
-           lastNarrow = newIsNarrow;
-           setIsNarrow(newIsNarrow);
-         }
+           if (heightChanged) {
+             lastHeight = newHeight;
+             setViewportH(newHeight);
+           }
+          if (narrowChanged) {
+            lastNarrow = newIsNarrow;
+            setIsNarrow(newIsNarrow);
+          }
        } catch (e) {
          // Fallback values if window properties are unavailable
          lastHeight = 800;
@@ -925,17 +927,28 @@ const chatContent = (
     <div
       ref={chatRef}
       onClick={(e) => e.stopPropagation()}
-      className={[
+className={[
         'flex flex-col relative',
 fullPage
           ? 'fixed inset-0 z-[200] overflow-hidden'
           : [
               'fixed z-[200] mobile-chat-viewport overflow-hidden',
-              isNarrow ? 'inset-0 rounded-none' : '',
-              !isNarrow && 'top-auto bottom-4 mx-auto w-[min(920px,92vw)] h-[78vh] min-h-[520px] max-h-[calc(100dvh-2rem)] rounded-2xl border border-gray-200 dark:border-gray-700',
+              isNarrow ? 'inset-x-0 rounded-none' : '', // Use inset-x-0 to allow top positioning via style
+              // Dynamic height so the input stays docked to the bottom edge of the
+              // viewport and the message list fills the remaining space. No fixed
+              // height that would leave empty space or break on small browser windows.
+              !isNarrow && 'top-auto bottom-4 mx-auto w-[min(920px,92vw)] h-[calc(100dvh-2rem)] rounded-2xl border border-gray-200 dark:border-gray-700',
             ].filter(Boolean).join(' '),
       ].filter(Boolean).join(' ')}
-      style={undefined}
+      // On mobile (modal and full-page) use visualViewport height and offsetTop so
+      // the input stays docked right above the on-screen keyboard when it opens/closes.
+      style={isNarrow
+        ? {
+            height: `${viewportH}px`,
+            top: `${viewportOffsetTopRef.current}px`,
+            bottom: 'auto',
+          }
+        : undefined}
     >
       {/* ===== Header ===== */}
       <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 text-white px-4 pt-[env(safe-area-inset-top)] py-3 flex items-center justify-between flex-shrink-0 shadow-md">
@@ -996,8 +1009,8 @@ fullPage
         </div>
       </div>
 
-      {/* ===== Body ===== */}
-       <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-gray-50 dark:bg-gray-900/60 overscroll-contain">
+{/* ===== Body ===== */}
+        <div ref={messagesContainerRef} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth bg-gray-50 dark:bg-gray-900/60 overscroll-contain">
         {/* Quick Actions - sticky */}
         <div className="sticky top-0 z-10 bg-white/85 dark:bg-gray-800/85 backdrop-blur border-b border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center gap-2 mb-2">
@@ -1117,68 +1130,68 @@ fullPage
           )}
           <div ref={messagesEndRef} />
         </div>
-      </div>
+       </div>
 
-      {/* ===== Input ===== */}
-      <div className="px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-        {activeAction && (
-          <div className="flex items-center justify-between mb-2 text-xs">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium">
-              {activeAction.icon}
-              {activeAction.label}
-            </span>
-            <button
-              onClick={() => {
-                setActiveTool(null);
-                setInputMessage('');
-              }}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              {t('ai.cancel')}
-            </button>
-          </div>
-        )}
-
-        {selectedFile && (
-          <div className="mb-2 flex items-center gap-1.5 text-xs text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-2.5 py-1.5 w-fit">
-            <FileText className="h-3.5 w-3.5 text-primary-500 flex-shrink-0" />
-            <span className="truncate max-w-[240px]">{selectedFile.name}</span>
-            <button
-              onClick={() => setSelectedFile(null)}
-              type="button"
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1 shrink-0"
-              title={t('ai.removeFile')}
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        )}
-
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={inputRef}
-            value={inputMessage}
-            onChange={(e) => {
-              setInputMessage(e.target.value);
-              autoGrow(e.target);
-            }}
-            onKeyPress={handleKeyPress}
-            placeholder={t('ai.placeholder')}
-            className="flex-1 min-w-0 w-full resize-none overflow-y-auto max-h-[200px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-xl p-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none leading-relaxed"
-            rows={1}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading}
-            className="flex-shrink-0 p-2.5 h-11 w-11 flex items-center justify-center bg-gradient-to-br from-primary-600 to-secondary-600 text-white rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
-            aria-label={t('ai.send')}
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* ===== Chat History (Profile) Panel ===== */}
+       {/* ===== Input ===== */}
+       <div className="px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+         {activeAction && (
+           <div className="flex items-center justify-between mb-2 text-xs">
+             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium">
+               {activeAction.icon}
+               {activeAction.label}
+             </span>
+             <button
+               onClick={() => {
+                 setActiveTool(null);
+                 setInputMessage('');
+               }}
+               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+             >
+               {t('ai.cancel')}
+             </button>
+           </div>
+         )}
+ 
+         {selectedFile && (
+           <div className="mb-2 flex items-center gap-1.5 text-xs text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-2.5 py-1.5 w-fit">
+             <FileText className="h-3.5 w-3.5 text-primary-500 flex-shrink-0" />
+             <span className="truncate max-w-[240px]">{selectedFile.name}</span>
+             <button
+               onClick={() => setSelectedFile(null)}
+               type="button"
+               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1 shrink-0"
+               title={t('ai.removeFile')}
+             >
+               <X className="h-3 w-3" />
+             </button>
+           </div>
+         )}
+ 
+         <div className="flex items-end gap-2">
+           <textarea
+             ref={inputRef}
+             value={inputMessage}
+             onChange={(e) => {
+               setInputMessage(e.target.value);
+               autoGrow(e.target);
+             }}
+             onKeyPress={handleKeyPress}
+             placeholder={t('ai.placeholder')}
+             className="flex-1 min-w-0 w-full resize-none overflow-y-auto max-h-[200px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-xl p-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none leading-relaxed"
+             rows={1}
+           />
+           <button
+             onClick={handleSendMessage}
+             disabled={!inputMessage.trim() || isLoading}
+             className="flex-shrink-0 p-2.5 h-11 w-11 flex items-center justify-center bg-gradient-to-br from-primary-600 to-secondary-600 text-white rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+             aria-label={t('ai.send')}
+           >
+             <Send className="w-5 h-5" />
+           </button>
+         </div>
+       </div>
+ 
+       {/* ===== Chat History (Profile) Panel ===== */}
       <div
         className={`absolute inset-0 z-20 bg-black/30 transition-opacity duration-200 ${isHistoryOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
@@ -1278,11 +1291,11 @@ fullPage
     </div>
   );
 
-  if (fullPage) {
-    return chatContent;
-  }
-
-  return createPortal(chatContent, document.body);
+   if (fullPage) {
+     return chatContent;
+   }
+ 
+   return createPortal(chatContent, document.body);
 };
 
 export default AIChat;

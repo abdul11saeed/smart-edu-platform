@@ -289,9 +289,9 @@ const PrivateChatPage = () => {
                 const isEditing = editingMessageId === message.id;
 
                 return (
-                    <div
+<div
                         key={message.id}
-                        className={`mb-2 flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
+                        className={`chat-msg-row mb-2 flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
                         onContextMenu={(e) => {
                             if (touchHandledRef.current) {
                                 touchHandledRef.current = false;
@@ -312,19 +312,19 @@ const PrivateChatPage = () => {
                             if (window.innerWidth < 480) {
                                 menuX = Math.max(10, Math.min(rect.left + rect.width / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10));
                                 menuY = Math.min(rect.bottom + 8, window.innerHeight - 280);
-                            } else {
-                                // Position menu beside the message bubble (outer side)
+} else {
+                                // Position menu beside the message bubble (inner side)
                                 if (isRTL) {
                                     if (isOwn) {
-                                        menuX = rect.left - menuWidth - 8;
-                                    } else {
                                         menuX = rect.right + 8;
+                                    } else {
+                                        menuX = rect.left - menuWidth - 8;
                                     }
                                 } else {
                                     if (isOwn) {
-                                        menuX = rect.right + 8;
-                                    } else {
                                         menuX = rect.left - menuWidth - 8;
+                                    } else {
+                                        menuX = rect.right + 8;
                                     }
                                 }
 
@@ -516,12 +516,15 @@ const PrivateChatPage = () => {
     );
 }
 
-    return (
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
+return (
+        <div
+            className="chat-page-root container mx-auto px-4 py-6 max-w-4xl flex flex-col overflow-hidden"
+            style={{ height: `${viewportH}px` }}
+        >
             {/* Context Menu */}
             {contextMenu && (
                 <div
-                    className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[180px] max-w-[calc(100vw-20px)] max-h-[70vh] overflow-y-auto"
+                    className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 w-[220px] max-w-[calc(100vw-20px)] max-h-[70vh] overflow-y-auto"
                     style={{
                         left: contextMenu.x,
                         top: contextMenu.y
@@ -755,10 +758,9 @@ const PrivateChatPage = () => {
              {/* Messages Container - responsive height using viewport units for mobile compatibility.
                  On mobile we use the dynamic visualViewport height (viewportH) instead of 100vh so that
                  the input stays docked right above the on-screen keyboard (no large gap / hiding behind it).
-                 The chat-messages-container class (mobile only) overrides height with the visual viewport. */}
-             <div
-                 className="chat-messages-container bg-gradient-to-br from-green-50/80 to-white dark:from-green-900/30 dark:to-green-900/50 backdrop-blur-md rounded-xl shadow-lg shadow-green-500/10 border border-green-100/50 dark:border-green-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] flex flex-col"
-                 style={{ ['--chat-vh' as string]: `${viewportH}px` }}
+                 Height is calculated dynamically: viewportH - headerHeight (approx 140px for private chat). */}
+<div
+                 className="chat-messages-container bg-gradient-to-br from-green-50/80 to-white dark:from-green-900/30 dark:to-green-900/50 backdrop-blur-md rounded-xl shadow-lg shadow-green-500/10 border border-green-100/50 dark:border-green-700/30 flex flex-col flex-1 min-h-0"
              >
                  <div
                      ref={containerRef}

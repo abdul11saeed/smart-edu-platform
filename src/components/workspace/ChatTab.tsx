@@ -164,9 +164,9 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                         const isEditing = editingMessageId === msg.id;
 
                         return (
-                            <div
+<div
                                 key={msg.id}
-                                className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                                className={`chat-msg-row flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                                 onContextMenu={(e) => {
                                     if (touchHandledRef.current) {
                                         touchHandledRef.current = false;
@@ -184,20 +184,20 @@ const ChatTab = ({ courseId, courseName }: ChatTabProps) => {
                                     const menuWidth = 220;
                                     let menuX: number, menuY: number;
 
-                                    // Position menu beside the message bubble (outer side)
+// Position menu beside the message bubble (inner side)
                                     if (isRTL) {
                                         // In RTL: own messages on left, non-own on right
                                         if (isOwn) {
-                                            menuX = rect.left - menuWidth - 8;
-                                        } else {
                                             menuX = rect.right + 8;
+                                        } else {
+                                            menuX = rect.left - menuWidth - 8;
                                         }
                                     } else {
                                         // In LTR: own messages on right, non-own on left
                                         if (isOwn) {
-                                            menuX = rect.right + 8;
-                                        } else {
                                             menuX = rect.left - menuWidth - 8;
+                                        } else {
+                                            menuX = rect.right + 8;
                                         }
                                     }
 
