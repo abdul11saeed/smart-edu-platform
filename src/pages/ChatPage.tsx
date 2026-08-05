@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
 import { useChat } from '../hooks/useChat';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 import { deleteMessage, ChatRoomMessage } from '../services/chatService';
 import { createNotification, getUserNotifications, markNotificationAsRead } from '../services/notificationService';
 import { getUserFromRealtimeDB } from '../services/authService';
@@ -33,6 +34,11 @@ const ChatPage = () => {
     const { currentUser, activeCourse } = useAppStore();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    // Track the visual viewport height so the chat input stays docked right
+    // above the on-screen keyboard on mobile (v100vh does not shrink when the
+    // keyboard opens, causing a large gap between the input and the keyboard).
+    const viewportH = useVisualViewportHeight();
 
     // Authentication check - redirect to login if not authenticated
     useEffect(() => {
@@ -711,8 +717,14 @@ const ChatPage = () => {
                 </div>
             )}
 
-             {/* Messages Container - responsive height using viewport units for mobile compatibility */}
-             <div className="bg-gradient-to-br from-primary-50/80 to-white dark:from-brown-900/60 dark:to-brown-900/80 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 dark:border-primary-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] flex flex-col">
+{/* Messages Container - responsive height using viewport units for mobile compatibility.
+                 On mobile we use the dynamic visualViewport height (viewportH) instead of 100vh so that
+                 the input stays docked right above the on-screen keyboard (no large gap / hiding behind it).
+                 The chat-messages-container class (mobile only) overrides height with the visual viewport. */}
+             <div
+                 className="chat-messages-container bg-gradient-to-br from-primary-50/80 to-white dark:from-brown-900/60 dark:to-brown-900/80 backdrop-blur-md rounded-2xl shadow-lg shadow-primary-500/10 border border-primary-100/50 dark:border-primary-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] flex flex-col"
+                 style={{ ['--chat-vh' as string]: `${viewportH}px` }}
+             >
                  <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-primary-50/40 to-primary-100/20 dark:from-brown-800/40 dark:to-brown-900/30"
                      onScroll={() => {
                          handleScroll();

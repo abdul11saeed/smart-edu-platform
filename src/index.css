@@ -1367,7 +1367,7 @@
      max-width: 100vw;
    }
 
-   /* Mobile chat viewport: when JS inline style is not yet applied,
+/* Mobile chat viewport: when JS inline style is not yet applied,
       ensure the chat fills the visible viewport safely.
       Uses inset-0 (all four edges) to anchor to visual viewport and prevent
       shifting when keyboard opens/closes or page auto-scrolls. */
@@ -1385,6 +1385,17 @@
        /* Prevent scroll chaining to parent elements */
        overscroll-behavior: contain;
       }
+   }
+
+   /* Chat input keyboard gap fix (mobile only).
+      The chat pages set --chat-vh to the dynamic visualViewport height via
+      React (useVisualViewportHeight). Using it instead of 100vh keeps the
+      input docked right above the on-screen keyboard. On desktop the
+      sm:/md: Tailwind height classes still apply (unchanged). */
+   @media (max-width: 767px) {
+     .chat-messages-container {
+       height: calc(var(--chat-vh, 100vh) - 200px) !important;
+     }
    }
 
    /* ============================================

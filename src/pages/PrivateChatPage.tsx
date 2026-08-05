@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { useAppStore } from '../stores/appStore';
 import { useChat } from '../hooks/useChat';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 import { createNotification, markNotificationAsRead, getUserNotifications } from '../services/notificationService';
 import { deleteMessage, ChatRoomMessage } from '../services/chatService';
 import { getUserFromRealtimeDB } from '../services/authService';
@@ -29,6 +30,11 @@ const PrivateChatPage = () => {
     const { currentUser } = useAppStore();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    // Track the visual viewport height so the chat input stays docked right
+    // above the on-screen keyboard on mobile (100vh does not shrink when the
+    // keyboard opens, causing a large gap between the input and the keyboard).
+    const viewportH = useVisualViewportHeight();
 
     // Authentication check
     useEffect(() => {
@@ -746,8 +752,14 @@ const PrivateChatPage = () => {
                 </div>
             )}
 
-             {/* Messages Container - responsive height using viewport units for mobile compatibility */}
-             <div className="bg-gradient-to-br from-green-50/80 to-white dark:from-green-900/30 dark:to-green-900/50 backdrop-blur-md rounded-xl shadow-lg shadow-green-500/10 border border-green-100/50 dark:border-green-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] flex flex-col">
+             {/* Messages Container - responsive height using viewport units for mobile compatibility.
+                 On mobile we use the dynamic visualViewport height (viewportH) instead of 100vh so that
+                 the input stays docked right above the on-screen keyboard (no large gap / hiding behind it).
+                 The chat-messages-container class (mobile only) overrides height with the visual viewport. */}
+             <div
+                 className="chat-messages-container bg-gradient-to-br from-green-50/80 to-white dark:from-green-900/30 dark:to-green-900/50 backdrop-blur-md rounded-xl shadow-lg shadow-green-500/10 border border-green-100/50 dark:border-green-700/30 h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] flex flex-col"
+                 style={{ ['--chat-vh' as string]: `${viewportH}px` }}
+             >
                  <div
                      ref={containerRef}
                      className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-green-50/40 to-emerald-50/20 dark:from-green-900/20 dark:to-green-900/30"
