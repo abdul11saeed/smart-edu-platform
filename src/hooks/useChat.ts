@@ -100,8 +100,11 @@ export const useChat = (options: UseChatOptions) => {
     const offlineTimerRef = useRef<number | null>(null);
 
     // Memoized grouped messages by date
-    const groupedMessages = useMemo(() => {
-        return messages.reduce((groups, message) => {
+const groupedMessages = useMemo(() => {
+        // Sort explicitly by createdAt so the grouped output is always in
+        // chronological order no matter what order the messages array arrives in.
+        const sorted = [...messages].sort((a, b) => a.createdAt - b.createdAt);
+        return sorted.reduce((groups, message) => {
             const date = new Date(message.createdAt).toDateString();
             if (!groups[date]) groups[date] = [];
             groups[date].push(message);

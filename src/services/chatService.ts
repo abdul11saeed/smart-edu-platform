@@ -1,6 +1,6 @@
 // Firebase Realtime Database service for course-specific real-time chat
 import { database } from '../firebase/config';
-import { ref, set, push, get, onValue, query, limitToLast, update, remove, onDisconnect } from 'firebase/database';
+import { ref, set, push, get, onValue, query, limitToLast, update, remove, onDisconnect, serverTimestamp } from 'firebase/database';
 import { trackMessageSent } from '../utils/analyticsTracker';
 
 // Data model: chat_rooms/{courseId}/messages/{messageId}
@@ -39,12 +39,17 @@ export const sendMessage = async (
     const newMessageRef = push(messagesRef);
     const messageId = newMessageRef.key || Date.now().toString();
 
-    const newMessage: ChatRoomMessage = {
+// createdAt must use the Firebase server timestamp (not the sender's device
+    // clock) so every client sorts messages by the same authoritative time.
+    // Using Date.now() makes messages appear out of order when the two users'
+    // device clocks differ. serverTimestamp() is a sentinel that Firebase
+    // replaces with the real server time when the write is stored.
+    const newMessage = {
         id: messageId,
         text: text.trim(),
         senderId: sender.id,
         senderName: sender.name,
-        createdAt: Date.now(),
+        createdAt: serverTimestamp(),
         ...(replyTo && { replyTo })
     };
 
@@ -54,7 +59,9 @@ export const sendMessage = async (
         console.warn('Analytics tracking skipped:', err)
     );
 
-    return newMessage;
+    // Return a number-based createdAt (Date.now()) so the returned object still
+    // satisfies the ChatRoomMessage type (serverTimestamp() is an opaque sentinel).
+    return { ...newMessage, createdAt: Date.now() } as ChatRoomMessage;
 };
 
 /**
@@ -217,7 +224,7 @@ export const adminDeleteMessage = async (
         // Security: In production, validate admin role on the backend
         // This is a client-side helper that should only be called after
         // proper authentication and authorization checks
-if (requesterId) {
+        if (requesterId) {
             console.warn('adminDeleteMessage called with requesterId - ensure backend validation');
         }
         // Remove the message first. Its removal is the authoritative operation.
@@ -251,7 +258,7 @@ export const deleteMessage = async (
     const messageRef = ref(database, `${CHAT_ROOMS_REF}/${chatId}/messages/${messageId}`);
     const snapshot = await get(messageRef);
 
-if (snapshot.exists()) {
+    if (snapshot.exists()) {
         const message = snapshot.val() as ChatRoomMessage;
         if (message.senderId === senderId) {
             // Remove the message first. Its removal is the authoritative operation.

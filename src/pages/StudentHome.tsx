@@ -352,9 +352,16 @@ const StudentHome: React.FC = () => {
     // Handle preview
     const [previewFile, setPreviewFile] = useState<AppFile | null>(null);
     const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewAnchorRect, setPreviewAnchorRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
-    const handlePreview = (file: AppFile) => {
+    const handlePreview = (file: AppFile, anchor?: HTMLElement) => {
         setPreviewFile(file);
+        if (anchor) {
+            const rect = anchor.getBoundingClientRect();
+            setPreviewAnchorRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+        } else {
+            setPreviewAnchorRect(null);
+        }
         setPreviewOpen(true);
     };
 
@@ -732,7 +739,7 @@ const StudentHome: React.FC = () => {
                                         <>
                                             <button
                                                 className="btn-modern-ghost px-2.5 py-1.5 text-xs"
-                                                onClick={() => handlePreview(file)}
+                                                onClick={(e) => handlePreview(file, e.currentTarget)}
                                                 title={t('studentHome.preview')}
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
@@ -801,7 +808,7 @@ const StudentHome: React.FC = () => {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 className="btn-modern-ghost px-2.5 py-1.5 text-xs"
-                                                onClick={() => handlePreview(file)}
+                                                onClick={(e) => handlePreview(file, e.currentTarget)}
                                                 title={t('studentHome.preview')}
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
@@ -841,6 +848,7 @@ const StudentHome: React.FC = () => {
                 isOpen={previewOpen}
                 onClose={() => setPreviewOpen(false)}
                 file={previewFile}
+                anchorRect={previewAnchorRect}
             />
 
             {/* Edit Modal */}

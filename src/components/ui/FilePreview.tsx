@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X, FileText } from 'lucide-react';
@@ -11,9 +12,10 @@ interface FilePreviewProps {
     isOpen: boolean;
     onClose: () => void;
     file: File | null;
+    anchorRect?: { top: number; left: number; width: number; height: number } | null;
 }
 
-const FilePreview = ({ isOpen, onClose, file }: FilePreviewProps) => {
+const FilePreview = ({ isOpen, onClose, file, anchorRect }: FilePreviewProps) => {
     const { t, i18n } = useTranslation();
     const [previewContent, setPreviewContent] = useState<string | null>(null);
     const [dlProgress, setDlProgress] = useState<{ percent: number; indeterminate: boolean } | null>(null);
@@ -81,7 +83,7 @@ const FilePreview = ({ isOpen, onClose, file }: FilePreviewProps) => {
 
         if (isText && previewContent) {
             return (
-                <div className="bg-brown-50 dark:bg-brown-800/50 rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+                <div className="bg-brown-50 dark:bg-brown-800 rounded-lg p-4 max-h-[60vh] overflow-y-auto">
                     <pre className="whitespace-pre-wrap text-sm text-brown-800 dark:text-neutral-200 font-mono leading-relaxed">
                         {previewContent}
                     </pre>
@@ -100,9 +102,41 @@ const FilePreview = ({ isOpen, onClose, file }: FilePreviewProps) => {
         );
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-start justify-center pt-16 sm:pt-20 p-4 overflow-y-auto" onClick={onClose}>
-            <div className="bg-gradient-to-br from-white to-[#F9F0E6]/30 dark:from-brown-800 dark:to-brown-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-5rem)] overflow-y-auto border border-[#E8C9A8]/50 dark:border-brown-700/50" onClick={e => e.stopPropagation()}>
+    // Compute modal positioning based on anchor rect
+    const getModalPosition = () => {
+        if (!anchorRect) return {};
+        const modalWidth = Math.min(window.innerWidth - 32, 896); // max-w-4xl = 896px, with 16px padding each side
+        const modalHeight = Math.min(window.innerHeight * 0.85, 700); // approximate max height
+        const gap = 12; // gap between card and modal
+
+        let top = anchorRect.top - modalHeight - gap;
+        let left = anchorRect.left + anchorRect.width / 2 - modalWidth / 2;
+
+        // If not enough space above, show below the card
+        if (top < 16) {
+            top = anchorRect.top + anchorRect.height + gap;
+        }
+
+        // Clamp horizontal position
+        left = Math.max(16, Math.min(left, window.innerWidth - modalWidth - 16));
+
+        // If still not enough vertical space, center vertically
+        if (top + modalHeight > window.innerHeight - 16) {
+            top = Math.max(16, (window.innerHeight - modalHeight) / 2);
+        }
+
+        return { top, left, width: modalWidth, position: 'fixed' as const };
+    };
+
+    const modalPosition = getModalPosition();
+
+    return createPortal(
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center" onClick={onClose}>
+            <div
+                className="bg-gradient-to-br from-white to-[#F9F0E6] dark:from-brown-800 dark:to-brown-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-5rem)] overflow-y-auto border border-[#E8C9A8]/50 dark:border-brown-700/50"
+                style={anchorRect ? modalPosition : undefined}
+                onClick={e => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="bg-gradient-to-l from-[#5C3A1E] to-[#7B4D2A] p-4 sm:p-5 text-white flex items-center justify-between">
                     <div>
@@ -226,7 +260,7 @@ const FilePreview = ({ isOpen, onClose, file }: FilePreviewProps) => {
                                 }
                                 // Increment the download counter (best effort).
                                 if (file.id) {
-                                    downloadCourseFile(file.id).catch(() => {});
+                                    downloadCourseFile(file.id).catch(() => { });
                                 }
                                 setDlProgress({ percent: 0, indeterminate: true });
                                 downloadFile(file.downloadURL || file.url || '', {
@@ -245,7 +279,8 @@ const FilePreview = ({ isOpen, onClose, file }: FilePreviewProps) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

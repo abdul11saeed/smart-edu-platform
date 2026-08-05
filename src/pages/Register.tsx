@@ -39,7 +39,7 @@ const Register: React.FC = () => {
     }
   }, [currentUser, navigate]);
 
-  const onSubmit = async (data: RegisterForm) => {
+const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     setRegisterError('');
 
@@ -51,6 +51,11 @@ const Register: React.FC = () => {
       await registerWithEmail(data.email, data.password, data.name, 'student');
       navigate('/');
     } catch (error: any) {
+      // If the auth state observer already set the user (success via onAuthChange)
+      // and navigation is imminent, do NOT show a misleading error message.
+      if (useAppStore.getState().currentUser) {
+        return;
+      }
       setRegisterError(error.message || t('auth.registerError'));
     } finally {
       setIsLoading(false);
@@ -65,6 +70,11 @@ const Register: React.FC = () => {
       await loginWithGoogle();
       navigate('/');
     } catch (error: any) {
+      // If the auth state observer already set the user (success via onAuthChange)
+      // and navigation is imminent, do NOT show a misleading error message.
+      if (useAppStore.getState().currentUser) {
+        return;
+      }
       setRegisterError(error.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);

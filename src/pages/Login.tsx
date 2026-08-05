@@ -52,7 +52,7 @@ const Login: React.FC = () => {
     }
   }, [currentUser, navigate]);
 
-  const onSubmit = async (data: LoginForm) => {
+const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     setLoginError('');
 
@@ -65,6 +65,11 @@ const Login: React.FC = () => {
       // Redirect based on role
       navigate(getRedirectPath(user.role));
     } catch (error: any) {
+      // If the auth state observer already set the user (success via onAuthChange)
+      // and navigation is imminent, do NOT show a misleading error message.
+      if (useAppStore.getState().currentUser) {
+        return;
+      }
       setLoginError(error.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);
@@ -82,6 +87,11 @@ const Login: React.FC = () => {
       // Redirect based on role
       navigate(getRedirectPath(user.role));
     } catch (error: any) {
+      // If the auth state observer already set the user (success via onAuthChange)
+      // and navigation is imminent, do NOT show a misleading error message.
+      if (useAppStore.getState().currentUser) {
+        return;
+      }
       setLoginError(error.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);

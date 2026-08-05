@@ -304,17 +304,17 @@ const fetchUserWithRetry = async (
             const isTimeout = error.message === 'AUTH_TIMEOUT';
             const isPermissionError = error.message === 'AUTH_PERMISSION_ERROR';
             const isAuthError = error.message === 'ACCOUNT_BANNED' || error.message === 'ACCOUNT_DELETED';
-            
+
             if (isTimeout || isAuthError || attempt === retries - 1) {
                 throw error; // Last attempt, timeout, or auth error -> bubble up
             }
-            
+
             // For permission errors, we still retry because it might be a transient
             // Firebase rules propagation delay. But we don't retry indefinitely.
             if (isPermissionError && attempt >= 1) {
                 throw error; // Only retry permission errors once
             }
-            
+
             // Exponential backoff: 1s, 2s before retrying
             const delay = AUTH_RETRY_BASE_DELAY * Math.pow(2, attempt);
             await new Promise((resolve) => setTimeout(resolve, delay));
@@ -396,8 +396,14 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
         return user;
     } catch (error: any) {
         console.error('Login error:', error);
-        // Preserve custom ban/deletion/auth permission messages that carry no Firebase error code.
+        // Preserve custom ban/deletion messages that carry no Firebase error code,
+        // but translate internal resilience codes (AUTH_TIMEOUT, AUTH_FAILED,
+        // AUTH_PERMISSION_ERROR) into friendly Arabic so they are never shown raw.
         if (error?.message && !error?.code) {
+            const msg = error.message;
+            if (msg === 'AUTH_TIMEOUT' || msg === 'AUTH_FAILED' || msg === 'AUTH_PERMISSION_ERROR') {
+                throw new Error(getAuthErrorMessage(msg));
+            }
             throw error;
         }
         throw new Error(getAuthErrorMessage(error.code));
@@ -444,8 +450,14 @@ export const loginWithGoogle = async (): Promise<User> => {
         return user;
     } catch (error: any) {
         console.error('Google login error:', error);
-        // Preserve custom ban/deletion messages that carry no Firebase error code.
+        // Preserve custom ban/deletion messages that carry no Firebase error code,
+        // but translate internal resilience codes (AUTH_TIMEOUT, AUTH_FAILED,
+        // AUTH_PERMISSION_ERROR) into friendly Arabic so they are never shown raw.
         if (error?.message && !error?.code) {
+            const msg = error.message;
+            if (msg === 'AUTH_TIMEOUT' || msg === 'AUTH_FAILED' || msg === 'AUTH_PERMISSION_ERROR') {
+                throw new Error(getAuthErrorMessage(msg));
+            }
             throw error;
         }
         throw new Error(getAuthErrorMessage(error.code));
@@ -616,6 +628,13 @@ const getAuthErrorMessage = (errorCode: string): string => {
             return 'يوجد حساب بنفس البريد الإلكتروني';
         case 'auth/network-request-failed':
             return 'فشل الاتصال بالإنترنت';
+        // Internal resilience codes (not Firebase SDK codes) - map to friendly Arabic
+        case 'AUTH_PERMISSION_ERROR':
+            return 'تعذر الوصول إلى بيانات حسابك. يرجى المحاولة مرة أخرى بعد لحظات.';
+        case 'AUTH_TIMEOUT':
+            return 'انتهت مهلة الاتصال. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
+        case 'AUTH_FAILED':
+            return 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى لاحقاً.';
         default:
             return 'حدث خطأ في المصادقة';
     }

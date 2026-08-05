@@ -68,6 +68,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
     const [filesToShow, setFilesToShow] = useState<number>(5);
     const [previewFile, setPreviewFile] = useState<FileType | null>(null);
     const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewAnchorRect, setPreviewAnchorRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
     // Initialize filesToShow to 5 only on first load
     const hasInitialized = useRef(false);
@@ -216,8 +217,14 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
         return () => clearTimeout(t);
     }, [searchQuery, currentUser?.id]);
 
-    const handlePreview = (file: FileType) => {
+    const handlePreview = (file: FileType, anchor?: HTMLElement) => {
         setPreviewFile(file);
+        if (anchor) {
+            const rect = anchor.getBoundingClientRect();
+            setPreviewAnchorRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+        } else {
+            setPreviewAnchorRect(null);
+        }
         setPreviewOpen(true);
     };
 
@@ -401,7 +408,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
 
                                     <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-brown-100/80 dark:border-brown-700/30">
                                         <button
-                                            onClick={() => handlePreview(file)}
+                                            onClick={(e) => handlePreview(file, e.currentTarget)}
                                             className="btn-modern-ghost p-1.5"
                                             title={t('courseFiles.preview')}
                                         >
@@ -502,6 +509,7 @@ const CourseFilesTab = ({ courseId, course, university, college, major }: Course
                 isOpen={previewOpen}
                 onClose={() => setPreviewOpen(false)}
                 file={previewFile}
+                anchorRect={previewAnchorRect}
             />
         </div>
     );
